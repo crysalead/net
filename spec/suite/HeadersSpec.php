@@ -1,0 +1,213 @@
+<?php
+namespace net\spec\suite;
+
+use Exception;
+use net\Header;
+use net\Headers;
+
+describe("Headers", function() {
+
+    beforeEach(function() {
+        $this->headers = new Headers();
+    });
+
+    describe("->offsetGet()/->offsetSet()", function() {
+
+        it("sets an header", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+
+            expect($this->headers['Content-Type']->data())->toBe('text/plain');
+            expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
+
+        });
+
+        it("sets an header instance", function() {
+
+            $this->headers['Content-Type'] = new Header([
+                'data' => 'text/plain'
+            ]);
+
+            expect($this->headers['Content-Type']->data())->toBe('text/plain');
+            expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
+
+        });
+
+        it("is case insensitive", function() {
+
+            $this->headers['content-type'] = 'text/plain';
+            $this->headers['CONTENT-TYPE'] = 'application/json';
+
+            expect($this->headers['content-type']->data())->toBe('application/json');
+            expect($this->headers['CONTENT-TYPE']->to('array'))->toBe(['application/json']);
+
+        });
+
+        it("sets multi values header", function() {
+
+            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = '*/*;q=0.1';
+
+            expect($this->headers['Accept']->data())->toBe('text/html;q=1.0, */*;q=0.1');
+            expect($this->headers['Accept']->to('array'))->toBe([
+                'text/html;q=1.0',
+                '*/*;q=0.1'
+            ]);
+
+        });
+
+        it("overrides multi values header", function() {
+
+            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = '*/*;q=0.1';
+
+            $this->headers['Accept'] = 'application/json';
+            expect($this->headers['Accept']->data())->toBe('application/json');
+            expect($this->headers['Accept']->to('array'))->toBe(['application/json']);
+
+        });
+
+        it("throws an exception with an empty name", function() {
+
+            $closure = function() {
+                $this->headers[] = 'value';
+            };
+
+            expect($closure)->toThrow(new Exception("Error, invalid header name, can't be empty."));
+
+        });
+
+        it("throws an exception with a non scalar value", function() {
+
+            $closure = function() {
+                $this->headers['name'] = ['value'];
+            };
+
+            expect($closure)->toThrow(new Exception("Error, only string value is allowed."));
+
+        });
+
+    });
+
+    describe("->add()", function() {
+
+        it("adds an header", function() {
+
+            $this->headers->add('Content-Type: text/plain');
+
+            expect($this->headers['Content-Type']->data())->toBe('text/plain');
+            expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
+
+        });
+
+        it("throws an exception with an invalid header", function() {
+
+            $closure = function() {
+                $this->headers->add('HTTP/1.x 200 OK');
+            };
+
+            expect($closure)->toThrow(new Exception("Error, invalid header string format."));
+
+        });
+
+    });
+
+    describe("->offsetExists()", function() {
+
+        it("checks if a header exist", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+
+            expect(isset($this->headers['Content-Type']))->toBe(true);
+            expect(isset($this->headers['Accept']))->toBe(false);
+        });
+
+        it("is case insensitive", function() {
+
+            $this->headers['CONTENT-TYPE'] = 'application/json';
+
+            expect(isset($this->headers['content-type']))->toBe(true);
+            expect(isset($this->headers['cOnTeNt-TyPe']))->toBe(true);
+
+        });
+
+    });
+
+    describe("->offsetUnset()", function() {
+
+        it("remove a header", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            unset($this->headers['Content-Type']);
+
+            expect(isset($this->headers['Content-Type']))->toBe(false);
+        });
+
+        it("is case insensitive", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            unset($this->headers['CONTENT-TYPE']);
+
+            expect(isset($this->headers['content-type']))->toBe(false);
+
+        });
+
+    });
+
+    describe("->data()", function() {
+
+        it("exports headers", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            $this->headers['X-Custom-ABC'] = 'abc';
+            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = '*/*;q=0.1';
+
+            expect($this->headers->data())->toBe([
+                'Content-Type: text/plain',
+                'X-Custom-ABC: abc',
+                'Accept: text/html;q=1.0, */*;q=0.1'
+            ]);
+
+        });
+
+    });
+
+    describe("::parse()", function() {
+
+        it("exports headers", function() {
+
+            $header = <<<EOD
+HTTP/1.x 200 OK
+Transfer-Encoding: chunked
+Date: Thu, 25 Dec 2014 00:00:00 GMT
+Server: Apache
+Connection: close
+Pragma: public
+Expires: Thu, 25 Dec 2014 23:59:59 GMT
+Cache-Control: max-age=3600, public
+Content-Type: text/html; charset=UTF-8
+Content-Encoding: gzip
+Vary: Accept-Encoding, Cookie, User-Agent
+
+EOD;
+
+            $headers = Headers::parse($header);
+            expect($headers->data())->toBe([
+                'Transfer-Encoding: chunked',
+                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
+                'Server: Apache',
+                'Connection: close',
+                'Pragma: public',
+                'Expires: Thu, 25 Dec 2014 23:59:59 GMT',
+                'Cache-Control: max-age=3600, public',
+                'Content-Type: text/html; charset=UTF-8',
+                'Content-Encoding: gzip',
+                'Vary: Accept-Encoding, Cookie, User-Agent'
+            ]);
+
+        });
+
+    });
+
+});
