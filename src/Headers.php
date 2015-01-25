@@ -68,11 +68,11 @@ class Headers extends \collection\Collection
     public function add($value)
     {
         $header = $this->_classes['header'];
-        $parsed = $header::parse($value);
-        if ($parsed === null) {
-            throw new Exception("Error, invalid header string format.");
+        if ($parsed = $header::parse($value)) {
+            $this->_data[strtolower($parsed->name())] = $parsed;
+        } else {
+            $this->_data[(string) $value] = true;
         }
-        $this->_data[strtolower($parsed->name())] = $parsed;
     }
 
     /**
@@ -115,8 +115,8 @@ class Headers extends \collection\Collection
     public function data()
     {
         $result = [];
-        foreach ($this->_data as $header) {
-            $result[] = (string) $header;
+        foreach ($this->_data as $key => $header) {
+            $result[] = $header === true ? $key : (string) $header;
         }
         return $result;
     }

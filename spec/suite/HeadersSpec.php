@@ -100,16 +100,6 @@ describe("Headers", function() {
 
         });
 
-        it("throws an exception with an invalid header", function() {
-
-            $closure = function() {
-                $this->headers->add('HTTP/1.x 200 OK');
-            };
-
-            expect($closure)->toThrow(new Exception("Error, invalid header string format."));
-
-        });
-
     });
 
     describe("->offsetExists()", function() {
@@ -194,6 +184,7 @@ EOD;
 
             $headers = Headers::parse($header);
             expect($headers->data())->toBe([
+                'HTTP/1.x 200 OK',
                 'Transfer-Encoding: chunked',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Server: Apache',
