@@ -184,19 +184,12 @@ EOD;
 
     describe("::parse()", function() {
 
-        it("exports headers", function() {
+        it("creates a collection of headers from an header string", function() {
 
             $header = <<<EOD
 HTTP/1.x 200 OK
-Transfer-Encoding: chunked
 Date: Thu, 25 Dec 2014 00:00:00 GMT
-Server: Apache
-Connection: close
-Pragma: public
-Expires: Thu, 25 Dec 2014 23:59:59 GMT
-Cache-Control: max-age=3600, public
 Content-Type: text/html; charset=UTF-8
-Content-Encoding: gzip
 Vary: Accept-Encoding, Cookie, User-Agent
 
 EOD;
@@ -204,15 +197,27 @@ EOD;
             $headers = Headers::parse($header);
             expect($headers->data())->toBe([
                 'HTTP/1.x 200 OK',
-                'Transfer-Encoding: chunked',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Server: Apache',
-                'Connection: close',
-                'Pragma: public',
-                'Expires: Thu, 25 Dec 2014 23:59:59 GMT',
-                'Cache-Control: max-age=3600, public',
                 'Content-Type: text/html; charset=UTF-8',
-                'Content-Encoding: gzip',
+                'Vary: Accept-Encoding, Cookie, User-Agent'
+            ]);
+
+        });
+
+        it("creates a collection of headers from an array of headers", function() {
+
+            $header = [
+                'HTTP/1.x 200 OK',
+                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
+                'Content-Type: text/html; charset=UTF-8',
+                'Vary: Accept-Encoding, Cookie, User-Agent'
+            ];
+
+            $headers = Headers::parse($header);
+            expect($headers->data())->toBe([
+                'HTTP/1.x 200 OK',
+                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
+                'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'
             ]);
 

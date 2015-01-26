@@ -122,14 +122,14 @@ class Headers extends \collection\Collection
     }
 
     /**
-     * Parses an headers string.
+     * Creates an headers collection.
      *
-     * @param  string $header A header string.
-     * @return object         A collection of headers.
+     * @param  string|array $headers A header string or an array of headers.
+     * @return object                A collection of headers.
      */
-    public static function parse($header)
+    public static function parse($headers)
     {
-        $headers = explode("\n", $header);
+        $headers = is_string($headers) ? explode("\n", $headers) : $headers;
         $collection = new static();
 
         foreach ($headers as $value) {
