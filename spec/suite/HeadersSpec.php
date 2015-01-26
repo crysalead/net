@@ -163,6 +163,25 @@ describe("Headers", function() {
 
     });
 
+    describe("->__toString()", function() {
+
+        it("casts in string", function() {
+
+            $header = <<<EOD
+HTTP/1.x 200 OK
+Date: Thu, 25 Dec 2014 00:00:00 GMT
+Content-Type: text/html; charset=UTF-8
+Vary: Accept-Encoding, Cookie, User-Agent
+
+EOD;
+
+            $headers = Headers::parse($header);
+            expect((string) $headers)->toBe($header);
+
+        });
+
+    });
+
     describe("::parse()", function() {
 
         it("exports headers", function() {

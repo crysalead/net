@@ -142,4 +142,15 @@ class Headers extends \collection\Collection
         }
         return $collection;
     }
+
+    /**
+     * Returns the headers as a string.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        $data = $this->data();
+        return $data ? join("\n", $data) . "\n" : '';
+    }
 }
