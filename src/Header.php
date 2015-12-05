@@ -9,6 +9,16 @@ use Exception;
 class Header extends \collection\Collection
 {
     /**
+     * Contains all exportable formats and their handler
+     *
+     * @var array
+     */
+    protected static $_formats = [
+        'array'  => 'collection\Collection::toArray',
+        'header' => 'net\Header::toHeader'
+    ];
+
+    /**
      * The header name.
      *
      * @var string
@@ -71,13 +81,13 @@ class Header extends \collection\Collection
     }
 
     /**
-     * Gets the header value as an string.
+     * Returns the headers as a string.
      *
      * @return string
      */
     public function __toString()
     {
-        return $this->name() . ': ' . join(', ', $this->_data);
+        return static::toHeader($this);
     }
 
     /**
@@ -98,5 +108,21 @@ class Header extends \collection\Collection
             'name'  => $values[0],
             'data' => $data
         ]);
+    }
+
+    /**
+     * Returns the headers as a string.
+     *
+     * @return string
+     */
+    public static function toHeader($collection)
+    {
+        $data = [];
+        foreach ($collection as $value) {
+            if ($value) {
+                $data[] = $value;
+            }
+        }
+        return $collection->name() . ': ' . join(', ', $data);
     }
 }

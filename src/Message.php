@@ -12,8 +12,15 @@ class Message
      * @var array
      */
     protected static $_formats = [
-        'definition' => 'net\Message::toDefinition'
+        'array' => 'net\Message::toArray'
     ];
+
+    /**
+     * Class dependencies.
+     *
+     * @var array
+     */
+    protected $_classes = [];
 
     /**
      * The communication protocol
@@ -81,7 +88,7 @@ class Message
      *                      - `'username'`   _string_ : Username (defaults `null`).
      *                      - `'password'`   _string_ : Password (defaults `null`).
      *                      - `'path'`       _string_ : Absolute path of the request. (defaults `'/'`).
-     *                      - `'headers'`    _array_  : The headers array of the message (defaults `''`).
+     *                      - `'headers'`    _mixed_  : The headers (defaults `[]`).
      *                      - `'body'`       _mixed_  : The body string, resource or `storage\stream\Stream` instance
      *                                                  of the message (defaults `''`).
      */
@@ -97,8 +104,8 @@ class Message
             'headers'  => [],
             'body'     => '',
             'classes'  => [
-                'scheme'  => 'net\Scheme',
                 'headers' => 'net\Headers',
+                'scheme'  => 'net\Scheme',
                 'stream'  => 'storage\stream\Stream'
             ]
         ];
@@ -120,7 +127,7 @@ class Message
      * Gets/sets the body of the message body (string way).
      *
      * @param  string $value.
-     * @return string
+     * @return mixed
      */
     public function headers($value = null)
     {
@@ -133,19 +140,20 @@ class Message
         } else {
             $this->_headers = $headers::parse($value);
         }
-        return $this->_headers;
+        return $this;
     }
 
     /**
      * Gets/sets the body of the message body (string way).
      *
      * @param  string $value.
-     * @return string
+     * @return mixed
      */
     public function body($value = null)
     {
         if (func_num_args() === 1) {
-            $this->_body = $this->stream($value);
+            $this->stream($value);
+            return $this;
         }
         return (string) $this->_body;
     }
@@ -155,7 +163,7 @@ class Message
      *
      * @param  mixed  $value   A stream object or stream resource.
      * @param  array  $options The stream options.
-     * @return object
+     * @return mixed
      */
     public function stream($value = null, $options = [])
     {
@@ -163,47 +171,51 @@ class Message
             return $this->_body;
         }
         $stream = $this->_classes['stream'];
-        return $this->_body = new $stream(['data' => $value] + $options);
+        $this->_body = new $stream(['data' => $value] + $options);
+        return $this;
     }
 
     /**
      * Gets/sets the scheme.
      *
      * @param  string $scheme The scheme of the message
-     * @return string
+     * @return mixed
      */
     public function scheme($scheme = null)
     {
         if (func_num_args() === 0) {
             return $this->_scheme;
         }
-        return $this->_scheme = $scheme;
+        $this->_scheme = $scheme;
+        return $this;
     }
 
     /**
      * Gets/sets the host.
      *
      * @param  string $host The host of the message
-     * @return string
+     * @return mixed
      */
     public function host($host = null)
     {
         if (func_num_args() === 0) {
             return $this->_host;
         }
-        return $this->_host = $host;
+        $this->_host = $host;
+        return $this;
     }
 
     /**
      * Gets/sets the port.
      *
      * @param  string $port The port of the message.
-     * @return string
+     * @return mixed
      */
     public function port($port = null)
     {
         if (func_num_args() === 1) {
-            return $this->_port = $port;
+            $this->_port = $port;
+            return $this;
         }
         if ($this->_port !== null) {
             return $this->_port;
@@ -221,42 +233,45 @@ class Message
      * Gets/sets the path.
      *
      * @param  string $path Absolute path of the message.
-     * @return string
+     * @return mixed
      */
     public function path($path = null)
     {
         if (func_num_args() === 0) {
             return $this->_path;
         }
-        return $this->_path = '/' . ltrim($path, '/');
+        $this->_path = '/' . ltrim($path, '/');
+        return $this;
     }
 
     /**
      * Gets/sets the username.
      *
      * @param  string $path The username of the message.
-     * @return string
+     * @return mixed
      */
     public function username($username = null)
     {
         if (func_num_args() === 0) {
             return $this->_username;
         }
-        return $this->_username = $username;
+        $this->_username = $username;
+        return $this;
     }
 
     /**
      * Gets/sets the password.
      *
      * @param  string $path The password of the message.
-     * @return string
+     * @return mixed
      */
     public function password($password = null)
     {
         if (func_num_args() === 0) {
             return $this->_password;
         }
-        return $this->_password = $password;
+        $this->_password = $password;
+        return $this;
     }
 
     /**
@@ -320,7 +335,7 @@ class Message
             return static::$_formats;
         }
         if ($format === false) {
-            return static::$_formats = ['definition' => 'net\Message::toDefinition'];
+            return static::$_formats = ['array' => 'net\Message::toArray'];
         }
         if ($handler === false) {
             unset(static::$_formats[$format]);
@@ -364,9 +379,9 @@ class Message
      *
      * @param  mixed $message A `Message` instance.
      * @param  array $options Options used to export `$message`.
-     * @return array          The exported array.
+     * @return array          The export array.
      */
-    public static function toDefinition($message, $options = [])
+    public static function toArray($message, $options = [])
     {
         return [
             'scheme'   => $message->scheme(),
@@ -375,7 +390,8 @@ class Message
             'username' => $message->username(),
             'password' => $message->password(),
             'path'     => $message->path(),
-            'url'      => $message->url()
+            'url'      => $message->url(),
+            'headers'  => $message->headers()->data()
         ];
     }
 
@@ -386,6 +402,6 @@ class Message
      */
     public function __toString()
     {
-        return (string) $this->_headers . "\n" . (string) $this->_body;
+        return (string) $this->_headers . (string) $this->_body;
     }
 }

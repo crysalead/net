@@ -1,6 +1,6 @@
 {
     "name": "crysalead/net",
-    "description": "Net - Object-Oriented API for low level network communication",
+    "description": "Net - Object-Oriented API for Network Communication",
     "keywords": ["TCP", "UDP"],
     "license": "MIT",
     "require": {
@@ -8,10 +8,10 @@
         "ext-curl": "*",
         "crysalead/collection": "dev-master",
         "crysalead/storage-stream": "dev-master",
-        "crysalead/set": "dev-master"
+        "crysalead/set": "~1.0"
     },
     "require-dev": {
-        "crysalead/kahlan": "dev-master"
+        "crysalead/kahlan": "~1.2"
     },
     "autoload": {
         "psr-4": {

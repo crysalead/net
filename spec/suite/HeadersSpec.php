@@ -173,6 +173,7 @@ Date: Thu, 25 Dec 2014 00:00:00 GMT
 Content-Type: text/html; charset=UTF-8
 Vary: Accept-Encoding, Cookie, User-Agent
 
+
 EOD;
 
             $headers = Headers::parse($header);

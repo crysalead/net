@@ -12,10 +12,7 @@ describe("Message", function() {
 
         beforeEach(function() {
             $this->headers = <<<EOD
-HTTP/1.x 200 OK
-Date: Thu, 25 Dec 2014 00:00:00 GMT
-Content-Type: text/html; charset=UTF-8
-Vary: Accept-Encoding, Cookie, User-Agent
+Custom-Header: Custom Value
 
 EOD;
         });
@@ -24,10 +21,7 @@ EOD;
 
             $message = new Message(['headers' => $this->headers]);
             expect($message->headers()->data())->toBe([
-                'HTTP/1.x 200 OK',
-                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Content-Type: text/html; charset=UTF-8',
-                'Vary: Accept-Encoding, Cookie, User-Agent'
+                'Custom-Header: Custom Value'
             ]);
 
         });
@@ -36,10 +30,7 @@ EOD;
 
             $message = new Message(['headers' => Headers::parse($this->headers)]);
             expect($message->headers()->data())->toBe([
-                'HTTP/1.x 200 OK',
-                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Content-Type: text/html; charset=UTF-8',
-                'Vary: Accept-Encoding, Cookie, User-Agent'
+                'Custom-Header: Custom Value'
             ]);
 
         });
@@ -268,7 +259,7 @@ EOD;
         it("gets registered formats", function() {
 
             Message::formats('json', function() {});
-            expect(array_keys(Message::formats()))->toBe(['definition', 'json']);
+            expect(array_keys(Message::formats()))->toBe(['array', 'json']);
 
         });
 
@@ -277,7 +268,7 @@ EOD;
             Message::formats('json', function() {});
             Message::formats('json', false);
 
-            expect(array_keys(Message::formats()))->toBe(['definition']);
+            expect(array_keys(Message::formats()))->toBe(['array']);
 
         });
 
@@ -286,14 +277,14 @@ EOD;
             Message::formats('json', function() {});
             Message::formats(false);
 
-            expect(array_keys(Message::formats()))->toBe(['definition']);
+            expect(array_keys(Message::formats()))->toBe(['array']);
 
         });
     });
 
-    describe("->to('definition')", function() {
+    describe("->to('array')", function() {
 
-        it("returns the definition", function() {
+        it("returns the query", function() {
 
             $message = new Message([
                 'scheme'   => 'http',
@@ -304,14 +295,15 @@ EOD;
                 'path'     => 'index.php'
             ]);
 
-            expect($message->to('definition'))->toBe([
+            expect($message->to('array'))->toBe([
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
                 'port'     => 80,
                 'username' => 'username',
                 'password' => 'password',
                 'path'     => '/index.php',
-                'url'      => 'http://username:password@www.domain.com/index.php'
+                'url'      => 'http://username:password@www.domain.com/index.php',
+                'headers'  => []
             ]);
 
         });

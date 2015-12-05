@@ -2,12 +2,23 @@
 namespace net;
 
 use Exception;
+use set\Set;
 
 /**
  * Collection of Headers.
  */
 class Headers extends \collection\Collection
 {
+    /**
+     * Contains all exportable formats and their handler
+     *
+     * @var array
+     */
+    protected static $_formats = [
+        'array'  => 'collection\Collection::toArray',
+        'header' => 'net\http\Headers::toHeader'
+    ];
+
     /**
      * Class dependencies.
      *
@@ -27,7 +38,7 @@ class Headers extends \collection\Collection
                 'header' => 'net\Header'
             ]
         ];
-        $config += $defaults;
+        $config = Set::merge($defaults, $config);
         parent::__construct($config);
         $this->_classes = $config['classes'];
 
@@ -67,6 +78,9 @@ class Headers extends \collection\Collection
      */
     public function add($value)
     {
+        if (!$value = trim($value)) {
+            return;
+        }
         $header = $this->_classes['header'];
         if ($parsed = $header::parse($value)) {
             $this->_data[strtolower($parsed->name())] = $parsed;
@@ -116,7 +130,7 @@ class Headers extends \collection\Collection
     {
         $result = [];
         foreach ($this->_data as $key => $header) {
-            $result[] = $header === true ? $key : (string) $header;
+            $result[] = $header === true ? $key : $header->to('header');
         }
         return $result;
     }
@@ -129,16 +143,24 @@ class Headers extends \collection\Collection
      */
     public static function parse($headers)
     {
-        $headers = is_string($headers) ? explode("\n", $headers) : $headers;
         $collection = new static();
+        if (!$headers) {
+            return $collection;
+        }
+        $headers = is_string($headers) ? explode("\n", $headers) : $headers;
 
-        foreach ($headers as $value) {
+        foreach ($headers as $key => $value) {
             if (!$value = trim($value)) {
                 continue;
             }
-            try {
-                $collection->add($value);
-            } catch (Exception $e) {}
+            if (!is_numeric($key)) {
+                if (is_array($value)) {
+                    $value = "{$key}: " . join(', ', $value);
+                } else {
+                    $value = "{$key}: {$value}";
+                }
+            }
+            $collection->add($value);
         }
         return $collection;
     }
@@ -150,7 +172,24 @@ class Headers extends \collection\Collection
      */
     public function __toString()
     {
-        $data = $this->data();
-        return $data ? join("\n", $data) . "\n" : '';
+        return static::toHeader($this);
+    }
+
+    /**
+     * Returns the headers as a string.
+     *
+     * @return string
+     */
+    public static function toHeader($collection)
+    {
+        $data = [];
+        foreach ($collection as $key => $header) {
+            if ($header === true) {
+                $data[] = $key;
+            } elseif ($header = $header->to('header')) {
+                $data[] = $header;
+            }
+        }
+        return $data ? join("\n", $data) . "\n\n" : '';
     }
 }
