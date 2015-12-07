@@ -1,4 +1,4 @@
-# Net - Object-Oriented API for low level network communication
+# Net - Object-Oriented API for Network Communication
 
 [![Build Status](https://travis-ci.org/crysalead/net.svg?branch=master)](https://travis-ci.org/crysalead/net)
 [![Code Coverage](https://scrutinizer-ci.com/g/crysalead/net/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/crysalead/net/)

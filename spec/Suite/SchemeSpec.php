@@ -1,9 +1,9 @@
 <?php
-namespace net\spec\suite;
+namespace Lead\Net\Spec\Suite;
 
 use Exception;
-use net\NetException;
-use net\Scheme;
+use Lead\Net\NetException;
+use Lead\Net\Scheme;
 
 describe("Scheme", function() {
 

@@ -1,12 +1,10 @@
 <?php
-namespace net\http;
+namespace Lead\Net\Http;
 
 /**
  * The `Auth` class handles HTTP Authentication encoding and decoding. Typically, this class is
- * not used directly, but is a utility of `net\http\Request` and `net\http\Response`
+ * not used directly, but is a utility of `Lead\Net\Http\Request` and `Lead\Net\Http\Response`
  *
- * @see net\http\Request::to()
- * @see net\http\Response::digest()
  */
 class Auth
 {
@@ -52,7 +50,8 @@ class Auth
      * @param  array  $data Params needed to hash the response
      * @return array
      */
-    public static function encode($username, $password, $data = []) {
+    public static function encode($username, $password, $data = [])
+    {
         if (!isset($data['nonce'])) {
             $response = base64_encode("{$username}:{$password}");
             return compact('username', 'response');
@@ -75,11 +74,17 @@ class Auth
      * @param string $header
      * @return array
      */
-    public static function decode($header) {
+    public static function decode($header)
+    {
         $data = [
-            'realm' => null, 'username' => null, 'uri' => null,
-            'nonce' => null, 'opaque' => null, 'qop' => null,
-            'cnonce' => null, 'nc' => null,
+            'realm'    => null,
+            'username' => null,
+            'uri'      => null,
+            'nonce'    => null,
+            'opaque'   => null,
+            'qop'      => null,
+            'cnonce'   => null,
+            'nc'       => null,
             'response' => null
         ];
         $keys = implode('|', array_keys($data));

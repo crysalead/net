@@ -1,15 +1,16 @@
 <?php
-namespace net\http;
+namespace Lead\Net\Http;
 
-use set\Set;
+use Lead\Set\Set;
+use Lead\Net\NetException;
 
 /**
  * HTTP Message class
  */
-class Message extends \net\Message
+class Message extends \Lead\Net\Message
 {
     /**
-     * Specification version number
+     * HTTP protocol version number
      *
      * @var string
      */
@@ -32,10 +33,10 @@ class Message extends \net\Message
             'type'    => null,
             'headers' => [],
             'classes' => [
-                'auth'    => 'net\http\Auth',
-                'headers' => 'net\http\Headers',
-                'media'   => 'net\http\Media',
-                'stream'  => 'storage\stream\Stream'
+                'auth'    => 'Lead\Net\Http\Auth',
+                'headers' => 'Lead\Net\Http\Headers',
+                'media'   => 'Lead\Net\Http\Media',
+                'stream'  => 'Lead\Storage\Stream\Stream'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -52,11 +53,22 @@ class Message extends \net\Message
         }
     }
 
+    /**
+     * Gets protocol string.
+     *
+     * @return string
+     */
     public function protocol()
     {
         return "HTTP/" . $this->version();
     }
 
+    /**
+     * Gets/sets the HTTP protocol version number.
+     *
+     * @return string      The version number.
+     * @return string|self
+     */
     public function version($version = null)
     {
         if (func_num_args() === 0) {
@@ -69,8 +81,8 @@ class Message extends \net\Message
     /**
      * Gets/sets the Content-Type.
      *
-     * @param  string $type A full Content-Type i.e. `'application/json'`.
-     * @return string       The Content-Type.
+     * @param  string      $type A full Content-Type i.e. `'application/json'`.
+     * @return string|self
      */
     public function type($type = null)
     {
@@ -87,63 +99,54 @@ class Message extends \net\Message
             return;
         }
 
-        return $this->_headers['content-type'] = $type;
+        $this->_headers['content-type'] = $type;
+        if (!$encoding = $this->encoding()) {
+            $this->encoding('UTF-8');
+        }
+        return $this;
     }
 
     /**
-     * Gets/sets the string body of the message body.
+     * Gets/sets the Content-Type charset encoding.
      *
-     * @param  array  $options
-     * @return string
+     * @param  string      $charset A charset i.e. `'UTF-8'`.
+     * @return string|self
      */
-    public function body($options = [])
+    public function encoding($charset = null)
     {
+        if (!isset($this->_headers['content-type'])) {
+            if (func_num_args() !== 0) {
+                throw new NetException("Can't set a charset with no valid Content-Type defined.");
+            }
+            return;
+        }
+        $value = $this->_headers['content-type']->data();
+
+        preg_match('/([-\w\/\.+]+)(;\s*?charset=(.+))?/i', $value, $matches);
+
         if (func_num_args() === 0) {
-            return $this->_body;
+            return isset($matches[3]) ? strtoupper(trim($matches[3])) : null;
         }
-
-        $default =[
-            'encode' => false,
-            'decode' => false
-        ];
-        $options += $default;
-
-        $body = $this->_body;
-
-        if ($options['encode']) {
-            $body = $this->_encode($body);
-        }
-        if ($options['decode']) {
-            $body = $this->_decode($body);
-        }
-        return $body;
+        $this->_headers['content-type'] = $matches[1] . ($charset ? "; charset=" . strtoupper($charset) : "");
+        return $this;
     }
 
     /**
-     * Encode the body based on the content type.
+     * Gets/sets the body of this message.
      *
-     * @see    net\http\Message::type()
-     * @param  mixed $body
-     * @return string
+     * @param  mixed       $value The data to set as body message.
+     * @return string|self
      */
-    protected function _encode($body)
+    public function body($value = null)
     {
         $media = $this->_classes['media'];
-        return $media::encode($this->type(), $body) ?: $body;
+        $type = $this->type();
+
+        if (func_num_args() === 1) {
+            $this->stream($media::encode($type, $value));
+            return $this;
+        }
+        return $media::decode($type, $this->_body);
     }
 
-    /**
-     * Decode the body based on the content type.
-     *
-     * @see    net\http\Message::type()
-     * @param  string $body
-     * @return mixed
-     */
-    protected function _decode($body)
-    {
-        $media = $this->_classes['media'];
-        return $media::decode($this->type(), $body) ?: $body;
-    }
 }
-
-?>

@@ -1,5 +1,5 @@
 <?php
-namespace net\http\cookie;
+namespace Lead\Net\Http\Cookie;
 
 use Exception;
 
@@ -8,7 +8,7 @@ use Exception;
  *
  * @see http://curl.haxx.se/rfc/cookie_spec.html
  */
-class SetCookie extends \net\http\cookie\Cookie
+class SetCookie extends \Lead\Net\Http\Cookie\Cookie
 {
     /**
      * SetCookie data.

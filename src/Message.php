@@ -1,8 +1,8 @@
 <?php
-namespace net;
+namespace Lead\Net;
 
 use InvalidArgumentException;
-use set\Set;
+use Lead\Set\Set;
 
 class Message
 {
@@ -12,7 +12,7 @@ class Message
      * @var array
      */
     protected static $_formats = [
-        'array' => 'net\Message::toArray'
+        'array' => 'Lead\Net\Message::toArray'
     ];
 
     /**
@@ -104,9 +104,9 @@ class Message
             'headers'  => [],
             'body'     => '',
             'classes'  => [
-                'headers' => 'net\Headers',
-                'scheme'  => 'net\Scheme',
-                'stream'  => 'storage\stream\Stream'
+                'headers' => 'Lead\Net\Headers',
+                'scheme'  => 'Lead\Net\Scheme',
+                'stream'  => 'Lead\Storage\Stream\Stream'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -126,8 +126,8 @@ class Message
     /**
      * Gets/sets the body of the message body (string way).
      *
-     * @param  string $value.
-     * @return mixed
+     * @param  string      $value.
+     * @return string|self
      */
     public function headers($value = null)
     {
@@ -146,8 +146,8 @@ class Message
     /**
      * Gets/sets the body of the message body (string way).
      *
-     * @param  string $value.
-     * @return mixed
+     * @param  string      $value.
+     * @return string|self
      */
     public function body($value = null)
     {
@@ -161,9 +161,9 @@ class Message
     /**
      * Gets/sets the body of the message body (stream way).
      *
-     * @param  mixed  $value   A stream object or stream resource.
-     * @param  array  $options The stream options.
-     * @return mixed
+     * @param  mixed       $value   A stream object or stream resource.
+     * @param  array       $options The stream options.
+     * @return string|self
      */
     public function stream($value = null, $options = [])
     {
@@ -178,8 +178,8 @@ class Message
     /**
      * Gets/sets the scheme.
      *
-     * @param  string $scheme The scheme of the message
-     * @return mixed
+     * @param  string      $scheme The scheme of the message
+     * @return string|self
      */
     public function scheme($scheme = null)
     {
@@ -193,8 +193,8 @@ class Message
     /**
      * Gets/sets the host.
      *
-     * @param  string $host The host of the message
-     * @return mixed
+     * @param  string      $host The host of the message
+     * @return string|self
      */
     public function host($host = null)
     {
@@ -208,8 +208,8 @@ class Message
     /**
      * Gets/sets the port.
      *
-     * @param  string $port The port of the message.
-     * @return mixed
+     * @param  string      $port The port of the message.
+     * @return string|self
      */
     public function port($port = null)
     {
@@ -232,8 +232,8 @@ class Message
     /**
      * Gets/sets the path.
      *
-     * @param  string $path Absolute path of the message.
-     * @return mixed
+     * @param  string      $path Absolute path of the message.
+     * @return string|self
      */
     public function path($path = null)
     {
@@ -247,8 +247,8 @@ class Message
     /**
      * Gets/sets the username.
      *
-     * @param  string $path The username of the message.
-     * @return mixed
+     * @param  string      $path The username of the message.
+     * @return string|self
      */
     public function username($username = null)
     {
@@ -262,8 +262,8 @@ class Message
     /**
      * Gets/sets the password.
      *
-     * @param  string $path The password of the message.
-     * @return mixed
+     * @param  string      $path The password of the message.
+     * @return string|self
      */
     public function password($password = null)
     {
@@ -321,7 +321,7 @@ class Message
      * Message::formats('array', 'my\custom\Formatter::toArray');
      * ```
      *
-     * @see    net\Message::to()
+     * @see    Lead\Net\Message::to()
      * @param  string $format  A string representing the name of the format that a `Message`
      *                         can be converted to. If `false`, reset the `$_formats` attribute.
      *                         If `null` return the content of the `$_formats` attribute.
@@ -335,13 +335,23 @@ class Message
             return static::$_formats;
         }
         if ($format === false) {
-            return static::$_formats = ['array' => 'net\Message::toArray'];
+            return static::$_formats = ['array' => 'Lead\Net\Message::toArray'];
         }
         if ($handler === false) {
             unset(static::$_formats[$format]);
             return;
         }
         return static::$_formats[$format] = $handler;
+    }
+
+    /**
+     * Exports a `Message` object into an array of datas.
+     *
+     * @return array
+     */
+    public function data()
+    {
+        return $this->to('array');
     }
 
     /**
@@ -356,7 +366,7 @@ class Message
      * $message->to('array'); // returns a Array string
      * ```
      *
-     * @see    net\Message::formats()
+     * @see    Lead\Net\Message::formats()
      * @param  string $format  By default the only supported value is `'array'`. However, additional
      *                         format handlers can be registered using the `formats()` method.
      * @param  array  $options Options for converting the collection.

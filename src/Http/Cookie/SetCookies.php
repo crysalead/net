@@ -1,13 +1,13 @@
 <?php
-namespace net\http\cookie;
+namespace Lead\Net\Http\Cookie;
 
 use Exception;
-use set\Set;
+use Lead\Set\Set;
 
 /**
  * Collection of `SetCookie`.
  */
-class SetCookies extends \collection\Collection
+class SetCookies extends \Lead\Collection\Collection
 {
     /**
      * Class dependencies
@@ -22,8 +22,8 @@ class SetCookies extends \collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'collection\Collection::toArray',
-        'header' => 'net\http\cookie\SetCookies::toSetCookie'
+        'array'  => 'Lead\Collection\Collection::toArray',
+        'header' => 'Lead\Net\Http\Cookie\SetCookies::toSetCookie'
     ];
 
     /**
@@ -46,8 +46,8 @@ class SetCookies extends \collection\Collection
             'domain'  => null,
             'path'    => '/',
             'classes' => [
-                'header' => 'net\http\Header',
-                'cookie' => 'net\http\cookie\SetCookie'
+                'header' => 'Lead\Net\Http\Header',
+                'cookie' => 'Lead\Net\Http\Cookie\SetCookie'
             ]
         ];
         $config = Set::merge($defaults, $config);

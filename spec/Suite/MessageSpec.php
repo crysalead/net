@@ -1,10 +1,10 @@
 <?php
-namespace net\spec\suite;
+namespace Lead\Net\Spec\Suite;
 
 use Exception;
 use InvalidArgumentException;
-use net\Message;
-use net\Headers;
+use Lead\Net\Message;
+use Lead\Net\Headers;
 
 describe("Message", function() {
 
@@ -282,6 +282,20 @@ EOD;
         });
     });
 
+    describe("->export()", function() {
+
+        it("delegates to `->to('array')`", function() {
+
+            $message = new Message();
+
+            expect($message)->toReceive('to')->with('array');
+
+            $message->to('array');
+
+        });
+
+    });
+
     describe("->to('array')", function() {
 
         it("returns the query", function() {
@@ -360,7 +374,7 @@ EOD;
         it("casts to a string", function() {
 
             $headers = [
-                'HTTP/1.x 200 OK',
+                'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent',

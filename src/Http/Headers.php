@@ -1,13 +1,13 @@
 <?php
-namespace net\http;
+namespace Lead\Net\Http;
 
-use set\Set;
-use collection\Collection;
+use Lead\Set\Set;
+use Lead\Collection\Collection;
 
 /**
  * Collection of Headers.
  */
-class Headers extends \net\Headers
+class Headers extends \Lead\Net\Headers
 {
     /**
      * Contains all exportable formats and their handler
@@ -15,9 +15,16 @@ class Headers extends \net\Headers
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'collection\Collection::toArray',
-        'header' => 'net\http\Headers::toHeader'
+        'array'  => 'Lead\Collection\Collection::toArray',
+        'header' => 'Lead\Net\Http\Headers::toHeader'
     ];
+
+    /**
+     * HTTP Status.
+     *
+     * @var string
+     */
+    protected $_status = null;
 
     /**
      * The constructor
@@ -28,9 +35,9 @@ class Headers extends \net\Headers
     {
         $defaults = [
             'classes' => [
-                'header' => 'net\Header',
-                'cookies' => 'net\http\cookie\Cookies',
-                'set-cookies' => 'net\http\cookie\SetCookies'
+                'header'      => 'Lead\Net\Header',
+                'cookies'     => 'Lead\Net\Http\Cookie\Cookies',
+                'set-cookies' => 'Lead\Net\Http\Cookie\SetCookies'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -86,8 +93,28 @@ class Headers extends \net\Headers
                 $this->_data[$name] = $parsed;
             }
         } else {
-            $this->_data[(string) $value] = true;
+            if (preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', $value, $matches)) {
+                $this->status($value);
+            } else {
+                $this->_data[(string) $value] = true;
+            }
         }
+    }
+
+
+    /**
+     * Sets/gets the status for the response.
+     *
+     * @param  string $status The HTTP status.
+     * @return string         Returns the full HTTP status.
+     */
+    public function status($status = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_status;
+        }
+        $this->_status = $status;
+        return $this;
     }
 
     /**
@@ -95,15 +122,18 @@ class Headers extends \net\Headers
      *
      * @return string
      */
-    public static function toHeader($collection)
+    public static function toHeader($headers)
     {
         $data = [];
-        foreach ($collection as $key => $header) {
+        foreach ($headers as $key => $header) {
             if ($header === true) {
                 $data[] = $key;
             } elseif ($header = $header->to('header')) {
                 $data[] = $header;
             }
+        }
+        if ($status = $headers->status()) {
+            array_unshift($data, $status);
         }
         return $data ? join("\r\n", $data) . "\r\n\r\n" : '';
     }

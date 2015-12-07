@@ -1,5 +1,5 @@
 <?php
-namespace net\http\cookie;
+namespace Lead\Net\Http\Cookie;
 
 use Exception;
 

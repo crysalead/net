@@ -1,9 +1,9 @@
 <?php
-namespace net\http\spec\suite\cookie;
+namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
-use net\http\cookie\SetCookie;
-use net\http\cookie\SetCookies;
+use Lead\Net\Http\Cookie\SetCookie;
+use Lead\Net\Http\Cookie\SetCookies;
 
 describe("SetCookies", function() {
 
@@ -46,7 +46,7 @@ describe("SetCookies", function() {
             $closure = function() {
                 $this->cookies['foo'] = (object) 'bar';
             };
-            expect($closure)->toThrow(new Exception('Error, only `net\http\cookie\SetCookie` instances are allowed in this collection.'));
+            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\SetCookie` instances are allowed in this collection.'));
 
         });
 

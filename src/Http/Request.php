@@ -1,14 +1,14 @@
 <?php
-namespace net\http;
+namespace Lead\Net\Http;
 
-use text\Text;
+use Lead\Text\Text;
 use UnexpectedValueException;
 
 /**
  * Facilitates HTTP request creation by assembling connection and path info, `GET` and `POST` data,
  * and authentication credentials in a single, stateful object.
  */
-class Request extends \net\Message
+class Request extends \Lead\Net\Http\Message
 {
     /**
      * Contains all exportable formats and their handler
@@ -16,7 +16,7 @@ class Request extends \net\Message
      * @var array
      */
     protected static $_formats = [
-        'array'   => 'net\http\Request::toArray'
+        'array'   => 'Lead\Net\Http\Request::toArray'
     ];
     /**
      * The method of the request, typically one of the following: `GET`, `POST`, `PUT`, `DELETE`,
@@ -54,28 +54,28 @@ class Request extends \net\Message
     /**
      * Adds config values to the public properties when a new object is created.
      *
-     * @param array $config Configuration options : default value
-     *        - `'protocol'` _string_: null
-     *        - `'version'` _string_: '1.1'
-     *        - `'method'` _string_: 'GET'
-     *        - `'scheme'` _string_: 'http'
-     *        - `'host'` _string_: 'localhost'
-     *        - `'port'` _integer_: null
-     *        - `'username'` _string_: null
-     *        - `'password'` _string_: null
-     *        - `'path'` _string_: null
-     *        - `'query'` _array_: []
-     *        - `'headers'` _array_: []
-     *        - `'type'` _string_: null
-     *        - `'auth'` _mixed_: null
-     *        - `'body'` _mixed_: null
+     * @param array $config Configuration options:
+     *                      - `'version'`  _string_ : '1.1'
+     *                      - `'method'`   _string_ : 'GET'
+     *                      - `'scheme'`   _string_ : 'http'
+     *                      - `'host'`     _string_ : 'localhost'
+     *                      - `'port'`     _integer_: null
+     *                      - `'username'` _string_ : null
+     *                      - `'password'` _string_ : null
+     *                      - `'path'`     _string_ : null
+     *                      - `'query'`    _array_  : []
+     *                      - `'headers'`  _array_  : []
+     *                      - `'type'`     _string_ : null
+     *                      - `'auth'`     _mixed_  : null
+     *                      - `'body'`     _mixed_  : null
      */
-    public function __construct($config = []) {
+    public function __construct($config = [])
+    {
         $defaults = [
             'method' => 'GET',
             'query' => [],
             'type' => null,
-            'auth' => null,
+            'auth' => null
         ];
         $config += $defaults;
 
@@ -147,21 +147,6 @@ class Request extends \net\Message
         $data = $auth::encode($this->username(), $this->password(), $data);
         $this->_headers['Authorization'] = $auth::header($data);
         return $this;
-    }
-    /**
-     * Compile the HTTP message body, optionally encoding its parts according to content type.
-     *
-     * @see Message::body()
-     * @see Message::_encode()
-     * @param array $options Possible options are:
-     *                       - `'encode'` _boolean_: encode the body based on the content type
-     *                       - `'decode'` _boolean_: decode the body based on the content type
-     * @return array
-     */
-    public function body($options = [])
-    {
-        $defaults = array('encode' => true);
-        return parent::body($options + $defaults);
     }
 
     /**

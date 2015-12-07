@@ -1,8 +1,9 @@
 <?php
-namespace net\spec\suite\http;
+namespace Lead\Net\Spec\Suite\Http;
 
-use net\http\Message;
-use net\http\Headers;
+use Lead\Net\NetException;
+use Lead\Net\Http\Message;
+use Lead\Net\Http\Headers;
 
 describe("Message", function() {
 
@@ -15,26 +16,18 @@ describe("Message", function() {
 
         });
 
-        it("parses headers", function() {
+        it("parses passed headers", function() {
 
             $message = new Message(['headers' => [
-                'HTTP/1.x 200 OK',
+                'HTTP/1.1 200 OK',
                 'User-Agent: Mozilla/5.0',
-                'Cache-Control: no-cache',
-                'Cookie: foo1=bar1, foo2=bar2, foo3=bar3',
-                'Set-Cookie: foo1=bar1; Path=/',
-                'Set-Cookie: foo2=bar2; Path=/',
-                'Set-Cookie: foo3=bar3; Path=/'
+                'Cache-Control: no-cache'
             ]]);
 
             $expected =<<<EOD
-HTTP/1.x 200 OK\r
+HTTP/1.1 200 OK\r
 User-Agent: Mozilla/5.0\r
 Cache-Control: no-cache\r
-Cookie: foo1=bar1, foo2=bar2, foo3=bar3\r
-Set-Cookie: foo1=bar1; Path=/\r
-Set-Cookie: foo2=bar2; Path=/\r
-Set-Cookie: foo3=bar3; Path=/\r
 \r
 
 EOD;
@@ -43,6 +36,34 @@ EOD;
 
         });
 
+    });
+
+    describe("->protocol()", function() {
+
+        it("returns the protocol", function() {
+
+            $message = new Message();
+            expect($message->protocol())->toBe('HTTP/1.1');
+
+        });
+    });
+
+    describe("->version()", function() {
+
+        it("returns the protocol version", function() {
+
+            $message = new Message();
+            expect($message->version())->toBe('1.1');
+
+        });
+
+        it("gets/sets the protocol version", function() {
+
+            $message = new Message();
+            $message->version('1.0');
+            expect($message->version())->toBe('1.0');
+
+        });
     });
 
     describe("->type()", function() {
@@ -57,24 +78,40 @@ EOD;
 
         });
 
-        it("returns the content type initialized using the type option", function() {
+        it("applies UTF-8 as default charset", function() {
 
             $message = new Message(['type' => 'application/json']);
             expect($message->type())->toBe('application/json');
-            expect($message->headers()['Content-Type']->data())->toBe('application/json');
+            expect($message->headers()['Content-Type']->data())->toBe('application/json; charset=UTF-8');
 
         });
 
     });
 
-    describe("->type()", function() {
+    describe("->encoding()", function() {
 
-        it("returns the protocol", function() {
+        it("gets/sets the content type charset encoding", function() {
 
-            $message = new Message();
-            expect($message->protocol())->toBe('HTTP/1.1');
+            $message = new Message(['headers' => [
+                'Content-Type: application/json; charset=UTF-8'
+            ]]);
+            expect($message->encoding())->toBe('UTF-8');
+            expect($message->encoding('utf-16'))->toBe($message);
+            expect($message->encoding())->toBe('UTF-16');
 
         });
+
+        it("throws an exception when no Content-Type has been defined", function() {
+
+            $closure = function() {
+                $message = new Message();
+                $message->encoding('UTF-8');
+            };
+
+            expect($closure)->toThrow(new NetException("Can't set a charset with no valid Content-Type defined."));
+
+        });
+
     });
 
 });

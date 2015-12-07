@@ -1,5 +1,5 @@
 <?php
-namespace net;
+namespace Lead\Net;
 
 class Scheme
 {

@@ -1,9 +1,9 @@
 <?php
-namespace net\spec\suite;
+namespace Lead\Net\Spec\Suite;
 
 use Exception;
-use net\Header;
-use net\Headers;
+use Lead\Net\Header;
+use Lead\Net\Headers;
 
 describe("Headers", function() {
 
@@ -168,7 +168,7 @@ describe("Headers", function() {
         it("casts in string", function() {
 
             $header = <<<EOD
-HTTP/1.x 200 OK
+HTTP/1.1 200 OK
 Date: Thu, 25 Dec 2014 00:00:00 GMT
 Content-Type: text/html; charset=UTF-8
 Vary: Accept-Encoding, Cookie, User-Agent
@@ -188,7 +188,7 @@ EOD;
         it("creates a collection of headers from an header string", function() {
 
             $header = <<<EOD
-HTTP/1.x 200 OK
+HTTP/1.1 200 OK
 Date: Thu, 25 Dec 2014 00:00:00 GMT
 Content-Type: text/html; charset=UTF-8
 Vary: Accept-Encoding, Cookie, User-Agent
@@ -197,7 +197,7 @@ EOD;
 
             $headers = Headers::parse($header);
             expect($headers->data())->toBe([
-                'HTTP/1.x 200 OK',
+                'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'
@@ -208,7 +208,7 @@ EOD;
         it("creates a collection of headers from an array of headers", function() {
 
             $header = [
-                'HTTP/1.x 200 OK',
+                'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'
@@ -216,7 +216,7 @@ EOD;
 
             $headers = Headers::parse($header);
             expect($headers->data())->toBe([
-                'HTTP/1.x 200 OK',
+                'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'

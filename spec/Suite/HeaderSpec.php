@@ -1,8 +1,8 @@
 <?php
-namespace net\spec\suite;
+namespace Lead\Net\Spec\Suite;
 
 use Exception;
-use net\Header;
+use Lead\Net\Header;
 
 describe("Header", function() {
 

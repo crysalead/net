@@ -1,10 +1,10 @@
 <?php
-namespace net\http\spec\suite\cookie;
+namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
-use net\http\cookie\Jar;
-use net\http\cookie\SetCookie;
-use net\http\cookie\SetCookies;
+use Lead\Net\Http\Cookie\Jar;
+use Lead\Net\Http\Cookie\SetCookie;
+use Lead\Net\Http\Cookie\SetCookies;
 
 describe("Jar", function() {
 

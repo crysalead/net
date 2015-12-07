@@ -1,13 +1,13 @@
 <?php
-namespace net;
+namespace Lead\Net;
 
 use Exception;
-use set\Set;
+use Lead\Set\Set;
 
 /**
  * Collection of Headers.
  */
-class Headers extends \collection\Collection
+class Headers extends \Lead\Collection\Collection
 {
     /**
      * Contains all exportable formats and their handler
@@ -15,8 +15,8 @@ class Headers extends \collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'collection\Collection::toArray',
-        'header' => 'net\http\Headers::toHeader'
+        'array'  => 'Lead\Collection\Collection::toArray',
+        'header' => 'Lead\Net\Http\Headers::toHeader'
     ];
 
     /**
@@ -35,7 +35,7 @@ class Headers extends \collection\Collection
     {
         $defaults = [
             'classes' => [
-                'header' => 'net\Header'
+                'header' => 'Lead\Net\Header'
             ]
         ];
         $config = Set::merge($defaults, $config);

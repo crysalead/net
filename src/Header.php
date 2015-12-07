@@ -1,12 +1,12 @@
 <?php
-namespace net;
+namespace Lead\Net;
 
 use Exception;
 
 /**
  * Collection of Header values.
  */
-class Header extends \collection\Collection
+class Header extends \Lead\Collection\Collection
 {
     /**
      * Contains all exportable formats and their handler
@@ -14,8 +14,8 @@ class Header extends \collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'collection\Collection::toArray',
-        'header' => 'net\Header::toHeader'
+        'array'  => 'Lead\Collection\Collection::toArray',
+        'header' => 'Lead\Net\Header::toHeader'
     ];
 
     /**

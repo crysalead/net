@@ -1,8 +1,8 @@
 <?php
-namespace net\http\spec\suite\cookie;
+namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
-use net\http\cookie\Cookie;
+use Lead\Net\Http\Cookie\Cookie;
 
 describe("Cookie", function() {
 
