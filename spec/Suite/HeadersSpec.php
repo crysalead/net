@@ -100,6 +100,16 @@ describe("Headers", function() {
 
         });
 
+        it("overrides an header and its letter case definition", function() {
+
+            $this->headers->add('Content-Type: text/plain');
+            expect((string) $this->headers['Content-Type'])->toBe('Content-Type: text/plain');
+
+            $this->headers->add('CONTENT-TYPE: application/json');
+            expect((string) $this->headers['Content-Type'])->toBe('CONTENT-TYPE: application/json');
+
+        });
+
     });
 
     describe("->offsetExists()", function() {
@@ -176,7 +186,8 @@ Vary: Accept-Encoding, Cookie, User-Agent
 
 EOD;
 
-            $headers = Headers::parse($header);
+            $headers = new Headers();
+            $headers->add($header);
             expect((string) $headers)->toBe($header);
 
         });
@@ -195,7 +206,9 @@ Vary: Accept-Encoding, Cookie, User-Agent
 
 EOD;
 
-            $headers = Headers::parse($header);
+            $headers = new Headers();
+            $headers->add($header);
+
             expect($headers->data())->toBe([
                 'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
@@ -214,7 +227,9 @@ EOD;
                 'Vary: Accept-Encoding, Cookie, User-Agent'
             ];
 
-            $headers = Headers::parse($header);
+            $headers = new Headers();
+            $headers->add($header);
+
             expect($headers->data())->toBe([
                 'HTTP/1.1 200 OK',
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',

@@ -28,7 +28,10 @@ EOD;
 
         it("sets headers as an object", function() {
 
-            $message = new Message(['headers' => Headers::parse($this->headers)]);
+            $headers = new Headers();
+            $headers->add($this->headers);
+
+            $message = new Message(['headers' => $headers]);
             expect($message->headers()->data())->toBe([
                 'Custom-Header: Custom Value'
             ]);
@@ -282,7 +285,7 @@ EOD;
         });
     });
 
-    describe("->export()", function() {
+    describe("->data()", function() {
 
         it("delegates to `->to('array')`", function() {
 
@@ -309,7 +312,7 @@ EOD;
                 'path'     => 'index.php'
             ]);
 
-            expect($message->to('array'))->toBe([
+            expect($message->to('array'))->toEqual([
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
                 'port'     => 80,
@@ -344,7 +347,7 @@ EOD;
                     'url'      => $message->url()
                 ];
             });
-            expect($result)->toBe([
+            expect($result)->toEqual([
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
                 'port'     => 80,

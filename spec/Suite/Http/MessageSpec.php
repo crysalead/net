@@ -114,6 +114,23 @@ EOD;
 
     });
 
+    describe("->body()", function() {
+
+        it("endodes in json", function() {
+
+            $message = new Message();
+            $message->type("application/json");
+
+            expect($message->body(""))->toBe($message);
+            expect($message->plain())->toBe('""');
+
+            expect($message->body(['name' => 'value']))->toBe($message);
+            expect($message->plain())->toBe('{"name":"value"}');
+
+        });
+
+    });
+
 });
 
 //     public function testReturnJsonIfNoBufferAndEmptyBody() {

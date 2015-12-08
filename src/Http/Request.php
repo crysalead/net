@@ -1,8 +1,9 @@
 <?php
 namespace Lead\Net\Http;
 
-use Lead\Text\Text;
 use UnexpectedValueException;
+use Lead\Text\Text;
+use Lead\Net\Scheme;
 
 /**
  * Facilitates HTTP request creation by assembling connection and path info, `GET` and `POST` data,
@@ -45,13 +46,6 @@ class Request extends \Lead\Net\Http\Message
     protected $_auth = null;
 
     /**
-     * An array of closures representing various formats this object can be exported to.
-     *
-     * @var array
-     */
-    protected $_formats = [];
-
-    /**
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options:
@@ -80,14 +74,10 @@ class Request extends \Lead\Net\Http\Message
         $config += $defaults;
 
         $this->_method  = $config['method'];
-
         $this->_query   = $config['query'];
 
         parent::__construct($config);
 
-        if (!isset($this->_headers['Host'])) {
-            $this->_headers['Host'] = $this->_port ? "{$this->_host}:{$this->_port}" : $this->_host;
-        }
         if (!isset($this->_headers['Connection'])) {
             $this->_headers['Connection'] = 'Close';
         }
@@ -110,6 +100,23 @@ class Request extends \Lead\Net\Http\Message
             return $this->_method;
         }
         $this->_method = $method;
+        return $this;
+    }
+
+    /**
+     * Gets/sets the host.
+     *
+     * @param  string      $host The host of the message
+     * @return string|self
+     */
+    public function host($host = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_host;
+        }
+        $this->_host = $host;
+        $port = Scheme::port($this->_scheme) !== $this->_port ? $this->_port : '';
+        $this->headers()['Host'] = $port ? "{$this->_host}:{$port}" : $this->_host;
         return $this;
     }
 
@@ -185,8 +192,8 @@ class Request extends \Lead\Net\Http\Message
     public static function toArray($request, $options = [])
     {
         $headers = $request->headers();
-        if (!in_array($this->method(), ['GET', 'HEAD', 'DELETE'], true)) {
-            $headers['Content-Length'] = $this->stream()->length();
+        if (!in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
+            $headers['Content-Length'] = $request->stream()->length();
         }
         $query = $request->query() ? '?' . http_build_query($request->query()) : '';
         return [
@@ -201,7 +208,7 @@ class Request extends \Lead\Net\Http\Message
             'password' => $request->password(),
             'url'      => $request->url(),
             'headers'  => $headers->data(),
-            'stream'   => $this->stream()
+            'stream'   => $request->stream()
         ];
     }
 }

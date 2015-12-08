@@ -118,7 +118,7 @@ class Response extends \Lead\Net\Http\Message
         if (is_array($status)) {
             $code = isset($status[0]) ? (string) $status[0] : '200';
             $message = isset($status[1]) ? (string) $status[1] : null;
-        } else
+        } else {
             $code = $status;
         }
         if (!$message && isset($this->_statuses[$code])) {
@@ -155,9 +155,9 @@ class Response extends \Lead\Net\Http\Message
         if ($expires === false) {
             $headers = [
                 'Expires: Mon, 26 Jul 1997 05:00:00 GMT',
-                'Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+                'Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0',
                 'Pragma: no-cache'
-            );
+            ];
         } else {
             $expires = is_int($expires) ? $expires : strtotime($expires);
             $headers = [
@@ -181,7 +181,7 @@ class Response extends \Lead\Net\Http\Message
     protected function _parseMessage($body)
     {
         $options = [];
-        $parts = explode("\r\n\r\n", $body, 2));
+        $parts = explode("\r\n\r\n", $body, 2);
         list($headers, $body) = $parts;
         $headers = str_replace("\r", '', explode("\n", $headers));
 

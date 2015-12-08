@@ -113,14 +113,20 @@ class Message
 
         $this->_classes = $config['classes'];
 
+        if (is_object($config['headers'])) {
+            $this->headers($config['headers']);
+        }
         $this->scheme($config['scheme']);
-        $this->host($config['host']);
         $this->port($config['port']);
+        $this->host($config['host']);
         $this->username($config['username']);
         $this->password($config['password']);
         $this->path($config['path']);
-        $this->headers($config['headers']);
-        $this->stream($config['body']);
+
+        if (!is_object($config['headers'])) {
+            $this->headers()->add($config['headers']);
+        }
+        $this->body($config['body']);
     }
 
     /**
@@ -132,24 +138,34 @@ class Message
     public function headers($value = null)
     {
         if (func_num_args() === 0) {
+            if (!$this->_headers) {
+                $headers = $this->_classes['headers'];
+                $this->_headers = new $headers();
+            }
             return $this->_headers;
         }
-        $headers = $this->_classes['headers'];
-        if (is_object($value)) {
-            $this->_headers = $value;
-        } else {
-            $this->_headers = $headers::parse($value);
-        }
+        $this->_headers = $value;
         return $this;
     }
 
     /**
-     * Gets/sets the body of the message body (string way).
+     * Aliases for `plain()`.
      *
      * @param  string      $value.
      * @return string|self
      */
     public function body($value = null)
+    {
+        return func_num_args() ? $this->plain($value) : $this->plain();
+    }
+
+    /**
+     * Gets/sets the plain body message (string way).
+     *
+     * @param  string      $value.
+     * @return string|self
+     */
+    public function plain($value = null)
     {
         if (func_num_args() === 1) {
             $this->stream($value);
@@ -171,7 +187,11 @@ class Message
             return $this->_body;
         }
         $stream = $this->_classes['stream'];
-        $this->_body = new $stream(['data' => $value] + $options);
+        if ($value instanceof $stream) {
+            $this->_body = $value;
+        } else {
+            $this->_body = new $stream(['data' => $value] + $options);
+        }
         return $this;
     }
 

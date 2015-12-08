@@ -44,7 +44,6 @@ class Message extends \Lead\Net\Message
         parent::__construct($config);
 
         $this->_version = $config['version'];
-        $this->_scheme = $config['scheme'];
 
         if ($config['type']) {
             $this->type($config['type']);
@@ -114,7 +113,7 @@ class Message extends \Lead\Net\Message
      */
     public function encoding($charset = null)
     {
-        if (!isset($this->_headers['content-type'])) {
+        if (!isset($this->_headers['Content-Type'])) {
             if (func_num_args() !== 0) {
                 throw new NetException("Can't set a charset with no valid Content-Type defined.");
             }
@@ -127,7 +126,7 @@ class Message extends \Lead\Net\Message
         if (func_num_args() === 0) {
             return isset($matches[3]) ? strtoupper(trim($matches[3])) : null;
         }
-        $this->_headers['content-type'] = $matches[1] . ($charset ? "; charset=" . strtoupper($charset) : "");
+        $this->_headers['Content-Type'] = $matches[1] . ($charset ? "; charset=" . strtoupper($charset) : "");
         return $this;
     }
 
@@ -146,7 +145,7 @@ class Message extends \Lead\Net\Message
             $this->stream($media::encode($type, $value));
             return $this;
         }
-        return $media::decode($type, $this->_body);
+        return $media::decode($type, (string) $this->_body);
     }
 
 }

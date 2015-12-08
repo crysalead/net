@@ -73,14 +73,36 @@ class Headers extends \Lead\Collection\Collection
     /**
      * Adds an header.
      *
-     * @param  string $value The header string.
-     * @return object        The added value.
+     * @param  string|array $headers A header string or an array of headers.
+     * @return self
      */
     public function add($value)
     {
-        if (!$value = trim($value)) {
-            return;
+        $headers = is_string($value) ? explode("\n", $value) : $value;
+
+        foreach ($headers as $key => $value) {
+            if (!is_numeric($key)) {
+                if (is_array($value)) {
+                    $value = "{$key}: " . join(', ', $value);
+                } else {
+                    $value = "{$key}: {$value}";
+                }
+            }
+            if (!$value = trim($value)) {
+                continue;
+            }
+            $this->_add($value);
         }
+        return $this;
+    }
+
+    /**
+     * Adds helper.
+     *
+     * @param string $value The header to add.
+     */
+    protected function _add($value)
+    {
         $header = $this->_classes['header'];
         if ($parsed = $header::parse($value)) {
             $this->_data[strtolower($parsed->name())] = $parsed;
@@ -136,33 +158,11 @@ class Headers extends \Lead\Collection\Collection
     }
 
     /**
-     * Creates an headers collection.
-     *
-     * @param  string|array $headers A header string or an array of headers.
-     * @return object                A collection of headers.
+     * Clear the headers.
      */
-    public static function parse($headers)
+    public function clear()
     {
-        $collection = new static();
-        if (!$headers) {
-            return $collection;
-        }
-        $headers = is_string($headers) ? explode("\n", $headers) : $headers;
-
-        foreach ($headers as $key => $value) {
-            if (!$value = trim($value)) {
-                continue;
-            }
-            if (!is_numeric($key)) {
-                if (is_array($value)) {
-                    $value = "{$key}: " . join(', ', $value);
-                } else {
-                    $value = "{$key}: {$value}";
-                }
-            }
-            $collection->add($value);
-        }
-        return $collection;
+        $this->_data = [];
     }
 
     /**

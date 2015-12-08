@@ -64,16 +64,12 @@ class Headers extends \Lead\Net\Headers
     }
 
     /**
-     * Adds an header.
+     * Adds helper.
      *
-     * @param  string $value The header string.
-     * @return object        The added value.
+     * @param string $value The header to add.
      */
-    public function add($value)
+    protected function _add($value)
     {
-        if (!$value = trim($value)) {
-            return;
-        }
         $header = $this->_classes['header'];
         if ($parsed = $header::parse($value)) {
             $name = strtolower($parsed->name());
@@ -100,7 +96,6 @@ class Headers extends \Lead\Net\Headers
             }
         }
     }
-
 
     /**
      * Sets/gets the status for the response.

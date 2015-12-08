@@ -235,6 +235,9 @@ class Media
                 'cast' => true,
                 'encode' => 'json_encode',
                 'decode' => function($data) {
+                    if ($data === '') {
+                        return '""';
+                    }
                     return json_decode($data, true);
                 }
             ],
