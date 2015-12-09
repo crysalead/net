@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http;
 
+use Lead\Net\NetException;
 use Lead\Net\Http\Auth;
 
 describe("Auth", function() {
@@ -89,6 +90,16 @@ describe("Auth", function() {
             expect($result)->toBe($expected);
         });
 
+        it("throws an exception with invalid auth data", function() {
+
+            $closure = function() {
+                Auth::header([]);
+            };
+
+            expect($closure)->toThrow(new NetException("Can't create Authorization headers from an empty response."));
+
+        });
+
     });
 
     describe("::decode()", function() {
@@ -96,7 +107,7 @@ describe("Auth", function() {
         it("decodes a header", function() {
 
             $header = 'qop="auth",nonce="4bca0fbca7bd0",';
-            $header .= 'nc="00000001",cnonce="95b2cd1e179bf5414e52ed62811481cf",';
+            $header .= 'nc=00000001,cnonce="95b2cd1e179bf5414e52ed62811481cf",';
             $header .= 'uri="/http_auth",realm="app",';
             $header .= 'opaque="d3fb67a7aa4d887ec4bf83040a820a46",username="willy",';
             $header .= 'response="04d7d878c67f289f37e553d2025e3a52"';

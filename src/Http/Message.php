@@ -17,6 +17,13 @@ class Message extends \Lead\Net\Message
     protected $_version = '1.1';
 
     /**
+     * The headers instance.
+     *
+     * @var object
+     */
+    protected $_headers = null;
+
+    /**
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options. Possible values are:
@@ -28,11 +35,11 @@ class Message extends \Lead\Net\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'version' => '1.1',
-            'scheme'  => 'http',
-            'type'    => null,
-            'headers' => [],
-            'classes' => [
+            'version'  => '1.1',
+            'type'     => null,
+            'encoding' => null,
+            'headers'  => [],
+            'classes'  => [
                 'auth'    => 'Lead\Net\Http\Auth',
                 'headers' => 'Lead\Net\Http\Headers',
                 'media'   => 'Lead\Net\Http\Media',
@@ -43,12 +50,17 @@ class Message extends \Lead\Net\Message
 
         parent::__construct($config);
 
-        $this->_version = $config['version'];
+        $this->version($config['version']);
+
+        $this->headers($config['headers']);
 
         if ($config['type']) {
             $this->type($config['type']);
-        } elseif (isset($this->_headers['content-type'])) {
-            $this->type($this->_headers['content-type']);
+        } elseif (isset($this->_headers['Content-Type'])) {
+            $this->type($this->_headers['Content-Type']);
+        }
+        if ($config['encoding']) {
+            $this->encoding($config['encoding']);
         }
     }
 
@@ -86,22 +98,19 @@ class Message extends \Lead\Net\Message
     public function type($type = null)
     {
         if (func_num_args() === 0) {
-            if (!isset($this->_headers['content-type'])) {
+            if (!isset($this->_headers['Content-Type'])) {
                 return;
             }
-            list($type) = explode(';', $this->_headers['content-type']->data(), 2);
+            list($type) = explode(';', $this->_headers['Content-Type']->data(), 2);
             return $type;
         }
 
         if ($type === false) {
-            unset($this->_headers['content-type']);
-            return;
+            unset($this->_headers['Content-Type']);
+            return $this;
         }
 
-        $this->_headers['content-type'] = $type;
-        if (!$encoding = $this->encoding()) {
-            $this->encoding('UTF-8');
-        }
+        $this->_headers['Content-Type'] = $type;
         return $this;
     }
 
@@ -119,7 +128,7 @@ class Message extends \Lead\Net\Message
             }
             return;
         }
-        $value = $this->_headers['content-type']->data();
+        $value = $this->_headers['Content-Type']->data();
 
         preg_match('/([-\w\/\.+]+)(;\s*?charset=(.+))?/i', $value, $matches);
 
@@ -127,6 +136,29 @@ class Message extends \Lead\Net\Message
             return isset($matches[3]) ? strtoupper(trim($matches[3])) : null;
         }
         $this->_headers['Content-Type'] = $matches[1] . ($charset ? "; charset=" . strtoupper($charset) : "");
+        return $this;
+    }
+
+    /**
+     * Gets/sets the body of the message body (string way).
+     *
+     * @param  string      $value.
+     * @return string|self
+     */
+    public function headers($value = null)
+    {
+        if (func_num_args() === 0) {
+            if (!$this->_headers) {
+                $headers = $this->_classes['headers'];
+                $this->_headers = new $headers();
+            }
+            return $this->_headers;
+        }
+        if (is_object($value)) {
+            $this->_headers = $value;
+        } else {
+            $this->headers()->add($value);
+        }
         return $this;
     }
 
@@ -142,10 +174,10 @@ class Message extends \Lead\Net\Message
         $type = $this->type();
 
         if (func_num_args() === 1) {
-            $this->stream($media::encode($type, $value));
+            $this->stream($type ? $media::encode($type, $value) : $value);
             return $this;
         }
-        return $media::decode($type, (string) $this->_body);
+        return $type ? $media::decode($type, (string) $this->_body) : (string) $this->_body;
     }
 
 }

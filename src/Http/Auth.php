@@ -1,8 +1,10 @@
 <?php
 namespace Lead\Net\Http;
 
+use Lead\Net\NetException;
+
 /**
- * The `Auth` class handles HTTP Authentication encoding and decoding. Typically, this class is
+ * The `Auth` class handles HTTP Authorization encoding and decoding. Typically, this class is
  * not used directly, but is a utility of `Lead\Net\Http\Request` and `Lead\Net\Http\Response`
  *
  */
@@ -22,7 +24,7 @@ class Auth
     public static function header($data)
     {
         if (empty($data['response'])) {
-            return;
+            throw new NetException("Can't create Authorization headers from an empty response.");
         }
         if (!isset($data['nonce'])) {
             return "Basic " . $data['response'];
@@ -88,13 +90,10 @@ class Auth
             'response' => null
         ];
         $keys = implode('|', array_keys($data));
-        $regex = '@(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))@';
+        $regex = '~(' . $keys . ')=(?:([\'"])([^\2]+?)\2|([^\s,]+))~';
         preg_match_all($regex, $header, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $m) {
-            if (!isset($m[3]) && !isset($m[4])) {
-                continue;
-            }
             $data[$m[1]] = $m[3] ? $m[3] : $m[4];
         }
         return $data;

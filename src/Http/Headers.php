@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Http;
 
+use Lead\Net\NetException;
 use Lead\Set\Set;
 use Lead\Collection\Collection;
 
@@ -20,13 +21,6 @@ class Headers extends \Lead\Net\Headers
     ];
 
     /**
-     * HTTP Status.
-     *
-     * @var string
-     */
-    protected $_status = null;
-
-    /**
      * The constructor
      *
      * @param array $data The data
@@ -35,15 +29,20 @@ class Headers extends \Lead\Net\Headers
     {
         $defaults = [
             'classes' => [
-                'header'      => 'Lead\Net\Header',
+                'header'      => 'Lead\Net\Http\Header',
                 'cookies'     => 'Lead\Net\Http\Cookie\Cookies',
                 'set-cookies' => 'Lead\Net\Http\Cookie\SetCookies'
             ]
         ];
         $config = Set::merge($defaults, $config);
-        parent::__construct($config);
+        $this->_classes = $config['classes'];
     }
 
+    /**
+     * Returns the cookie collection.
+     *
+     * @return object
+     */
     public function cookies()
     {
         if (!isset($this->_data['cookie'])) {
@@ -54,6 +53,11 @@ class Headers extends \Lead\Net\Headers
 
     }
 
+    /**
+     * Returns the set-cookie collection.
+     *
+     * @return object
+     */
     public function setCookies()
     {
         if (!isset($this->_data['set-cookie'])) {
@@ -64,52 +68,64 @@ class Headers extends \Lead\Net\Headers
     }
 
     /**
-     * Adds helper.
+     * Adds some headers.
      *
-     * @param string $value The header to add.
+     * @param  string|array $headers A header string or an array of headers.
+     * @param  boolean      $prepend If true, prepend headers to the beginning.
+     * @return self
      */
-    protected function _add($value)
+    public function add($values, $prepend = false)
     {
-        $header = $this->_classes['header'];
-        if ($parsed = $header::parse($value)) {
-            $name = strtolower($parsed->name());
-            if ($name === 'cookie') {
-                $cookies = $this->_classes['cookies'];
-                foreach ($parsed as $cookie) {
-                    $cookie = $cookies::parseCookie($cookie);
-                    $this->cookies()[$cookie['name']] = $cookie['value'];
+        $headers = is_string($values) ? explode("\n", $values) : $values;
+
+        foreach ($headers as $key => $value) {
+            if (!is_numeric($key)) {
+                if (is_array($value)) {
+                    $value = "{$key}: " . join(', ', $value);
+                } else {
+                    $value = "{$key}: {$value}";
                 }
-            } elseif ($name === 'set-cookie') {
-                $setCookies = $this->_classes['set-cookies'];
-                foreach ($parsed as $setCookie) {
-                    $setCookie = $setCookies::parseSetCookie($setCookie);
-                    $this->setCookies()[$setCookie['name']] = $setCookie;
-                }
-            } else {
-                $this->_data[$name] = $parsed;
             }
-        } else {
-            if (preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', $value, $matches)) {
-                $this->status($value);
-            } else {
-                $this->_data[(string) $value] = true;
+            if (!$value = trim($value)) {
+                continue;
             }
+            $this->_add($value, $prepend);
         }
+        return $this;
     }
 
     /**
-     * Sets/gets the status for the response.
+     * Pushes an header.
      *
-     * @param  string $status The HTTP status.
-     * @return string         Returns the full HTTP status.
+     * @param string  $value   The header to add.
+     * @param boolean $prepend If true, prepend headers to the beginning.
      */
-    public function status($status = null)
+    protected function _add($value, $prepend)
     {
-        if (func_num_args() === 0) {
-            return $this->_status;
+        $header = $this->_classes['header'];
+        if (!$parsed = $header::parse($value)) {
+            throw new NetException("Invalid HTTP header: `'{$value}'`.");
         }
-        $this->_status = $status;
-        return $this;
+        $name = strtolower($parsed->name());
+        if ($name === 'cookie') {
+            $cookies = $this->_classes['cookies'];
+            foreach ($parsed as $cookie) {
+                $cookie = $cookies::parseCookie($cookie);
+                $this->cookies()[$cookie['name']] = $cookie['value'];
+            }
+        } elseif ($name === 'set-cookie') {
+            $setCookies = $this->_classes['set-cookies'];
+            foreach ($parsed as $setCookie) {
+                $setCookie = $setCookies::parseSetCookie($setCookie);
+                $this->setCookies()[$setCookie['name']] = $setCookie;
+            }
+        } else {
+            if ($prepend) {
+                $this->_data = [$name => $parsed] + $this->_data;
+            } else {
+                $this->_data = array_merge($this->_data, [$name => $parsed]);
+            }
+        }
     }
 
     /**
@@ -121,14 +137,7 @@ class Headers extends \Lead\Net\Headers
     {
         $data = [];
         foreach ($headers as $key => $header) {
-            if ($header === true) {
-                $data[] = $key;
-            } elseif ($header = $header->to('header')) {
-                $data[] = $header;
-            }
-        }
-        if ($status = $headers->status()) {
-            array_unshift($data, $status);
+            $data[] = $header->to('header');
         }
         return $data ? join("\r\n", $data) . "\r\n\r\n" : '';
     }

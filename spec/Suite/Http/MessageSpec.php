@@ -11,21 +11,25 @@ describe("Message", function() {
 
         it("sets default values", function() {
 
-            $message = new Message();
-            expect($message->headers())->toBeAnInstanceOf(Headers::class);
+            $message = new Message([
+                'type'     => 'text/plain',
+                'encoding' => 'UTF-8'
+            ]);
+
+            $headers = $message->headers();
+            expect($headers)->toBeAnInstanceOf(Headers::class);
+            expect((string) $headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
 
         });
 
         it("parses passed headers", function() {
 
             $message = new Message(['headers' => [
-                'HTTP/1.1 200 OK',
                 'User-Agent: Mozilla/5.0',
                 'Cache-Control: no-cache'
             ]]);
 
             $expected =<<<EOD
-HTTP/1.1 200 OK\r
 User-Agent: Mozilla/5.0\r
 Cache-Control: no-cache\r
 \r
@@ -68,6 +72,17 @@ EOD;
 
     describe("->type()", function() {
 
+        it("gets/sets the content type ", function() {
+
+            $message = new Message();
+            expect($message->type('application/json'))->toBe($message);
+            expect($message->type())->toBe('application/json');
+
+            expect($message->type('application/csv'))->toBe($message);
+            expect($message->type())->toBe('application/csv');
+
+        });
+
         it("returns the content type initialized using headers", function() {
 
             $message = new Message(['headers' => [
@@ -78,11 +93,14 @@ EOD;
 
         });
 
-        it("applies UTF-8 as default charset", function() {
+        it("removes the content type ", function() {
 
-            $message = new Message(['type' => 'application/json']);
+            $message = new Message();
+            expect($message->type('application/json'))->toBe($message);
             expect($message->type())->toBe('application/json');
-            expect($message->headers()['Content-Type']->data())->toBe('application/json; charset=UTF-8');
+
+            expect($message->type(false))->toBe($message);
+            expect($message->type())->toBe(null);
 
         });
 
@@ -101,6 +119,13 @@ EOD;
 
         });
 
+        it("returns `null` when no encoding has been defined", function() {
+
+            $message = new Message();
+            expect($message->encoding())->toBe(null);
+
+        });
+
         it("throws an exception when no Content-Type has been defined", function() {
 
             $closure = function() {
@@ -114,9 +139,41 @@ EOD;
 
     });
 
+    describe("->headers()", function() {
+
+        beforeEach(function() {
+            $this->headers = <<<EOD
+Custom-Header: Custom Value
+
+EOD;
+        });
+
+        it("sets headers as a string", function() {
+
+            $message = new Message(['headers' => $this->headers]);
+            expect($message->headers()->data())->toBe([
+                'Custom-Header: Custom Value'
+            ]);
+
+        });
+
+        it("sets headers as an object", function() {
+
+            $headers = new Headers();
+            $headers->add($this->headers);
+
+            $message = new Message(['headers' => $headers]);
+            expect($message->headers()->data())->toBe([
+                'Custom-Header: Custom Value'
+            ]);
+
+        });
+
+    });
+
     describe("->body()", function() {
 
-        it("endodes in json", function() {
+        it("endodes according to the Content-Type", function() {
 
             $message = new Message();
             $message->type("application/json");
@@ -129,78 +186,19 @@ EOD;
 
         });
 
+        it("decodes according to the Content-Type", function() {
+
+            $message = new Message();
+            $message->type("application/json");
+
+            expect($message->plain('""'))->toBe($message);
+            expect($message->body())->toBe("");
+
+            expect($message->plain('{"name":"value"}'))->toBe($message);
+            expect($message->body())->toBe(['name' => 'value']);
+
+        });
+
     });
 
 });
-
-//     public function testReturnJsonIfNoBufferAndEmptyBody() {
-//         $this->message->type("json");
-//         $result = $this->message->body("", array('encode' => true));
-//         $this->assertIdentical('[""]', $result);
-//     }
-
-//     public function testReturnMergedJsonWithEmptyBody() {
-//         $this->message->type("json");
-//         $result = $this->message->body("", array('encode' => true));
-//         $this->assertIdentical('[""]', $result);
-
-//         $result = $this->message->body("", array('encode' => true));
-//         $this->assertIdentical('["",""]', $result);
-//     }
-
-//     public function testReturnMergedJson() {
-//         $this->message->type("json");
-//         $result = $this->message->body(array("myvar1" => "val1"), array('encode' => true));
-//         $this->assertIdentical('{"myvar1":"val1"}', $result);
-
-//         $result = $this->message->body(array("myvar2" => "val2"), array('encode' => true));
-//         $this->assertIdentical('{"myvar1":"val1","myvar2":"val2"}', $result);
-//     }
-
-//     public function testReturnJsonIfNoBufferAndArrayBody() {
-//         $this->message->type("json");
-//         $result = $this->message->body(array(""), array('encode' => true));
-//         $this->assertIdentical('[""]', $result);
-//     }
-
-//     public function testReturnProperlyWithEmptyValues() {
-//         $this->message->type("json");
-
-//         $result = $this->message->body(array(
-//             'active' => '0'
-//         ), array('encode' => true));
-//         $this->assertIdentical('{"active":"0"}', $result);
-
-//         $this->message = new Message();
-//         $this->message->type("json");
-
-//         $result = $this->message->body(array(
-//             'myvar' => ''
-//         ), array('encode' => true));
-//         $this->assertIdentical('{"myvar":""}', $result);
-//     }
-
-//     public function testEmptyEncodeInJson() {
-//         $this->message->type("json");
-//         $result = $this->message->body(null, array('encode' => true));
-//         $this->assertIdentical("", $result);
-//     }
-
-//     public function testEmptyArrayEncodeInJson() {
-//         $this->message->type("json");
-//         $result = $this->message->body(array(), array('encode' => true));
-//         $this->assertIdentical("[]", $result);
-//     }
-
-//     public function testEmptyJsonDecode() {
-//         $this->message->type("json");
-//         $result = $this->message->body("{}", array('decode' => true));
-//         $this->assertIdentical(array(), $result);
-//     }
-
-//     public function testEmptyJsonArrayDecode() {
-//         $this->message->type("json");
-//         $result = $this->message->body("[]", array('decode' => true));
-//         $this->assertIdentical(array(), $result);
-//     }
-// }

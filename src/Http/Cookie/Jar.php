@@ -14,10 +14,10 @@ class Jar
      * @param  object $cookies A `SetCookies` collection.
      * @return string
      */
-    public static function toJar($cookies)
+    public static function toJar($setCookies)
     {
         $result = [];
-        foreach ($cookies as $name => $cookie) {
+        foreach ($setCookies as $name => $cookie) {
             if (!$cookie->expired()) {
                 $result[] = static::_line($name, $cookie);
             }

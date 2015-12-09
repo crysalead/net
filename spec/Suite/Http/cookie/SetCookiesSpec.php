@@ -8,57 +8,45 @@ use Lead\Net\Http\Cookie\SetCookies;
 describe("SetCookies", function() {
 
     beforeEach(function() {
-        $this->cookies = new SetCookies();
+        $this->setCookies = new SetCookies();
     });
 
     describe("->offsetSet()", function() {
 
         it("adds Cookies", function() {
 
-            $this->cookies['foo'] = 'bar';
+            $this->setCookies['foo'] = 'bar';
 
-            expect($this->cookies['foo']->value())->toBe('bar');
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
 
         it("adds a cookie using the array syntax", function() {
 
-            $this->cookies['foo'] = [
+            $this->setCookies['foo'] = [
                 'value'    => 'bar',
                 'expires'  => 'Thu, 25 Dec 2014 00:00:00 GMT',
                 'httponly' => true
             ];
-            expect($this->cookies['foo']->value())->toBe('bar');
-            expect($this->cookies['foo']->expires())->toBe(1419465600);
-            expect($this->cookies['foo']->httponly())->toBe(true);
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
+            expect($this->setCookies['foo'][0]->expires())->toBe(1419465600);
+            expect($this->setCookies['foo'][0]->httponly())->toBe(true);
 
         });
 
         it("adds a cookie using an instance", function() {
 
-            $this->cookies['foo'] = new SetCookie('bar');
-            expect($this->cookies['foo']->value())->toBe('bar');
+            $this->setCookies['foo'] = new SetCookie('bar');
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
 
         it("throws an exception if the cookie is an invalid instance", function() {
 
             $closure = function() {
-                $this->cookies['foo'] = (object) 'bar';
+                $this->setCookies['foo'] = (object) 'bar';
             };
             expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\SetCookie` instances are allowed in this collection.'));
-
-        });
-
-        it("throws an exception if the cookie scope doesn't match the collection scope", function() {
-
-            $closure = function() {
-                $this->cookies['foo'] = [
-                    'value'  => 'bar',
-                    'domain' => '.domain2.com'
-                ];
-            };
-            expect($closure)->toThrow(new Exception("Error, the cookie's scope doesn't match the collection's one."));
 
         });
 
@@ -67,9 +55,9 @@ describe("SetCookies", function() {
             foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
 
                 $closure = function() use ($invalid) {
-                    $this->cookies["ab{$invalid}ba"] = 'bar';
+                    $this->setCookies["ab{$invalid}ba"] = 'bar';
                 };
-                expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
+                expect($closure)->toThrow(new Exception("Invalid set-cookie name `'ab{$invalid}ba'`."));
 
             }
 
@@ -81,13 +69,13 @@ describe("SetCookies", function() {
 
         it('generates HTTP headers', function() {
 
-            $this->cookies['foo1'] = ['value' => 'bar1', 'expires' => strtotime('+10 days')];
-            $this->cookies['foo2'] = ['value' => 'bar2', 'expires' => strtotime('-1 day')];
-            $this->cookies['foo3'] = ['value' => 'bar3', 'expires' => strtotime('+1 day')];
+            $this->setCookies['foo1'] = ['value' => 'bar1', 'expires' => strtotime('+10 days')];
+            $this->setCookies['foo2'] = ['value' => 'bar2', 'expires' => strtotime('-1 day')];
+            $this->setCookies['foo3'] = ['value' => 'bar3', 'expires' => strtotime('+1 day')];
 
-            $this->cookies->flushExpired();
+            $this->setCookies->flushExpired();
 
-            expect($this->cookies->keys())->toBe(['foo1', 'foo3']);
+            expect($this->setCookies->keys())->toBe(['foo1', 'foo3']);
 
         });
 
@@ -97,15 +85,61 @@ describe("SetCookies", function() {
 
         it('generates HTTP headers', function() {
 
-            $this->cookies['foo1'] = 'bar1';
-            $this->cookies['foo2'] = 'bar2';
-            $this->cookies['foo3'] = 'bar3';
+            $this->setCookies['foo1'] = 'bar1';
+            $this->setCookies['foo2'] = 'bar2';
+            $this->setCookies['foo3'] = 'bar3';
 
-            expect($this->cookies->to('header'))->toBe(join("\r\n", [
+            expect($this->setCookies->to('header'))->toBe(join("\r\n", [
                 'Set-Cookie: foo1=bar1; Path=/',
                 'Set-Cookie: foo2=bar2; Path=/',
                 'Set-Cookie: foo3=bar3; Path=/'
             ]));
+
+        });
+
+    });
+
+    describe("->data()", function() {
+
+        it('exports set-cookies', function() {
+
+            $this->setCookies['foo1'] = ['value' => 'bar1', 'path' => '/home'];
+            $this->setCookies['foo1'] = ['value' => 'bar11', 'path' => '/home/index'];
+            $this->setCookies['foo2'] = ['value' => 'bar2', 'path' => '/'];
+
+            expect($this->setCookies->data())->toBe([
+                "foo1" => [
+                    [
+                        "value" => "bar1",
+                        "expires" => null,
+                        "path" => "/home",
+                        "domain" => null,
+                        "max-age" => null,
+                        "secure" => false,
+                        "httponly" => false
+                    ],
+                    [
+                        "value" => "bar11",
+                        "expires" => null,
+                        "path" => "/home/index",
+                        "domain" => null,
+                        "max-age" => null,
+                        "secure" => false,
+                        "httponly" => false
+                    ]
+                ],
+                "foo2" => [
+                    [
+                        "value" => "bar2",
+                        "expires" => null,
+                        "path" => "/",
+                        "domain" => null,
+                        "max-age" => null,
+                        "secure" => false,
+                        "httponly" => false
+                    ]
+                ]
+            ]);
 
         });
 

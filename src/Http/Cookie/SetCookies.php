@@ -17,12 +17,26 @@ class SetCookies extends \Lead\Collection\Collection
     protected $_classes = [];
 
     /**
+     * Hashes to names map.
+     *
+     * @var array
+     */
+    protected $_names = [];
+
+    /**
+     * Map to hashes map.
+     *
+     * @var array
+     */
+    protected $_hashes = [];
+
+    /**
      * Contains all exportable formats and their handler
      *
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'Lead\Collection\Collection::toArray',
+        'array'  => 'Lead\Net\Http\Cookie\SetCookies::toArray',
         'header' => 'Lead\Net\Http\Cookie\SetCookies::toSetCookie'
     ];
 
@@ -67,16 +81,58 @@ class SetCookies extends \Lead\Collection\Collection
     {
         $cookie = $this->_classes['cookie'];
         if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
+            throw new Exception("Invalid set-cookie name `'{$name}'`.");
         }
         $value = $this->_autobox($value);
         if (!$value instanceof $cookie) {
             throw new Exception("Error, only `{$cookie}` instances are allowed in this collection.");
         }
-        if (!$this->_match($value)) {
-            throw new Exception("Error, the cookie's scope doesn't match the collection's one.");
+        $hash = $name . $value->domain() . $value->path();
+        $this->_hashes[$name][] = $hash;
+        $this->_names[$hash] = $name;
+
+        return $this->_data[$hash] = $value;
+    }
+
+    /**
+     * Gets a set-cookie.
+     *
+     * @param  string $name  The cookie name.
+     * @param  object $value The cookie.
+     * @return object        The setted cookie.
+     */
+    public function offsetGet($name)
+    {
+        $data = [];
+
+        if (!isset($this->_hashes[$name])) {
+            throw new Exception("Unexisting set-cookie name `'{$name}'`.");
         }
-        return $this->_data[$name] = $value;
+        foreach ($this->_hashes[$name] as $key => $hash) {
+            $data[] = $this->_data[$hash];
+        }
+        return $data;
+    }
+
+    /**
+     * Returns the key of the current item.
+     *
+     * @return scalar Scalar on success or `null` on failure.
+     */
+    public function key()
+    {
+        $hash = key($this->_data);
+        return $this->_names[$hash];
+    }
+
+    /**
+     * Returns the item keys.
+     *
+     * @return array The keys of the items.
+     */
+    public function keys()
+    {
+        return array_keys($this->_hashes);
     }
 
     /**
@@ -97,29 +153,23 @@ class SetCookies extends \Lead\Collection\Collection
     }
 
     /**
-     * Checks if a cookie is compatible with the `SetCookies` scope.
-     *
-     * @param  object  $value The cookie instance.
-     * @return boolean        Returns `true` if match, `false` otherwise.
-     */
-    protected function _match($cookie) {
-        return (
-            $this->_scope['secure'] === $cookie->secure() &&
-            $this->_scope['domain'] === $cookie->domain() &&
-            $this->_scope['path'] === $cookie->path()
-        );
-    }
-
-    /**
      * Removes expired cookies.
      *
      * @return object Returns `$this`.
      */
     public function flushExpired()
     {
-        foreach ($this->_data as $name => $cookie) {
-            if ($cookie->expired()) {
-                unset($this->_data[$name]);
+        foreach ($this->_hashes as $name => $hashes) {
+            foreach ($hashes as $key => $hash) {
+                $cookie = $this->_data[$hash];
+                if ($cookie->expired()) {
+                    unset($this->_data[$hash]);
+                    unset($this->_names[$hash]);
+                    unset($this->_hashes[$name][$key]);
+                    if (!$this->_hashes[$name]) {
+                        unset($this->_hashes[$name]);
+                    }
+                }
             }
         }
         return $this;
@@ -178,10 +228,10 @@ class SetCookies extends \Lead\Collection\Collection
      * @param  object $cookies A `SetCookies` collection.
      * @return string
      */
-    public static function toSetCookie($cookies)
+    public static function toSetCookie($setCookies)
     {
         $parts = [];
-        foreach ($cookies as $name => $cookie) {
+        foreach ($setCookies as $name => $cookie) {
             if (!$cookie->expired()) {
                 $parts[] = static::_setCookieValue($name, $cookie);
             }
@@ -225,5 +275,21 @@ class SetCookies extends \Lead\Collection\Collection
             $parts[] = 'HttpOnly';
         }
         return join('; ', $parts);
+    }
+
+    /**
+     * Exports set-cookies.
+     *
+     * @param  Traversable $setCookies The set-cookies.
+     * @param  array       $options    Options.
+     * @return array                   The export array.
+     */
+    public static function toArray($setCookies, $options = [])
+    {
+        $data = [];
+        foreach ($setCookies as $name => $cookie) {
+            $data[$name][] = $cookie->data();
+        }
+        return $data;
     }
 }

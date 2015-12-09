@@ -1,5 +1,5 @@
 <?php
-namespace Lead\Net;
+namespace Lead\Net\Http;
 
 use Exception;
 
@@ -15,7 +15,7 @@ class Header extends \Lead\Collection\Collection
      */
     protected static $_formats = [
         'array'  => 'Lead\Collection\Collection::toArray',
-        'header' => 'Lead\Net\Header::toHeader'
+        'header' => 'Lead\Net\Http\Header::toHeader'
     ];
 
     /**

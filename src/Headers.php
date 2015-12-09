@@ -2,47 +2,20 @@
 namespace Lead\Net;
 
 use Exception;
+use Lead\Net\NetException;
 use Lead\Set\Set;
 
 /**
  * Collection of Headers.
  */
-class Headers extends \Lead\Collection\Collection
+abstract class Headers extends \Lead\Collection\Collection
 {
-    /**
-     * Contains all exportable formats and their handler
-     *
-     * @var array
-     */
-    protected static $_formats = [
-        'array'  => 'Lead\Collection\Collection::toArray',
-        'header' => 'Lead\Net\Http\Headers::toHeader'
-    ];
-
     /**
      * Class dependencies.
      *
      * @var array
      */
     protected $_classes = [];
-
-    /**
-     * The constructor
-     *
-     * @param array $data The data
-     */
-    public function __construct($config = [])
-    {
-        $defaults = [
-            'classes' => [
-                'header' => 'Lead\Net\Header'
-            ]
-        ];
-        $config = Set::merge($defaults, $config);
-        parent::__construct($config);
-        $this->_classes = $config['classes'];
-
-    }
 
     /**
      * Assigns a header.
@@ -62,7 +35,7 @@ class Headers extends \Lead\Collection\Collection
             return $this->_data[strtolower($name)] = $value;
         }
         if (!is_scalar($value)) {
-            throw new Exception("Error, only string value is allowed.");
+            throw new Exception("Error, only scalar value are allowed as header value.");
         }
         return $this->_data[strtolower($name)] = new $header([
             'name' => $name,
@@ -73,43 +46,11 @@ class Headers extends \Lead\Collection\Collection
     /**
      * Adds an header.
      *
-     * @param  string|array $headers A header string or an array of headers.
+     * @param  string|array $values  A header string or an array of headers.
+     * @param  boolean      $prepend If true, prepend headers to the beginning.
      * @return self
      */
-    public function add($value)
-    {
-        $headers = is_string($value) ? explode("\n", $value) : $value;
-
-        foreach ($headers as $key => $value) {
-            if (!is_numeric($key)) {
-                if (is_array($value)) {
-                    $value = "{$key}: " . join(', ', $value);
-                } else {
-                    $value = "{$key}: {$value}";
-                }
-            }
-            if (!$value = trim($value)) {
-                continue;
-            }
-            $this->_add($value);
-        }
-        return $this;
-    }
-
-    /**
-     * Adds helper.
-     *
-     * @param string $value The header to add.
-     */
-    protected function _add($value)
-    {
-        $header = $this->_classes['header'];
-        if ($parsed = $header::parse($value)) {
-            $this->_data[strtolower($parsed->name())] = $parsed;
-        } else {
-            $this->_data[(string) $value] = true;
-        }
-    }
+    abstract public function add($values, $prepend = false);
 
     /**
      * Checks whether or not an header exists.
@@ -180,16 +121,5 @@ class Headers extends \Lead\Collection\Collection
      *
      * @return string
      */
-    public static function toHeader($collection)
-    {
-        $data = [];
-        foreach ($collection as $key => $header) {
-            if ($header === true) {
-                $data[] = $key;
-            } elseif ($header = $header->to('header')) {
-                $data[] = $header;
-            }
-        }
-        return $data ? join("\n", $data) . "\n\n" : '';
-    }
+    /*abstract*/ public static function toHeader($collection){} // https://bugs.php.net/bug.php?id=53081 .
 }

@@ -12,12 +12,12 @@ describe("Jar", function() {
 
         it('exports cookies into a JAR string', function() {
 
-        	$cookies = new SetCookies();
-            $cookies['foo1'] = 'bar1';
-            $cookies['foo2'] = 'bar2';
-            $cookies['foo3'] = 'bar3';
+        	$setCookies = new SetCookies();
+            $setCookies['foo1'] = 'bar1';
+            $setCookies['foo2'] = 'bar2';
+            $setCookies['foo3'] = 'bar3';
 
-            expect(Jar::toJar($cookies))->toBe(join("\n", [
+            expect(Jar::toJar($setCookies))->toBe(join("\n", [
                 "\tFALSE\t/\tFALSE\t0\tfoo1\tbar1",
                 "\tFALSE\t/\tFALSE\t0\tfoo2\tbar2",
                 "\tFALSE\t/\tFALSE\t0\tfoo3\tbar3",

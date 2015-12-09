@@ -2,7 +2,7 @@
 namespace Lead\Net\Spec\Suite;
 
 use Exception;
-use Lead\Net\Header;
+use Lead\Net\Http\Header;
 
 describe("Header", function() {
 

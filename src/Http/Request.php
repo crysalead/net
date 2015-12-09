@@ -2,6 +2,7 @@
 namespace Lead\Net\Http;
 
 use UnexpectedValueException;
+use Lead\Net\NetException;
 use Lead\Text\Text;
 use Lead\Net\Scheme;
 
@@ -66,17 +67,28 @@ class Request extends \Lead\Net\Http\Message
     public function __construct($config = [])
     {
         $defaults = [
+            'scheme'   => 'http',
+            'host'     => 'localhost',
+            'port'     => null,
+            'username' => null,
+            'password' => null,
             'method' => 'GET',
+            'path'     => '',
             'query' => [],
-            'type' => null,
             'auth' => null
         ];
         $config += $defaults;
 
-        $this->_method  = $config['method'];
-        $this->_query   = $config['query'];
-
         parent::__construct($config);
+
+        $this->scheme($config['scheme']);
+        $this->port($config['port']);
+        $this->host($config['host']);
+        $this->username($config['username']);
+        $this->password($config['password']);
+        $this->method($config['method']);
+        $this->path($config['path']);
+        $this->query($config['query']);
 
         if (!isset($this->_headers['Connection'])) {
             $this->_headers['Connection'] = 'Close';
@@ -86,6 +98,60 @@ class Request extends \Lead\Net\Http\Message
         }
 
         $this->auth($config['auth']);
+    }
+
+    /**
+     * Gets/sets the scheme.
+     *
+     * @param  string      $scheme The scheme of the message
+     * @return string|self
+     */
+    public function scheme($scheme = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_scheme;
+        }
+        $this->_scheme = $scheme;
+        return $this;
+    }
+
+    /**
+     * Gets/sets the port.
+     *
+     * @param  string      $port The port of the message.
+     * @return string|self
+     */
+    public function port($port = null)
+    {
+        if (func_num_args() === 1) {
+            $this->_port = $port;
+            return $this;
+        }
+        if ($this->_port !== null) {
+            return $this->_port;
+        }
+        $scheme = $this->_classes['scheme'];
+        $name = $this->scheme();
+
+        if ($scheme::registered($name)) {
+            return $scheme::port($name);
+        }
+        return $this->_port;
+    }
+
+    /**
+     * Gets/sets the path.
+     *
+     * @param  string      $path Absolute path of the message.
+     * @return string|self
+     */
+    public function path($path = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_path;
+        }
+        $this->_path = '/' . ltrim($path, '/');
+        return $this;
     }
 
     /**
@@ -99,8 +165,67 @@ class Request extends \Lead\Net\Http\Message
         if (func_num_args() === 0) {
             return $this->_method;
         }
-        $this->_method = $method;
+        $this->_method = strtoupper($method);
         return $this;
+    }
+
+    /**
+     * Gets/sets the username.
+     *
+     * @param  string      $path The username of the message.
+     * @return string|self
+     */
+    public function username($username = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_username;
+        }
+        $this->_username = $username;
+        return $this;
+    }
+
+    /**
+     * Gets/sets the password.
+     *
+     * @param  string      $path The password of the message.
+     * @return string|self
+     */
+    public function password($password = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_password;
+        }
+        $this->_password = $password;
+        return $this;
+    }
+
+    /**
+     * Returns the message url.
+     *
+     * @return string
+     */
+    public function url()
+    {
+        $scheme = $this->_classes['scheme'];
+        $name = $this->scheme();
+        $port = $this->port();
+
+        if ($scheme::registered($name)) {
+            $port = $port === $scheme::port($name) ? null : $port;
+        }
+
+        $port = $port ? ':' . $port : '';
+        $scheme = $name ? $name . '://' : '//';
+        $credentials = '';
+        if ($username = $this->username()) {
+            $credentials = $username;
+            if ($password = $this->password()) {
+                $credentials .= ':' . $password;
+            }
+            $credentials .= '@';
+        }
+
+        return $scheme . $credentials . $this->host() . $port . $this->path();
     }
 
     /**
@@ -116,7 +241,7 @@ class Request extends \Lead\Net\Http\Message
         }
         $this->_host = $host;
         $port = Scheme::port($this->_scheme) !== $this->_port ? $this->_port : '';
-        $this->headers()['Host'] = $port ? "{$this->_host}:{$port}" : $this->_host;
+        $this->headers()->add('Host: ' . ($port ? "{$this->_host}:{$port}" : $this->_host), true);
         return $this;
     }
 
@@ -127,7 +252,7 @@ class Request extends \Lead\Net\Http\Message
      */
     public function fullPath()
     {
-        $query = $request->query() ? '?' . http_build_query($request->query()) : '';
+        $query = $this->query() ? '?' . http_build_query($this->query()) : '';
         return $this->path() . $query;
     }
 
@@ -157,7 +282,7 @@ class Request extends \Lead\Net\Http\Message
     }
 
     /**
-     * Gets/sets the  string.
+     * Gets/sets the query string.
      *
      * @param  array  $qs The query string to set or none to get the defined one.
      * @return string
@@ -176,26 +301,36 @@ class Request extends \Lead\Net\Http\Message
      *
      * @return string
      */
-    public function __toString()
+    public function toString()
     {
+        static::_setContentLength($this);
         $status = $this->method() . ' ' . $this->fullPath() . ' ' . $this->protocol() . "\r\n";
         return $status . (string) $this->_headers . (string) $this->_body;
+    }
+
+    public static function _setContentLength($request)
+    {
+        $headers = $request->headers();
+        if (isset($headers['Content-Length']) || in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
+            return;
+        }
+        $length = $request->stream()->length();
+        if ($length === null) {
+            throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
+        }
+        $headers['Content-Length'] = $request->stream()->length();
     }
 
     /**
      * Exports a `Request` instance to an array.
      *
-     * @param  mixed $message A `Request` instance.
+     * @param  mixed $request A `Request` instance.
      * @param  array $options Options.
      * @return array          The export array.
      */
     public static function toArray($request, $options = [])
     {
-        $headers = $request->headers();
-        if (!in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
-            $headers['Content-Length'] = $request->stream()->length();
-        }
-        $query = $request->query() ? '?' . http_build_query($request->query()) : '';
+        static::_setContentLength($request);
         return [
             'method'   => $request->method(),
             'scheme'   => $request->scheme(),
@@ -203,11 +338,11 @@ class Request extends \Lead\Net\Http\Message
             'host'     => $request->host(),
             'port'     => $request->port(),
             'path'     => $request->path(),
-            'query'    => $query,
+            'query'    => $request->query() ? '?' . http_build_query($request->query()) : '',
             'username' => $request->username(),
             'password' => $request->password(),
             'url'      => $request->url(),
-            'headers'  => $headers->data(),
+            'headers'  => $request->headers()->data(),
             'stream'   => $request->stream()
         ];
     }

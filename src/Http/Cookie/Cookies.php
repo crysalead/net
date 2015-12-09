@@ -22,7 +22,7 @@ class Cookies extends \Lead\Collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'Lead\Collection\Collection::toArray',
+        'array'  => 'Lead\Net\Http\cookie\Cookies::toArray',
         'header' => 'Lead\Net\Http\cookie\Cookies::toCookie'
     ];
 
@@ -108,5 +108,21 @@ class Cookies extends \Lead\Collection\Collection
             throw new Exception("Invalid cookie name `'{$name}'`.");
         }
         return $name . '=' . urlencode($cookie->value());
+    }
+
+    /**
+     * Exports cookies.
+     *
+     * @param  Traversable $cookies The cookies.
+     * @param  array       $options Options.
+     * @return array                The export array.
+     */
+    public static function toArray($cookies, $options = [])
+    {
+        $data = [];
+        foreach ($cookies as $name => $cookie) {
+           $data[$name] = $cookie->value();
+        }
+        return $data;
     }
 }
