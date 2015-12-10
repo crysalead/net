@@ -29,7 +29,7 @@ describe("Header", function() {
             $this->header[] = 'value2';
             $this->header[0] = 'value1';
 
-            expect($this->header->data())->toBe('value1, value2');
+            expect($this->header->value())->toBe('value1, value2');
 
         });
 
@@ -45,7 +45,7 @@ describe("Header", function() {
 
     });
 
-    describe("->data()", function() {
+    describe("->value()", function() {
 
         it("returns a string representation of the value(s)", function() {
 
@@ -53,7 +53,7 @@ describe("Header", function() {
             $this->header[] = 'value2';
             $this->header[] = 'value3';
 
-            expect($this->header->data())->toBe('value1, value2, value3');
+            expect($this->header->value())->toBe('value1, value2, value3');
 
         });
 

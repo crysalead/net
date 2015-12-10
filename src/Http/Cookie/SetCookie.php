@@ -125,6 +125,7 @@ class SetCookie extends \Lead\Net\Http\Cookie\Cookie
         if (static::isValidTimeStamp($expires)) {
             return $this->_data['expires'] = $expires;
         }
+
         $this->_data['expires'] = strtotime($expires);
         return $this->_data['expires'] = (integer) $this->_data['expires'];
     }

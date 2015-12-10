@@ -88,6 +88,7 @@ class Message
     {
         $defaults = [
             'body'     => '',
+            'plain'    => null,
             'classes'  => [
                 'scheme'  => 'Lead\Net\Scheme',
                 'stream'  => 'Lead\Storage\Stream\Stream'
@@ -97,7 +98,11 @@ class Message
 
         $this->_classes = $config['classes'];
 
-        $this->body($config['body']);
+        if ($config['plain'] !== null) {
+            $this->plain($config['plain']);
+        } else {
+            $this->body($config['body']);
+        }
     }
 
     /**

@@ -18,7 +18,7 @@ describe("Headers", function() {
 
             $this->headers['Content-Type'] = 'text/plain';
 
-            expect($this->headers['Content-Type']->data())->toBe('text/plain');
+            expect($this->headers['Content-Type']->value())->toBe('text/plain');
             expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
 
         });
@@ -29,7 +29,7 @@ describe("Headers", function() {
                 'data' => 'text/plain'
             ]);
 
-            expect($this->headers['Content-Type']->data())->toBe('text/plain');
+            expect($this->headers['Content-Type']->value())->toBe('text/plain');
             expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
 
         });
@@ -39,7 +39,7 @@ describe("Headers", function() {
             $this->headers['content-type'] = 'text/plain';
             $this->headers['CONTENT-TYPE'] = 'application/json';
 
-            expect($this->headers['content-type']->data())->toBe('application/json');
+            expect($this->headers['content-type']->value())->toBe('application/json');
             expect($this->headers['CONTENT-TYPE']->to('array'))->toBe(['application/json']);
 
         });
@@ -49,7 +49,7 @@ describe("Headers", function() {
             $this->headers['Accept'] = 'text/html;q=1.0';
             $this->headers['Accept'][] = '*/*;q=0.1';
 
-            expect($this->headers['Accept']->data())->toBe('text/html;q=1.0, */*;q=0.1');
+            expect($this->headers['Accept']->value())->toBe('text/html;q=1.0, */*;q=0.1');
             expect($this->headers['Accept']->to('array'))->toBe([
                 'text/html;q=1.0',
                 '*/*;q=0.1'
@@ -63,7 +63,7 @@ describe("Headers", function() {
             $this->headers['Accept'][] = '*/*;q=0.1';
 
             $this->headers['Accept'] = 'application/json';
-            expect($this->headers['Accept']->data())->toBe('application/json');
+            expect($this->headers['Accept']->value())->toBe('application/json');
             expect($this->headers['Accept']->to('array'))->toBe(['application/json']);
 
         });
@@ -142,9 +142,9 @@ describe("Headers", function() {
             $this->headers['Accept'][] = '*/*;q=0.1';
 
             expect($this->headers->data())->toBe([
-                'Content-Type: text/plain',
-                'X-Custom-ABC: abc',
-                'Accept: text/html;q=1.0, */*;q=0.1'
+                'Content-Type' => 'text/plain',
+                'X-Custom-ABC' => 'abc',
+                'Accept'       => 'text/html;q=1.0, */*;q=0.1'
             ]);
 
         });
@@ -173,70 +173,56 @@ EOD;
 
     describe("->add()", function() {
 
+        beforeEach(function() {
+
+            $this->expected = <<<EOD
+Date: Thu, 25 Dec 2014 00:00:00 GMT\r
+Content-Type: text/html; charset=UTF-8\r
+Vary: Accept-Encoding, Cookie, User-Agent\r
+\r
+
+EOD;
+        });
+
         it("adds an header", function() {
 
             $this->headers->add('Content-Type: text/plain');
-
-            expect($this->headers['Content-Type']->data())->toBe('text/plain');
-            expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
+            expect($this->headers['Content-Type']->data())->toBe(['text/plain']);
 
         });
 
         it("adds a collection of headers from an header string", function() {
 
-            $header = <<<EOD
-Date: Thu, 25 Dec 2014 00:00:00 GMT
-Content-Type: text/html; charset=UTF-8
-Vary: Accept-Encoding, Cookie, User-Agent
-
-EOD;
-
             $headers = new Headers();
-            $headers->add($header);
+            $headers->add($this->expected);
 
-            expect($headers->data())->toBe([
-                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Content-Type: text/html; charset=UTF-8',
-                'Vary: Accept-Encoding, Cookie, User-Agent'
-            ]);
+            expect($headers->to('header'))->toBe($this->expected);
 
         });
 
         it("adds a collection of headers from an array of headers", function() {
 
-            $header = [
-                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Content-Type: text/html; charset=UTF-8',
-                'Vary: Accept-Encoding, Cookie, User-Agent'
-            ];
-
             $headers = new Headers();
-            $headers->add($header);
-
-            expect($headers->data())->toBe([
+            $headers->add([
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'
             ]);
+
+            expect($headers->to('header'))->toBe($this->expected);
 
         });
 
         it("adds a collection of headers from an array of key/value", function() {
 
-            $header = [
+            $headers = new Headers();
+            $headers->add([
                 'Date' => 'Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type' => 'text/html; charset=UTF-8',
                 'Vary' => ['Accept-Encoding', 'Cookie', 'User-Agent']
-            ];
-
-            $headers = new Headers();
-            $headers->add($header);
-
-            expect($headers->data())->toBe([
-                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
-                'Content-Type: text/html; charset=UTF-8',
-                'Vary: Accept-Encoding, Cookie, User-Agent'
             ]);
+
+            expect($headers->to('header'))->toBe($this->expected);
 
         });
 
@@ -253,7 +239,6 @@ EOD;
         it("adds cookies", function() {
 
             $this->headers->add('Cookie: foo1=bar1, foo2=bar2, foo3=bar3');
-
             expect((string) $this->headers)->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3\r\n\r\n");
 
         });

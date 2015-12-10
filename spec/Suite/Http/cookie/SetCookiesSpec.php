@@ -41,12 +41,21 @@ describe("SetCookies", function() {
 
         });
 
-        it("throws an exception if the cookie is an invalid instance", function() {
+        it("throws an exception if the set-cookie is an invalid instance", function() {
 
             $closure = function() {
                 $this->setCookies['foo'] = (object) 'bar';
             };
             expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\SetCookie` instances are allowed in this collection.'));
+
+        });
+
+        it("throws an exception for trying to get an unexisting set-cookie", function() {
+
+            $closure = function() {
+                $this->setCookies['foo'];
+            };
+            expect($closure)->toThrow(new Exception("Unexisting set-cookie name `'foo'`."));
 
         });
 
@@ -200,7 +209,7 @@ describe("SetCookies", function() {
 
             $date = gmdate('D, d M Y H:i:s \G\M\T', $expires);
             $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
-                "Set-Cookie: mycookie=the+cookie+value; Expires={$date}; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
+                "Set-Cookie: mycookie=the%20cookie%20value; Expires={$date}; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
             );
 
         });
@@ -216,7 +225,7 @@ describe("SetCookies", function() {
             ]);
 
             $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
-                "Set-Cookie: mycookie=the+cookie+value; Max-Age=3600; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
+                "Set-Cookie: mycookie=the%20cookie%20value; Max-Age=3600; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
             );
 
         });
@@ -226,7 +235,7 @@ describe("SetCookies", function() {
             $cookie = new SetCookie('the cookie value');
 
             $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
-                "Set-Cookie: mycookie=the+cookie+value; Path=/"
+                "Set-Cookie: mycookie=the%20cookie%20value; Path=/"
             );
 
         });

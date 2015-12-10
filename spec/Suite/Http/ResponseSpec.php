@@ -4,14 +4,293 @@ namespace Lead\Net\Spec\Suite\Http;
 use Lead\Net\NetException;
 use Lead\Net\Http\Response;
 
+use Kahlan\Plugin\Monkey;
+
 describe("Response", function() {
 
     describe("->__construct()", function() {
 
-        it("sets options", function() {
+        it("sets defaults values", function() {
 
-            //$request = new Response([]);
-            //expect((string) $request->headers()['Host'])->toBe('Host: www.domain.com');
+            $response = new Response();
+            expect($response->data())->toBe([
+                'status'  => [200, 'OK'],
+                'version' => '1.1',
+                'headers' => $response->headers(),
+                'body'    => $response->stream()
+            ]);
+
+        });
+
+        it("sets status", function() {
+
+            $response = new Response(['status' => 404]);
+            expect($response->status())->toEqual([404, 'Not Found']);
+
+        });
+
+        it("sets set-cookies", function() {
+
+            $response = new Response([
+                'setCookies' => [
+                    'foo' => 'bar',
+                    'bar' => 'foo'
+                ]
+            ]);
+
+            expect($response->headers()->setCookies()->data())->toEqual([
+                'foo' => [
+                    [
+                        'value'    => 'bar',
+                        'expires'  => null,
+                        'path'     => '/',
+                        'domain'   => null,
+                        'max-age'  => null,
+                        'secure'   => false,
+                        'httponly' => false
+                    ]
+                ],
+                'bar' => [
+                    [
+                        'value'    => 'foo',
+                        'expires'  => null,
+                        'path'     => '/',
+                        'domain'   => null,
+                        'max-age'  => null,
+                        'secure'   => false,
+                        'httponly' => false
+                    ]
+                ]
+            ]);
+
+        });
+
+    });
+
+    describe("->status()", function() {
+
+        it("sets the request's status using an integer", function() {
+
+            $response = new Response();
+            expect($response->status(404))->toBe($response);
+            expect($response->status())->toEqual([404, 'Not Found']);
+
+        });
+
+        it("sets the request's status using an array", function() {
+
+            $response = new Response();
+            expect($response->status([404]))->toBe($response);
+            expect($response->status())->toEqual([404, 'Not Found']);
+
+        });
+
+        it("sets the request's status using an array with a custom message definition", function() {
+
+            $response = new Response();
+            expect($response->status([404, 'Page Not Found']))->toBe($response);
+            expect($response->status())->toEqual([404, 'Page Not Found']);
+
+        });
+
+    });
+
+    describe("->cache()", function() {
+
+        it("adds no-cache headers", function() {
+
+            $response = new Response();
+            $response->cache(false);
+
+            $expected = <<<EOD
+Expires: Mon, 26 Jul 1997 05:00:00 GMT\r
+Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0\r
+Pragma: no-cache\r
+\r
+
+EOD;
+
+            expect($response->headers()->to('header'))->toBe($expected);
+
+        });
+
+        it("adds cache headers to a specific date", function() {
+
+            Monkey::patch('time', function() {
+                return 1451001000;
+            });
+
+            $response = new Response();
+            $response->cache(1451001600);
+
+            $expected = <<<EOD
+Expires: Fri, 25 Dec 2015 00:00:00 GMT\r
+Cache-Control: max-age=600\r
+Pragma: no-cache\r
+\r
+
+EOD;
+            expect($response->headers()->to('header'))->toBe($expected);
+
+        });
+
+    });
+
+    describe("->digest()", function() {
+
+        it("parses digest header", function() {
+
+            $headers = [
+                'WWW-Authenticate: Digest realm="app",qop="auth",nonce="4ee1617b8756e",opaque="dd7bcee161192cb8fba765eb595eba87"'
+            ];
+            $response = new Response(['headers' => $headers]);
+
+            $result = array_filter($response->digest());
+            expect($result)->toEqual([
+                'realm' => 'app',
+                'qop' => 'auth',
+                'nonce' => '4ee1617b8756e',
+                'opaque' => 'dd7bcee161192cb8fba765eb595eba87'
+            ]);
+
+        });
+
+        it("returns and empty array when there's no WWW-Authenticate header", function() {
+
+            $response = new Response();
+            expect($response->digest())->toBe([]);
+
+        });
+
+    });
+
+    describe("->toString()", function() {
+
+        it("casts the response as a string", function() {
+
+            $response = new Response([
+                'headers' => [
+                    'Content-Type: application/json'
+                ],
+                'body' => ['hello' => 'world']
+            ]);
+            $setCookies = $response->headers()->setCookies();
+
+            $setCookies['foo'] = 'bar';
+            $setCookies['bin'] = 'baz';
+            $setCookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
+
+            $expected = <<<EOD
+HTTP/1.1 200 OK\r
+Content-Type: application/json\r
+Content-Length: 17\r
+Set-Cookie: foo=bar; Path=/\r
+Set-Cookie: bin=baz; Path=/\r
+Set-Cookie: foo=bin; Path=/foo\r
+\r
+{"hello":"world"}
+EOD;
+            expect($response->toString())->toBe($expected);
+
+        });
+
+    });
+
+    describe("::create()", function() {
+
+        it("creates a response with some set-cookies", function() {
+
+            $message = join("\r\n", array(
+                'HTTP/1.1 200 OK',
+                'Connection: close',
+                'Content-Type: text/plain;charset=UTF8',
+                'Content-Length: 5',
+                'Set-Cookie: doctor=who; Path=/tardis; HttpOnly',
+                'Set-Cookie: test=foo%20bar; Expires=Fri, 25 Dec 2015 00:00:00 GMT; Secure',
+                'Set-Cookie: test=foo%2Bbin; Path=/test; Domain=.domain.com',
+                '',
+                'Test!'
+            ));
+            $cookies = [
+                'doctor' => [
+                    [
+                        'value'    => 'who',
+                        'expires'  => null,
+                        'path'     => '/tardis',
+                        'domain'   => null,
+                        'max-age'  => null,
+                        'secure'   => false,
+                        'httponly' => true
+                    ]
+                ],
+                'test' => [
+                    [
+                        'value'    => 'foo bar',
+                        'expires'  => 1451001600,
+                        'path'     => null,
+                        'domain'   => null,
+                        'max-age'  => null,
+                        'secure'   => true,
+                        'httponly' => false
+                    ],
+                    [
+                        'value'    => 'foo+bin',
+                        'expires'  => null,
+                        'path'     => '/test',
+                        'domain'   => '.domain.com',
+                        'max-age'  => null,
+                        'secure'   => false,
+                        'httponly' => false
+                    ]
+                ]
+            ];
+            $response = Response::create($message);
+            expect($response->headers()->setCookies()->data())->toBe($cookies);
+            expect((string) $response)->toBe($message);
+
+        });
+
+        it("decodes chunked body", function() {
+
+            $headers = join("\r\n", [
+                'HTTP/1.1 200 OK',
+                'Date: Mon, 22 Mar 2004 11:15:03 GMT',
+                'Content-Type: text/html',
+                'Transfer-Encoding: chunked',
+                '',
+                ''
+            ]);
+
+            $body  = "29\r\n";
+            $body .= "<html><body><p>The file you requested is \r\n";
+            $body .= "6\r\n";
+            $body .= "3,400 \r\n";
+            $body .= "22\r\n";
+            $body .= "bytes long and was last modified: \r\n";
+            $body .= "1d\r\n";
+            $body .= "Fri, 25 Dec 2015 00:00:00 GMT\r\n";
+            $body .= "13\r\n";
+            $body .= ".</p></body></html>\r\n";
+            $body .= "0\r\n";
+
+            $response = Response::create($headers . $body);
+
+            $expected = <<<EOD
+<html><body><p>The file you requested is 3,400 bytes long and was last modified: Fri, 25 Dec 2015 00:00:00 GMT.</p></body></html>
+EOD;
+
+            expect($response->body())->toBe($expected);
+
+
+        });
+
+        it("throws an exception if the message can't be parsed", function() {
+
+            $closure = function() {
+                Response::create('');
+            };
+
+            expect($closure)->toThrow(new NetException('The CRLFCRLF separator between headers and body is missing.'));
 
         });
 

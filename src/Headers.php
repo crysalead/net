@@ -84,18 +84,11 @@ abstract class Headers extends \Lead\Collection\Collection
         return parent::offsetUnset(strtolower($name));
     }
 
-    /**
-     * Gets the headers as an array.
-     *
-     * @return array Returns the headers.
-     */
-    public function data()
+    public function key()
     {
-        $result = [];
-        foreach ($this->_data as $key => $header) {
-            $result[] = $header === true ? $key : $header->to('header');
+        if ($header = current($this->_data)) {
+            return $header->name();
         }
-        return $result;
     }
 
     /**
@@ -114,6 +107,20 @@ abstract class Headers extends \Lead\Collection\Collection
     public function __toString()
     {
         return static::toHeader($this);
+    }
+
+    /**
+     * Gets the headers as an array.
+     *
+     * @return array Returns the headers.
+     */
+    public static function toArray($collection, $options = [])
+    {
+        $data = [];
+        foreach ($collection as $name => $header) {
+            $data[$name] = $header->value();
+        }
+        return $data;
     }
 
     /**

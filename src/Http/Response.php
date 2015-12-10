@@ -1,11 +1,22 @@
 <?php
 namespace Lead\Net\Http;
 
+use Lead\Net\NetException;
+
 /**
  * Parses and stores the status, headers and body of an HTTP response.
  */
 class Response extends \Lead\Net\Http\Message
 {
+    /**
+     * Contains all exportable formats and their handler
+     *
+     * @var array
+     */
+    protected static $_formats = [
+        'array'   => 'Lead\Net\Http\Response::toArray'
+    ];
+
     /**
      * HTTP Status.
      *
@@ -77,18 +88,31 @@ class Response extends \Lead\Net\Http\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'status'  => []
+            'status'     => [],
+            'setCookies' => []
         ];
         $config += $defaults;
 
         parent::__construct($config);
 
-        if (isset($this->_headers['Transfer-Encoding'])) {
-            $this->_body = $this->_httpChunkedDecode($this->_body);
-        }
         if ($config['status']) {
-            $this->status($status);
+            $this->status($config['status']);
         }
+        $setCookies = $this->headers()->setCookies();
+        foreach ($config['setCookies'] as $key => $value) {
+            $setCookies[$key] = $value;
+        }
+    }
+
+    /**
+     * Returns the request line.
+     *
+     * @return string
+     */
+    public function line()
+    {
+        $status = $this->status();
+        return $this->protocol(). ' ' . $status[0]. ' ' .$status[1];
     }
 
     /**
@@ -164,35 +188,14 @@ class Response extends \Lead\Net\Http\Message
     }
 
     /**
-     * Decodes content bodies transferred with HTTP chunked encoding.
-     *
-     * @link http://en.wikipedia.org/wiki/Chunked_transfer_encoding Wikipedia: Chunked encoding
-     *
-     * @param  string $body A chunked HTTP message body.
-     * @return string       Returns the value of `$body` with chunks decoded, but only if the value of the
-     *                      `Transfer-Encoding` header is set to `'chunked'`. Otherwise, returns `$body`
-     *                      unmodified.
-     */
-    protected function _httpChunkedDecode($body)
-    {
-        if (!isset($this->_headers['Transfer-Encoding']) || stripos($this->_headers['Transfer-Encoding'], 'chunked') === false) {
-            return $body;
-        }
-        $stream = fopen('data://text/plain;base64,' . base64_encode($body), 'r');
-        stream_filter_append($stream, 'dechunk');
-        return trim(stream_get_contents($stream));
-    }
-
-    /**
      * Magic method to convert object to string.
      *
      * @return string
      */
     public function toString()
     {
-        $protocol = $this->protocol();
-        $status = "{$protocol} {$this->_status[0]} {$this->status[1]}\r\n";
-        return $status . (string) $this->_headers . (string) $this->_body;
+        static::_setContentLength($this);
+        return $this->line() . "\r\n" . (string) $this->_headers . (string) $this->_body;
     }
 
     /**
@@ -205,21 +208,34 @@ class Response extends \Lead\Net\Http\Message
     public static function create($message, $options = [])
     {
         $parts = explode("\r\n\r\n", $message, 2);
-        list($headers, $body) = $parts;
-        $headers = str_replace("\r", '', explode("\n", $headers));
+        if (count($parts) < 2) {
+            throw new NetException("The CRLFCRLF separator between headers and body is missing.");
+        }
+        $response = new static($options);
 
+        list($header, $body) = $parts;
+
+        $headers = str_replace("\r", '', explode("\n", $header));
         $headers = array_filter($headers);
-        $extra['headers'] = $headers;
 
-        preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', reset($headers), $matches);
+        preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', array_shift($headers), $matches);
+
+        $response->headers()->add($headers);
+        $headers = $response->headers();
 
         if ($matches) {
-            $extra['version'] = $matches[1];
-            $extra['status'] = [$matches[2], isset($matches[3]) ? $matches[3] : ''];
+            $response->version($matches[1]);
+            $response->status([$matches[2], isset($matches[3]) ? $matches[3] : '']);
         }
 
-        $extra['body'] = $body;
-        return new static($options + $extra);
+        if (isset($headers['Transfer-Encoding']) && $headers['Transfer-Encoding']->value() === 'chunked') {
+            $stream = fopen('data://text/plain;base64,' . base64_encode($body), 'r');
+            stream_filter_append($stream, 'dechunk');
+            $body = trim(stream_get_contents($stream));
+        }
+
+        $response->plain($body);
+        return $response;
     }
 
     /**
@@ -231,20 +247,12 @@ class Response extends \Lead\Net\Http\Message
      */
     public static function toArray($response, $options = [])
     {
+        static::_setContentLength($response);
         return [
-            'status'   => $response->method(),
-            'scheme'   => $response->scheme(),
-            'version'  => $response->version(),
-            'host'     => $response->host(),
-            'port'     => $response->port(),
-            'path'     => $response->path(),
-            'username' => $response->username(),
-            'password' => $response->password(),
-            'url'      => $response->url(),
-            'headers'  => $request->headers(),
-            'stream'   => $response->stream()
+            'status'  => $response->status(),
+            'version' => $response->version(),
+            'headers' => $response->headers(),
+            'body'    => $response->stream()
         ];
     }
 }
-
-?>

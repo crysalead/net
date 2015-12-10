@@ -20,6 +20,7 @@ class Request extends \Lead\Net\Http\Message
     protected static $_formats = [
         'array'   => 'Lead\Net\Http\Request::toArray'
     ];
+
     /**
      * The method of the request, typically one of the following: `GET`, `POST`, `PUT`, `DELETE`,
      * `OPTIONS`, `HEAD`, `TRACE` or `CONNECT`.
@@ -72,14 +73,22 @@ class Request extends \Lead\Net\Http\Message
             'port'     => null,
             'username' => null,
             'password' => null,
-            'method' => 'GET',
+            'method'   => 'GET',
             'path'     => '',
-            'query' => [],
-            'auth' => null
+            'query'    => [],
+            'auth'     => null,
+            'cookies'  => []
         ];
         $config += $defaults;
 
         parent::__construct($config);
+
+        if (!isset($this->_headers['User-Agent'])) {
+            $this->_headers->add('User-Agent: Mozilla/5.0', true);
+        }
+        if (!isset($this->_headers['Connection'])) {
+            $this->_headers->add('Connection: Close', true);
+        }
 
         $this->scheme($config['scheme']);
         $this->port($config['port']);
@@ -89,15 +98,22 @@ class Request extends \Lead\Net\Http\Message
         $this->method($config['method']);
         $this->path($config['path']);
         $this->query($config['query']);
-
-        if (!isset($this->_headers['Connection'])) {
-            $this->_headers['Connection'] = 'Close';
-        }
-        if (!isset($this->_headers['User-Agent'])) {
-            $this->_headers['User-Agent'] = 'Mozilla/5.0';
-        }
-
         $this->auth($config['auth']);
+
+        $cookies = $this->headers()->cookies();
+        foreach ($config['cookies'] as $key => $value) {
+            $cookies[$key] = $value;
+        }
+    }
+
+    /**
+     * Returns the status line.
+     *
+     * @return string
+     */
+    public function line()
+    {
+        return $this->method() . ' ' . $this->fullPath() . ' ' . $this->protocol();
     }
 
     /**
@@ -136,7 +152,6 @@ class Request extends \Lead\Net\Http\Message
         if ($scheme::registered($name)) {
             return $scheme::port($name);
         }
-        return $this->_port;
     }
 
     /**
@@ -297,28 +312,16 @@ class Request extends \Lead\Net\Http\Message
     }
 
     /**
-     * Magic method to convert object to string.
+     * Auto adds a Content-Length header if necessary.
      *
-     * @return string
+     * @param object $request
      */
-    public function toString()
-    {
-        static::_setContentLength($this);
-        $status = $this->method() . ' ' . $this->fullPath() . ' ' . $this->protocol() . "\r\n";
-        return $status . (string) $this->_headers . (string) $this->_body;
-    }
-
     public static function _setContentLength($request)
     {
-        $headers = $request->headers();
-        if (isset($headers['Content-Length']) || in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
+        if (in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
             return;
         }
-        $length = $request->stream()->length();
-        if ($length === null) {
-            throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
-        }
-        $headers['Content-Length'] = $request->stream()->length();
+        parent::_setContentLength($request);
     }
 
     /**
@@ -342,7 +345,7 @@ class Request extends \Lead\Net\Http\Message
             'username' => $request->username(),
             'password' => $request->password(),
             'url'      => $request->url(),
-            'headers'  => $request->headers()->data(),
+            'headers'  => $request->headers(),
             'stream'   => $request->stream()
         ];
     }

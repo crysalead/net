@@ -7,7 +7,7 @@ use Lead\Net\NetException;
 /**
  * HTTP Message class
  */
-class Message extends \Lead\Net\Message
+abstract class Message extends \Lead\Net\Message
 {
     /**
      * HTTP protocol version number
@@ -48,10 +48,9 @@ class Message extends \Lead\Net\Message
         ];
         $config = Set::merge($defaults, $config);
 
-        parent::__construct($config);
+        $this->_classes = $config['classes'];
 
         $this->version($config['version']);
-
         $this->headers($config['headers']);
 
         if ($config['type']) {
@@ -62,6 +61,8 @@ class Message extends \Lead\Net\Message
         if ($config['encoding']) {
             $this->encoding($config['encoding']);
         }
+
+        parent::__construct($config);
     }
 
     /**
@@ -101,7 +102,7 @@ class Message extends \Lead\Net\Message
             if (!isset($this->_headers['Content-Type'])) {
                 return;
             }
-            list($type) = explode(';', $this->_headers['Content-Type']->data(), 2);
+            list($type) = explode(';', $this->_headers['Content-Type']->value(), 2);
             return $type;
         }
 
@@ -128,7 +129,7 @@ class Message extends \Lead\Net\Message
             }
             return;
         }
-        $value = $this->_headers['Content-Type']->data();
+        $value = $this->_headers['Content-Type']->value();
 
         preg_match('/([-\w\/\.+]+)(;\s*?charset=(.+))?/i', $value, $matches);
 
@@ -180,4 +181,66 @@ class Message extends \Lead\Net\Message
         return $type ? $media::decode($type, (string) $this->_body) : (string) $this->_body;
     }
 
+    /**
+     * Magic method to convert object to string.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        static::_setContentLength($this);
+        $headers = $this->headers();
+        if (isset($headers['Transfer-Encoding']) && $headers['Transfer-Encoding']->value() === 'chunked') {
+            $content = '';
+            $this->toChunks(function($chunk) use (&$content) { $content .= $chunk; });
+            return $content;
+        }
+        return $this->line() . "\r\n" . (string) $this->_headers . (string) $this->_body;
+    }
+
+    /**
+     * Flushes the content of a Message chunk by chunk.
+     *
+     * @param Closure $closure The process closure.
+     * @param Closure $size    The size of the chunks to process.
+     */
+    public function toChunks($closure, $size = 256)
+    {
+        $stream = $this->stream();
+        $headers = $this->line() . "\r\n" . (string) $this->_headers;
+        $closure($headers, strlen($headers));
+        while($chunk = $stream->read($size)) {
+            $readed = strlen($chunk);
+            $closure(dechex($readed) . "\r\n" . $chunk . "\r\n", $readed);
+        }
+        $closure("0\r\n", 0);
+        if ($stream->seekable()) {
+            $stream->rewind();
+        }
+    }
+
+    /**
+     * Auto adds a Content-Length header if necessary.
+     *
+     * @param object $request
+     */
+    public static function _setContentLength($request)
+    {
+        $headers = $request->headers();
+        if (isset($headers['Content-Length']) || isset($headers['Transfer-Encoding']) && $headers['Transfer-Encoding']->value() === 'chunked') {
+            return;
+        }
+        $length = $request->stream()->length();
+        if ($length === null) {
+            throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
+        }
+        $headers['Content-Length'] = $request->stream()->length();
+    }
+
+    /**
+     * Returns the request/status line of the message.
+     *
+     * @return string
+     */
+    abstract public function line();
 }

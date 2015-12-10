@@ -11,7 +11,7 @@ use Lead\Collection\Collection;
 class Headers extends \Lead\Net\Headers
 {
     /**
-     * Contains all exportable formats and their handler
+     * Contains all exportable formats and their handler.
      *
      * @var array
      */
@@ -21,9 +21,23 @@ class Headers extends \Lead\Net\Headers
     ];
 
     /**
+     * Contains cookies.
+     *
+     * @var object
+     */
+    public $_cookie = null;
+
+    /**
+     * Contains set-cookies.
+     *
+     * @var object
+     */
+    public $_setCookie = null;
+
+    /**
      * The constructor
      *
-     * @param array $data The data
+     * @param array $config The config array.
      */
     public function __construct($config = [])
     {
@@ -45,11 +59,11 @@ class Headers extends \Lead\Net\Headers
      */
     public function cookies()
     {
-        if (!isset($this->_data['cookie'])) {
+        if (!$this->_cookie) {
             $cookies = $this->_classes['cookies'];
-            $this->_data['cookie'] = new $cookies();
+            $this->_cookie = new $cookies();
         }
-        return $this->_data['cookie'];
+        return $this->_cookie;
 
     }
 
@@ -60,11 +74,11 @@ class Headers extends \Lead\Net\Headers
      */
     public function setCookies()
     {
-        if (!isset($this->_data['set-cookie'])) {
+        if (!$this->_setCookie) {
             $setCookies = $this->_classes['set-cookies'];
-            $this->_data['set-cookie'] = new $setCookies();
+            $this->_setCookie = new $setCookies();
         }
-        return $this->_data['set-cookie'];
+        return $this->_setCookie;
     }
 
     /**
@@ -108,17 +122,15 @@ class Headers extends \Lead\Net\Headers
         }
         $name = strtolower($parsed->name());
         if ($name === 'cookie') {
-            $cookies = $this->_classes['cookies'];
+            $cookies = $this->cookies();
             foreach ($parsed as $cookie) {
                 $cookie = $cookies::parseCookie($cookie);
-                $this->cookies()[$cookie['name']] = $cookie['value'];
+                $cookies[$cookie['name']] = $cookie['value'];
             }
         } elseif ($name === 'set-cookie') {
-            $setCookies = $this->_classes['set-cookies'];
-            foreach ($parsed as $setCookie) {
-                $setCookie = $setCookies::parseSetCookie($setCookie);
-                $this->setCookies()[$setCookie['name']] = $setCookie;
-            }
+            $setCookies = $this->setCookies();
+            $setCookie = $setCookies::parseSetCookie($parsed->value());
+            $setCookies[$setCookie['name']] = $setCookie;
         } else {
             if ($prepend) {
                 $this->_data = [$name => $parsed] + $this->_data;
@@ -138,6 +150,12 @@ class Headers extends \Lead\Net\Headers
         $data = [];
         foreach ($headers as $key => $header) {
             $data[] = $header->to('header');
+        }
+        if ($cookies = $headers->cookies()->to('header')) {
+            $data[] = $cookies;
+        }
+        if ($setCookies = $headers->setCookies()->to('header')) {
+            $data[] = $setCookies;
         }
         return $data ? join("\r\n", $data) . "\r\n\r\n" : '';
     }

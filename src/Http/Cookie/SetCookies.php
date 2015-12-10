@@ -192,7 +192,7 @@ class SetCookies extends \Lead\Collection\Collection
         $config['domain'] = isset($infos['host']) ? $infos['host'] : null;
 
         if (isset($infos['path'])) {
-            $config['path'] = substr($infos['path'], 0, strrpos($infos['path'], '/') + 1);
+            $config['path'] = substr($infos['path'], 0, strrpos($infos['path'], '/') + 1) ?: null;
         }
 
         $parts = explode(';', $value);
@@ -255,7 +255,7 @@ class SetCookies extends \Lead\Collection\Collection
         $data = $cookie->data();
 
         $parts = [];
-        $parts[] = $name . '=' . urlencode($data['value']);
+        $parts[] = $name . '=' . rawurlencode($data['value']);
 
         if (isset($data['max-age'])) {
             $parts[] = 'Max-Age=' . (string) $data['max-age'];

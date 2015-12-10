@@ -71,13 +71,23 @@ class Header extends \Lead\Collection\Collection
     }
 
     /**
-     * Gets the headers as an array.
+     * Gets the header's value.
+     *
+     * @return array Returns the headers.
+     */
+    public function value()
+    {
+        return join(', ', $this->_data);
+    }
+
+    /**
+     * Exports the header as an array.
      *
      * @return array Returns the headers.
      */
     public function data()
     {
-        return join(', ', $this->_data);
+        return $this->_data;
     }
 
     /**

@@ -23,6 +23,22 @@ describe("Request", function() {
 
         });
 
+        it("sets cookies", function() {
+
+            $request = new Request([
+                'cookies' => [
+                    'foo' => 'bar',
+                    'bar' => 'foo'
+                ]
+            ]);
+
+            expect($request->headers()->cookies()->data())->toEqual([
+                'foo' => 'bar',
+                'bar' => 'foo'
+            ]);
+
+        });
+
     });
 
     describe("->scheme()", function() {
@@ -261,18 +277,47 @@ describe("Request", function() {
             $request = new Request([
                 'method'  => 'POST',
                 'type'    => 'application/x-www-form-urlencoded',
-                'body'    => 'name1=value1&name2=value2'
+                'body'    => ['name1' => 'value1', 'name2' => 'value2']
             ]);
 
             $expected =<<<EOD
 POST / HTTP/1.1\r
 Host: localhost\r
-Content-Type: application/x-www-form-urlencoded\r
 Connection: Close\r
 User-Agent: Mozilla/5.0\r
+Content-Type: application/x-www-form-urlencoded\r
 Content-Length: 25\r
 \r
 name1=value1&name2=value2
+EOD;
+
+            expect($request->toString())->toBe($expected);
+
+        });
+
+        it("generates chunks when the Transfer-Encoding header is setted to chunked", function() {
+
+            $request = new Request([
+                'method'  => 'POST',
+                'headers' => [
+                    'Transfer-Encoding: chunked'
+                ],
+                'type'    => 'application/x-www-form-urlencoded',
+                'body'    => ['name1' => 'value1', 'name2' => 'value2']
+            ]);
+
+            $expected =<<<EOD
+POST / HTTP/1.1\r
+Host: localhost\r
+Connection: Close\r
+User-Agent: Mozilla/5.0\r
+Transfer-Encoding: chunked\r
+Content-Type: application/x-www-form-urlencoded\r
+\r
+19\r
+name1=value1&name2=value2\r
+0\r
+
 EOD;
 
             expect($request->toString())->toBe($expected);
@@ -288,7 +333,7 @@ EOD;
                 $request = new Request([
                     'method' => 'POST',
                     'type'   => 'application/x-www-form-urlencoded',
-                    'body'   => $stream
+                    'plain'  => $stream
                 ]);
                 $request->toString();
             };
@@ -319,11 +364,11 @@ EOD;
             $expected =<<<EOD
 GET / HTTP/1.1\r
 Host: localhost\r
+Connection: Close\r
+User-Agent: Mozilla/5.0\r
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
 Content-Type: text/html; charset=UTF-8\r
 Vary: Accept-Encoding, Cookie, User-Agent\r
-Connection: Close\r
-User-Agent: Mozilla/5.0\r
 \r
 Body Message
 EOD;
@@ -351,11 +396,7 @@ EOD;
                 'username' => null,
                 'password' => null,
                 'url'      => 'http://localhost/',
-                'headers'  => [
-                    'Host: localhost',
-                    'Connection: Close',
-                    'User-Agent: Mozilla/5.0'
-                ],
+                'headers'  => $request->headers(),
                 'stream'   => $request->stream()
             ]);
 
@@ -383,11 +424,7 @@ EOD;
                 'username' => 'username',
                 'password' => 'password',
                 'url'      => 'http://username:password@www.domain.com/index.php',
-                'headers'  => [
-                    'Host: www.domain.com',
-                    'Connection: Close',
-                    'User-Agent: Mozilla/5.0'
-                ],
+                'headers'  => $request->headers(),
                 'stream'   => $request->stream()
             ]);
 

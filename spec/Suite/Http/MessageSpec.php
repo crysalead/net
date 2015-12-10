@@ -2,8 +2,14 @@
 namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
-use Lead\Net\Http\Message;
 use Lead\Net\Http\Headers;
+
+use Kahlan\Plugin\Stub;
+
+function Message($config = []) {
+    $message = Stub::classname(['extends' => 'Lead\Net\Http\Message']);
+    return new $message($config);
+}
 
 describe("Message", function() {
 
@@ -11,7 +17,7 @@ describe("Message", function() {
 
         it("sets default values", function() {
 
-            $message = new Message([
+            $message = Message([
                 'type'     => 'text/plain',
                 'encoding' => 'UTF-8'
             ]);
@@ -24,7 +30,7 @@ describe("Message", function() {
 
         it("parses passed headers", function() {
 
-            $message = new Message(['headers' => [
+            $message = Message(['headers' => [
                 'User-Agent: Mozilla/5.0',
                 'Cache-Control: no-cache'
             ]]);
@@ -46,7 +52,7 @@ EOD;
 
         it("returns the protocol", function() {
 
-            $message = new Message();
+            $message = Message();
             expect($message->protocol())->toBe('HTTP/1.1');
 
         });
@@ -56,14 +62,14 @@ EOD;
 
         it("returns the protocol version", function() {
 
-            $message = new Message();
+            $message = Message();
             expect($message->version())->toBe('1.1');
 
         });
 
         it("gets/sets the protocol version", function() {
 
-            $message = new Message();
+            $message = Message();
             $message->version('1.0');
             expect($message->version())->toBe('1.0');
 
@@ -74,7 +80,7 @@ EOD;
 
         it("gets/sets the content type ", function() {
 
-            $message = new Message();
+            $message = Message();
             expect($message->type('application/json'))->toBe($message);
             expect($message->type())->toBe('application/json');
 
@@ -85,17 +91,17 @@ EOD;
 
         it("returns the content type initialized using headers", function() {
 
-            $message = new Message(['headers' => [
+            $message = Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
             expect($message->type())->toBe('application/json');
-            expect($message->headers()['Content-Type']->data())->toBe('application/json; charset=UTF-8');
+            expect($message->headers()['Content-Type']->value())->toBe('application/json; charset=UTF-8');
 
         });
 
         it("removes the content type ", function() {
 
-            $message = new Message();
+            $message = Message();
             expect($message->type('application/json'))->toBe($message);
             expect($message->type())->toBe('application/json');
 
@@ -110,7 +116,7 @@ EOD;
 
         it("gets/sets the content type charset encoding", function() {
 
-            $message = new Message(['headers' => [
+            $message = Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
             expect($message->encoding())->toBe('UTF-8');
@@ -121,7 +127,7 @@ EOD;
 
         it("returns `null` when no encoding has been defined", function() {
 
-            $message = new Message();
+            $message = Message();
             expect($message->encoding())->toBe(null);
 
         });
@@ -129,7 +135,7 @@ EOD;
         it("throws an exception when no Content-Type has been defined", function() {
 
             $closure = function() {
-                $message = new Message();
+                $message = Message();
                 $message->encoding('UTF-8');
             };
 
@@ -143,17 +149,16 @@ EOD;
 
         beforeEach(function() {
             $this->headers = <<<EOD
-Custom-Header: Custom Value
+Custom-Header: Custom Value\r
+\r
 
 EOD;
         });
 
         it("sets headers as a string", function() {
 
-            $message = new Message(['headers' => $this->headers]);
-            expect($message->headers()->data())->toBe([
-                'Custom-Header: Custom Value'
-            ]);
+            $message = Message(['headers' => $this->headers]);
+            expect($message->headers()->to('header'))->toBe($this->headers);
 
         });
 
@@ -162,10 +167,8 @@ EOD;
             $headers = new Headers();
             $headers->add($this->headers);
 
-            $message = new Message(['headers' => $headers]);
-            expect($message->headers()->data())->toBe([
-                'Custom-Header: Custom Value'
-            ]);
+            $message = Message(['headers' => $headers]);
+            expect($message->headers()->to('header'))->toBe($this->headers);
 
         });
 
@@ -175,7 +178,7 @@ EOD;
 
         it("endodes according to the Content-Type", function() {
 
-            $message = new Message();
+            $message = Message();
             $message->type("application/json");
 
             expect($message->body(""))->toBe($message);
@@ -188,7 +191,7 @@ EOD;
 
         it("decodes according to the Content-Type", function() {
 
-            $message = new Message();
+            $message = Message();
             $message->type("application/json");
 
             expect($message->plain('""'))->toBe($message);

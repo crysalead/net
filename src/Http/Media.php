@@ -183,7 +183,7 @@ class Media
         $handler = is_array($handler) ? $handler : static::handlers($handler);
 
         if (!$handler || empty($handler['encode'])) {
-            return;
+            return $data;
         }
 
         $cast = function($data) {
@@ -214,7 +214,7 @@ class Media
     public static function decode($type, $data, $options = [])
     {
         if ((!$handler = static::handlers($type)) || empty($handler['decode'])) {
-            return;
+            return $data;
         }
         $method = $handler['decode'];
         return is_string($method) ? $method($data) : $method($data, $handler + $options);
@@ -230,9 +230,16 @@ class Media
     public static function handlers($type = null)
     {
         $handlers = static::$_handlers + [
-            'default' => [],
-            'application/json' => [
+            'default' => [
                 'cast' => true,
+                'decode' => function($s) {
+                    return (string) $s;
+                },
+                'encode' => function($s) {
+                    return (string) $s;
+                }
+            ],
+            'application/json' => [
                 'encode' => 'json_encode',
                 'decode' => function($data) {
                     if ($data === '') {
@@ -241,13 +248,7 @@ class Media
                     return json_decode($data, true);
                 }
             ],
-            'text/plain' => [
-                'encode' => function($s) {
-                    return (string) $s;
-                }
-            ],
-            'form' => [
-                'cast' => true,
+            'application/x-www-form-urlencoded' => [
                 'encode' => 'http_build_query',
                 'decode' => function($data) {
                     $decoded = array();
@@ -258,7 +259,7 @@ class Media
         ];
 
         if ($type) {
-            return isset($handlers[$type]) ? $handlers[$type] : null;
+            return isset($handlers[$type]) ? $handlers[$type] + $handlers['default'] : null;
         }
         return $handlers;
     }
