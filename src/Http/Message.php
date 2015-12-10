@@ -204,8 +204,9 @@ abstract class Message extends \Lead\Net\Message
      * @param Closure $closure The process closure.
      * @param Closure $size    The size of the chunks to process.
      */
-    public function toChunks($closure, $size = 256)
+    public function toChunks($closure, $size = null)
     {
+        $size = $size > 0 ? $size : $this->chunkSize();
         $stream = $this->stream();
         $headers = $this->line() . "\r\n" . (string) $this->_headers;
         $closure($headers, strlen($headers));

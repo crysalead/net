@@ -23,53 +23,18 @@ class Message
     protected $_classes = [];
 
     /**
-     * The communication protocol
-     *
-     * @var boolean
-     */
-    protected $_scheme = 'tcp';
-
-    /**
-     * The port number, `null` for auto.
-     *
-     * @var integer
-     */
-    protected $_port = null;
-
-    /**
-     * The hostname.
-     *
-     * @var string
-     */
-    protected $_host = 'localhost';
-
-    /**
-     * The username.
-     *
-     * @var boolean
-     */
-    protected $_username = null;
-
-    /**
-     * The password.
-     *
-     * @var string
-     */
-    protected $_password = null;
-
-    /**
-     * Absolute path of the message.
-     *
-     * @var string
-     */
-    protected $_path = '/';
-
-    /**
      * The string body of the message.
      *
      * @var string
      */
     protected $_body = '';
+
+    /**
+     * Default chunk size
+     *
+     * @var array
+     */
+    protected $_chunkSize = 256;
 
     /**
      * Constructor.
@@ -87,9 +52,10 @@ class Message
     public function __construct($config = [])
     {
         $defaults = [
-            'body'     => '',
-            'plain'    => null,
-            'classes'  => [
+            'body'      => '',
+            'plain'     => null,
+            'chunkSize' => 256,
+            'classes'   => [
                 'scheme'  => 'Lead\Net\Scheme',
                 'stream'  => 'Lead\Storage\Stream\Stream'
             ]
@@ -97,6 +63,8 @@ class Message
         $config = Set::merge($defaults, $config);
 
         $this->_classes = $config['classes'];
+
+        $this->chunkSize($config['chunkSize']);
 
         if ($config['plain'] !== null) {
             $this->plain($config['plain']);
@@ -149,6 +117,21 @@ class Message
         } else {
             $this->_body = new $stream(['data' => $value] + $options);
         }
+        return $this;
+    }
+
+    /**
+     * Gets/sets the chunk size.
+     *
+     * @param  integer     $chunkSize The chunk size.
+     * @return string|self
+     */
+    public function chunkSize($chunkSize = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_chunkSize;
+        }
+        $this->_chunkSize = $chunkSize;
         return $this;
     }
 

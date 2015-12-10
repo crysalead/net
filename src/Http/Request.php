@@ -30,6 +30,48 @@ class Request extends \Lead\Net\Http\Message
     protected $_method = 'GET';
 
     /**
+     * The communication protocol
+     *
+     * @var boolean
+     */
+    protected $_scheme = 'http';
+
+    /**
+     * The port number, `null` for auto.
+     *
+     * @var integer
+     */
+    protected $_port = null;
+
+    /**
+     * The hostname.
+     *
+     * @var string
+     */
+    protected $_host = 'localhost';
+
+    /**
+     * The username.
+     *
+     * @var boolean
+     */
+    protected $_username = null;
+
+    /**
+     * The password.
+     *
+     * @var string
+     */
+    protected $_password = null;
+
+    /**
+     * Absolute path of the message.
+     *
+     * @var string
+     */
+    protected $_path = '/';
+
+    /**
      * Key/value pairs found encoded in the URL after the '?'.
      *
      * @var array
