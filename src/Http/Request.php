@@ -23,6 +23,13 @@ class Request extends \Lead\Net\Http\Message
     ];
 
     /**
+     * The request's mode.
+     *
+     * @var string
+     */
+    protected $_mode = null;
+
+    /**
      * The method of the request, typically one of the following: `GET`, `POST`, `PUT`, `DELETE`,
      * `OPTIONS`, `HEAD`, `TRACE` or `CONNECT`.
      *
@@ -121,6 +128,7 @@ class Request extends \Lead\Net\Http\Message
             'query'         => [],
             'auth'          => null,
             'cookies'       => [],
+            'mode'          => 'origin',
             'classes' => [
                 'headers' => 'Lead\Net\Http\RequestHeaders'
             ]
@@ -136,6 +144,7 @@ class Request extends \Lead\Net\Http\Message
             $this->headers()->add('Connection: Close', true);
         }
 
+        $this->mode($config['mode']);
         $this->scheme($config['scheme']);
         $this->port($config['port']);
         $this->host($config['host']);
@@ -153,13 +162,28 @@ class Request extends \Lead\Net\Http\Message
     }
 
     /**
+     * Gets/sets the request's mode.
+     *
+     * @param  string      $mode The mode of the message
+     * @return string|self
+     */
+    public function mode($mode = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_mode;
+        }
+        $this->_mode = $mode;
+        return $this;
+    }
+
+    /**
      * Returns the status line.
      *
      * @return string
      */
     public function line()
     {
-        return $this->method() . ' ' . $this->fullPath() . ' ' . $this->protocol();
+        return $this->method() . ' ' . $this->requestTarget() . ' ' . $this->protocol();
     }
 
     /**
@@ -261,7 +285,7 @@ class Request extends \Lead\Net\Http\Message
     }
 
     /**
-     * Returns the message url.
+     * Returns the message URI.
      *
      * @return string
      */
@@ -277,16 +301,25 @@ class Request extends \Lead\Net\Http\Message
 
         $port = $port ? ':' . $port : '';
         $scheme = $name ? $name . '://' : '//';
-        $credentials = '';
-        if ($username = $this->username()) {
-            $credentials = $username;
-            if ($password = $this->password()) {
-                $credentials .= ':' . $password;
-            }
-            $credentials .= '@';
-        }
+        $credential = $this->credential();
+        return $scheme . ($credential ? $credential. '@' : '') . $this->host() . $port . $this->path();
+    }
 
-        return $scheme . $credentials . $this->host() . $port . $this->path();
+    /**
+     * Returns the credential.
+     *
+     * @return string|null The credential string.
+     */
+    public function credential()
+    {
+        if (!$username = $this->username()) {
+            return '';
+        }
+        $credentials = $username;
+        if ($password = $this->password()) {
+            $credentials .= ':' . $password;
+        }
+        return $credentials;
     }
 
     /**
@@ -307,12 +340,19 @@ class Request extends \Lead\Net\Http\Message
     }
 
     /**
-     * Returns the path appended with the query string.
+     * Returns the request target present in the status line.
      *
      * @return string
      */
-    public function fullPath()
+    public function requestTarget()
     {
+        if ($this->method() === 'CONNECT') {
+            $credential = $this->credential();
+            return ($credential ? $credential. '@' : '') . $this->host();
+        }
+        if ($this->mode() === 'absolute') {
+            return $this->url();
+        }
         $query = $this->query() ? '?' . http_build_query($this->query()) : '';
         return $this->path() . $query;
     }
@@ -394,5 +434,28 @@ class Request extends \Lead\Net\Http\Message
             'headers'  => $request->headers(),
             'stream'   => $request->stream()
         ];
+    }
+
+    /**
+     * Method aliases
+     */
+    public function getScheme()
+    {
+        return $this->scheme();
+    }
+
+    public function getHost()
+    {
+        return $this->host();
+    }
+
+    public function getMethod()
+    {
+        return $this->method();
+    }
+
+    public function getRequestTarget()
+    {
+        return $this->requestTarget();
     }
 }

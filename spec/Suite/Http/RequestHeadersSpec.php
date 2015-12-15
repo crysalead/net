@@ -262,4 +262,17 @@ EOD;
 
     });
 
+    describe("->clear()", function() {
+
+        it("clears headers", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            expect(isset($this->headers['Content-Type']))->toBe(true);
+
+            $this->headers->clear();
+            expect(isset($this->headers['Content-Type']))->toBe(false);
+        });
+
+    });
+
 });

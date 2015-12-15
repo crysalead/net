@@ -208,6 +208,43 @@ describe("Request", function() {
 
     });
 
+    describe("->mode()", function() {
+
+        it("sets the request mode", function() {
+
+            $request = new Request([
+                'scheme'   => 'http',
+                'host'     => 'www.domain.com',
+                'port'     => 80,
+                'username' => 'username',
+                'password' => 'password',
+                'path'     => 'index.php'
+            ]);
+            expect($request->line())->toBe('GET /index.php HTTP/1.1');
+
+            $request->mode('absolute');
+            expect($request->line())->toBe('GET http://username:password@www.domain.com/index.php HTTP/1.1');
+
+        });
+
+    });
+
+    describe("->requestTarget()", function() {
+
+        it("sets the request mode", function() {
+
+            $request = new Request([
+                'method'   => 'CONNECT',
+                'host'     => 'www.domain.com',
+                'username' => 'username',
+                'password' => 'password',
+                'path'     => 'index.php'
+            ]);
+            expect($request->line())->toBe('CONNECT username:password@www.domain.com HTTP/1.1');
+
+        });
+
+    });
 
     describe("->query()", function() {
 
@@ -218,7 +255,7 @@ describe("Request", function() {
             expect($request->query(['param' => 'value', 'param1' => 'value1']))->toBe($request);
             expect($request->query())->toBe(['param' => 'value', 'param1' => 'value1']);
 
-            expect($request->fullPath())->toBe('/?param=value&param1=value1');
+            expect($request->requestTarget())->toBe('/?param=value&param1=value1');
 
         });
 
@@ -340,6 +377,62 @@ EOD;
 
 
             expect($closure)->toThrow(new NetException('A Content-Length header is required but the request stream has a `null` length.'));
+
+        });
+
+    });
+
+    describe("->getScheme()", function() {
+
+        it("delegates to `->scheme()`", function() {
+
+            $request = new Request();
+
+            expect($request)->toReceive('scheme');
+
+            $request->getScheme();
+
+        });
+
+    });
+
+    describe("->getHost()", function() {
+
+        it("delegates to `->host()`", function() {
+
+            $request = new Request();
+
+            expect($request)->toReceive('host');
+
+            $request->getHost();
+
+        });
+
+    });
+
+    describe("->getMethod()", function() {
+
+        it("delegates to `->method()`", function() {
+
+            $request = new Request();
+
+            expect($request)->toReceive('method');
+
+            $request->getMethod();
+
+        });
+
+    });
+
+    describe("->getRequestTarget()", function() {
+
+        it("delegates to `->path()`", function() {
+
+            $request = new Request();
+
+            expect($request)->toReceive('requestTarget');
+
+            $request->getRequestTarget();
 
         });
 
