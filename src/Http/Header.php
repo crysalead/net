@@ -4,7 +4,7 @@ namespace Lead\Net\Http;
 use Exception;
 
 /**
- * Collection of Header values.
+ * HTTP Header.
  */
 class Header extends \Lead\Collection\Collection
 {
@@ -23,7 +23,14 @@ class Header extends \Lead\Collection\Collection
      *
      * @var string
      */
-    protected $_name = null;
+    protected $_name = '';
+
+    /**
+     * The plain header value.
+     *
+     * @var string
+     */
+    protected $_plain = '';
 
     /**
      * The constructor
@@ -32,13 +39,23 @@ class Header extends \Lead\Collection\Collection
      */
     public function __construct($config = [])
     {
-        if (isset($config['data'])) {
-            $config['data'] = $config['data'] !== null ? (array) $config['data'] : [];
+        $defaults = [
+            'name' => '',
+            'data' => ''
+        ];
+        $config += $defaults;
+
+        $config['data'] = is_array($config['data']) ? join(',', $config['data']) : $config['data'];
+
+        $this->_name = $config['name'];
+        $this->_plain = $config['data'];
+
+        if (!empty($this->_plain)) {
+            $config['data'] = array_map('trim', explode(',', $this->_plain));
+        } else {
+            $config['data'] = [];
         }
         parent::__construct($config);
-        if (isset($config['name'])) {
-            $this->_name = $config['name'];
-        }
     }
 
     /**
@@ -68,6 +85,16 @@ class Header extends \Lead\Collection\Collection
             throw new Exception("Invalid index, should be numeric or empty.");
         }
         return $name === null ? $this->_data[] = $value : $this->_data[$name] = $value;
+    }
+
+    /**
+     * Gets the plain header's value.
+     *
+     * @return array Returns the headers.
+     */
+    public function plain()
+    {
+        return $this->_plain;
     }
 
     /**
@@ -112,11 +139,10 @@ class Header extends \Lead\Collection\Collection
         if (count($values) !== 2) {
             return;
         }
-        $data = array_map('trim', explode(',', $values[1]));
 
         return new static([
-            'name'  => $values[0],
-            'data' => $data
+            'name' => $values[0],
+            'data' => trim($values[1])
         ]);
     }
 

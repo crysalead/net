@@ -4,6 +4,7 @@ namespace Lead\Net\Http;
 use UnexpectedValueException;
 use Lead\Net\NetException;
 use Lead\Text\Text;
+use Lead\Set\Set;
 use Lead\Net\Scheme;
 
 /**
@@ -110,26 +111,29 @@ class Request extends \Lead\Net\Http\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'scheme'   => 'http',
-            'host'     => 'localhost',
-            'port'     => null,
-            'username' => null,
-            'password' => null,
-            'method'   => 'GET',
-            'path'     => '',
-            'query'    => [],
-            'auth'     => null,
-            'cookies'  => []
+            'scheme'        => 'http',
+            'host'          => 'localhost',
+            'port'          => null,
+            'username'      => null,
+            'password'      => null,
+            'method'        => 'GET',
+            'path'          => '',
+            'query'         => [],
+            'auth'          => null,
+            'cookies'       => [],
+            'classes' => [
+                'headers' => 'Lead\Net\Http\RequestHeaders'
+            ]
         ];
-        $config += $defaults;
+        $config = Set::merge($defaults, $config);
 
         parent::__construct($config);
 
         if (!isset($this->_headers['User-Agent'])) {
-            $this->_headers->add('User-Agent: Mozilla/5.0', true);
+            $this->headers()->add('User-Agent: Mozilla/5.0', true);
         }
         if (!isset($this->_headers['Connection'])) {
-            $this->_headers->add('Connection: Close', true);
+            $this->headers()->add('Connection: Close', true);
         }
 
         $this->scheme($config['scheme']);

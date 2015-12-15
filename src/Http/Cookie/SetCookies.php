@@ -87,7 +87,7 @@ class SetCookies extends \Lead\Collection\Collection
         if (!$value instanceof $cookie) {
             throw new Exception("Error, only `{$cookie}` instances are allowed in this collection.");
         }
-        $hash = $name . $value->domain() . $value->path();
+        $hash = $name . ';' . $value->domain() . ';' . $value->path();
         $this->_hashes[$name][] = $hash;
         $this->_names[$hash] = $name;
 
@@ -106,12 +106,40 @@ class SetCookies extends \Lead\Collection\Collection
         $data = [];
 
         if (!isset($this->_hashes[$name])) {
-            throw new Exception("Unexisting set-cookie name `'{$name}'`.");
+            throw new Exception("Unexisting set-cookie `'{$name}'`.");
         }
         foreach ($this->_hashes[$name] as $key => $hash) {
             $data[] = $this->_data[$hash];
         }
         return $data;
+    }
+
+    /**
+     * Checks if a set-cookie of a specific name exists.
+     *
+     * @param  string  $name The cookie name.
+     * @return boolean
+     */
+    public function offsetExists($name)
+    {
+        return isset($this->_hashes[$name]);
+    }
+
+    /**
+     * Removes all set-cookies of a specific name.
+     *
+     * @param string $name The cookie name.
+     */
+    public function offsetUnset($name)
+    {
+        if (!isset($this->_hashes[$name])) {
+            return;
+        }
+        foreach ($this->_hashes[$name] as $hash) {
+            unset($this->_data[$hash]);
+            unset($this->_names[$hash]);
+        }
+        unset($this->_hashes[$name]);
     }
 
     /**
@@ -182,7 +210,7 @@ class SetCookies extends \Lead\Collection\Collection
      * @param  string $url   The URL of the response.
      * @return array         The cookie data array.
      */
-    public static function parseSetCookie($value, $url = null)
+    public static function parse($value, $url = null)
     {
         $config = [];
 

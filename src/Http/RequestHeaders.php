@@ -6,9 +6,9 @@ use Lead\Set\Set;
 use Lead\Collection\Collection;
 
 /**
- * Collection of Headers.
+ * Collection of HTTP Headers.
  */
-class Headers extends \Lead\Net\Headers
+class RequestHeaders extends \Lead\Net\Headers
 {
     /**
      * Contains all exportable formats and their handler.
@@ -17,7 +17,7 @@ class Headers extends \Lead\Net\Headers
      */
     protected static $_formats = [
         'array'  => 'Lead\Collection\Collection::toArray',
-        'header' => 'Lead\Net\Http\Headers::toHeader'
+        'header' => 'Lead\Net\Http\RequestHeaders::toHeader'
     ];
 
     /**
@@ -26,13 +26,6 @@ class Headers extends \Lead\Net\Headers
      * @var object
      */
     public $_cookie = null;
-
-    /**
-     * Contains set-cookies.
-     *
-     * @var object
-     */
-    public $_setCookie = null;
 
     /**
      * The constructor
@@ -44,8 +37,7 @@ class Headers extends \Lead\Net\Headers
         $defaults = [
             'classes' => [
                 'header'      => 'Lead\Net\Http\Header',
-                'cookies'     => 'Lead\Net\Http\Cookie\Cookies',
-                'set-cookies' => 'Lead\Net\Http\Cookie\SetCookies'
+                'cookies'     => 'Lead\Net\Http\Cookie\Cookies'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -64,21 +56,6 @@ class Headers extends \Lead\Net\Headers
             $this->_cookie = new $cookies();
         }
         return $this->_cookie;
-
-    }
-
-    /**
-     * Returns the set-cookie collection.
-     *
-     * @return object
-     */
-    public function setCookies()
-    {
-        if (!$this->_setCookie) {
-            $setCookies = $this->_classes['set-cookies'];
-            $this->_setCookie = new $setCookies();
-        }
-        return $this->_setCookie;
     }
 
     /**
@@ -90,6 +67,7 @@ class Headers extends \Lead\Net\Headers
      */
     public function add($values, $prepend = false)
     {
+        $header = $this->_classes['header'];
         $headers = is_string($values) ? explode("\n", $values) : $values;
 
         foreach ($headers as $key => $value) {
@@ -103,41 +81,41 @@ class Headers extends \Lead\Net\Headers
             if (!$value = trim($value)) {
                 continue;
             }
-            $this->_add($value, $prepend);
-        }
-        return $this;
-    }
 
-    /**
-     * Pushes an header.
-     *
-     * @param string  $value   The header to add.
-     * @param boolean $prepend If true, prepend headers to the beginning.
-     */
-    protected function _add($value, $prepend)
-    {
-        $header = $this->_classes['header'];
-        if (!$parsed = $header::parse($value)) {
-            throw new NetException("Invalid HTTP header: `'{$value}'`.");
-        }
-        $name = strtolower($parsed->name());
-        if ($name === 'cookie') {
-            $cookies = $this->cookies();
-            foreach ($parsed as $cookie) {
-                $cookie = $cookies::parseCookie($cookie);
-                $cookies[$cookie['name']] = $cookie['value'];
+            if (!$parsed = $header::parse($value)) {
+                throw new NetException("Invalid HTTP header: `'{$value}'`.");
             }
-        } elseif ($name === 'set-cookie') {
-            $setCookies = $this->setCookies();
-            $setCookie = $setCookies::parseSetCookie($parsed->value());
-            $setCookies[$setCookie['name']] = $setCookie;
-        } else {
+            $name = strtolower($parsed->name());
+
+            if ($this->_addCookie($name, $parsed)) {
+                continue;
+            }
             if ($prepend) {
                 $this->_data = [$name => $parsed] + $this->_data;
             } else {
                 $this->_data = array_merge($this->_data, [$name => $parsed]);
             }
         }
+        return $this;
+    }
+
+    /**
+     * Adds a Cookie header.
+     *
+     * @param  string  $name    The header name.
+     * @param  string  $header  The header instance.
+     * @return boolean          Returns `true` if a cookie has been added, `false otherwise`.
+     */
+    protected function _addCookie($name, $header)
+    {
+        if ($name !== 'cookie') {
+            return false;
+        }
+        $cookies = $this->cookies();
+        foreach ($cookies::parse($header->plain()) as $cookie) {
+            $cookies[$cookie['name']] = $cookie['value'];
+        }
+        return true;
     }
 
     /**
@@ -153,9 +131,6 @@ class Headers extends \Lead\Net\Headers
         }
         if ($cookies = $headers->cookies()->to('header')) {
             $data[] = $cookies;
-        }
-        if ($setCookies = $headers->setCookies()->to('header')) {
-            $data[] = $setCookies;
         }
         return $data ? join("\r\n", $data) . "\r\n\r\n" : '';
     }

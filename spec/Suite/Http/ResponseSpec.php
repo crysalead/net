@@ -32,13 +32,13 @@ describe("Response", function() {
         it("sets set-cookies", function() {
 
             $response = new Response([
-                'setCookies' => [
+                'cookies' => [
                     'foo' => 'bar',
                     'bar' => 'foo'
                 ]
             ]);
 
-            expect($response->headers()->setCookies()->data())->toEqual([
+            expect($response->headers()->cookies()->data())->toEqual([
                 'foo' => [
                     [
                         'value'    => 'bar',
@@ -174,11 +174,11 @@ EOD;
                 ],
                 'body' => ['hello' => 'world']
             ]);
-            $setCookies = $response->headers()->setCookies();
+            $cookies = $response->headers()->cookies();
 
-            $setCookies['foo'] = 'bar';
-            $setCookies['bin'] = 'baz';
-            $setCookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
+            $cookies['foo'] = 'bar';
+            $cookies['bin'] = 'baz';
+            $cookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
 
             $expected = <<<EOD
 HTTP/1.1 200 OK\r
@@ -245,7 +245,7 @@ EOD;
                 ]
             ];
             $response = Response::create($message);
-            expect($response->headers()->setCookies()->data())->toBe($cookies);
+            expect($response->headers()->cookies()->data())->toBe($cookies);
             expect((string) $response)->toBe($message);
 
         });

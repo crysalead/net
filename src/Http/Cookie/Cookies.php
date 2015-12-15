@@ -2,6 +2,7 @@
 namespace Lead\Net\Http\Cookie;
 
 use Exception;
+use Generator;
 use Lead\Set\Set;
 
 /**
@@ -15,6 +16,20 @@ class Cookies extends \Lead\Collection\Collection
      * @var array
      */
     protected $_classes = [];
+
+    /**
+     * Hashes to names map.
+     *
+     * @var array
+     */
+    protected $_names = [];
+
+    /**
+     * Map to hashes map.
+     *
+     * @var array
+     */
+    protected $_hashes = [];
 
     /**
      * Contains all exportable formats and their handler
@@ -62,22 +77,95 @@ class Cookies extends \Lead\Collection\Collection
         if (!$value instanceof $cookie) {
             throw new Exception("Error, only `{$cookie}` instances are allowed in this collection.");
         }
-        return $this->_data[$name] = $value;
+
+        $hash = spl_object_hash($value);
+        $this->_hashes[$name][] = $hash;
+        $this->_names[$hash] = $name;
+
+        return $this->_data[$hash] = $value;
     }
 
     /**
-     * Parses a Cookie header string value.
+     * Checks if a cookie of a specific name exists.
      *
-     * @param  string $header A single Cookie header string value.
-     * @return array          The data array.
+     * @param  string  $name The cookie name.
+     * @return boolean
      */
-    public static function parseCookie($value)
+    public function offsetExists($name)
     {
-        $config = [];
-        list($config['name'], $value) = explode('=', $value);
-        $config['value'] = urldecode($value);
+        return isset($this->_hashes[$name]);
+    }
 
-        return $config;
+    /**
+     * Removes all cookies of a specific name.
+     *
+     * @param string $name The cookie name.
+     */
+    public function offsetUnset($name)
+    {
+        if (!isset($this->_hashes[$name])) {
+            return;
+        }
+        foreach ($this->_hashes[$name] as $hash) {
+            unset($this->_data[$hash]);
+            unset($this->_names[$hash]);
+        }
+        unset($this->_hashes[$name]);
+    }
+
+    /**
+     * Gets a cookie.
+     *
+     * @see http://tools.ietf.org/html/rfc6265, section 5.4.2
+     * @see Cookies with longer paths are listed before cookies with shorter paths.
+     *
+     * @param  string $name  The cookie name.
+     * @return object        The first cookie occurrence matching the required name.
+     */
+    public function offsetGet($name)
+    {
+        if (!isset($this->_hashes[$name])) {
+            throw new Exception("Unexisting cookie `'{$name}'`.");
+        }
+        return $this->_data[reset($this->_hashes[$name])];
+    }
+
+    /**
+     * Returns the key of the current item.
+     *
+     * @return scalar Scalar on success or `null` on failure.
+     */
+    public function key()
+    {
+        $hash = key($this->_data);
+        return $this->_names[$hash];
+    }
+
+    /**
+     * Returns the item keys.
+     *
+     * @return array The keys of the items.
+     */
+    public function keys()
+    {
+        return array_keys($this->_hashes);
+    }
+
+    /**
+     * Parses a Cookie header value.
+     *
+     * @param  string    $header A Cookie header value.
+     * @return Generator         A generator.
+     */
+    public static function parse($value)
+    {
+        $cookies = explode(';', $value);
+        foreach ($cookies as $cookie) {
+            list($name, $value) = explode('=', $cookie);
+            $name = trim($name);
+            $value = urldecode($value);
+            yield compact('name', 'value');
+        }
     }
 
     /**

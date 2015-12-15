@@ -2,6 +2,7 @@
 namespace Lead\Net\Http;
 
 use Lead\Net\NetException;
+use Lead\Set\Set;
 
 /**
  * Parses and stores the status, headers and body of an HTTP response.
@@ -83,24 +84,28 @@ class Response extends \Lead\Net\Http\Message
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options:
-     *                      - `'status'`  _mixed_ : null
+     *                      - `'status'`  _mixed_ : The response status (default: `[]`).
+     *                      - `'cookies'` _array_ : set-cookie definition (default: `[]`).
      */
     public function __construct($config = [])
     {
         $defaults = [
-            'status'     => [],
-            'setCookies' => []
+            'status'        => [],
+            'cookies'       => [],
+            'classes' => [
+                'headers' => 'Lead\Net\Http\ResponseHeaders'
+            ]
         ];
-        $config += $defaults;
+        $config = Set::merge($defaults, $config);
 
         parent::__construct($config);
 
         if ($config['status']) {
             $this->status($config['status']);
         }
-        $setCookies = $this->headers()->setCookies();
-        foreach ($config['setCookies'] as $key => $value) {
-            $setCookies[$key] = $value;
+        $cookies = $this->headers()->cookies();
+        foreach ($config['cookies'] as $key => $value) {
+            $cookies[$key] = $value;
         }
     }
 

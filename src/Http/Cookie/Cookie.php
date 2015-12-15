@@ -4,7 +4,7 @@ namespace Lead\Net\Http\Cookie;
 use Exception;
 
 /**
- * SetCookie value definition.
+ * Cookie value definition.
  *
  * @see http://curl.haxx.se/rfc/cookie_spec.html
  */

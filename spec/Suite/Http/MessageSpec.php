@@ -2,13 +2,17 @@
 namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
-use Lead\Net\Http\Headers;
+use Lead\Net\Http\RequestHeaders;
 
 use Kahlan\Plugin\Stub;
 
 function Message($config = []) {
     $message = Stub::classname(['extends' => 'Lead\Net\Http\Message']);
-    return new $message($config);
+    return new $message($config + [
+        'classes' => [
+            'headers' => 'Lead\Net\Http\RequestHeaders'
+        ]
+    ]);
 }
 
 describe("Message", function() {
@@ -23,7 +27,7 @@ describe("Message", function() {
             ]);
 
             $headers = $message->headers();
-            expect($headers)->toBeAnInstanceOf(Headers::class);
+            expect($headers)->toBeAnInstanceOf(RequestHeaders::class);
             expect((string) $headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
 
         });
@@ -42,7 +46,7 @@ Cache-Control: no-cache\r
 
 EOD;
 
-            expect(Headers::toHeader($message->headers()))->toBe($expected);
+            expect(RequestHeaders::toHeader($message->headers()))->toBe($expected);
 
         });
 
@@ -164,7 +168,7 @@ EOD;
 
         it("sets headers as an object", function() {
 
-            $headers = new Headers();
+            $headers = new RequestHeaders();
             $headers->add($this->headers);
 
             $message = Message(['headers' => $headers]);

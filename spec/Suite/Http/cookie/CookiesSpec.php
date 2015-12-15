@@ -43,6 +43,15 @@ describe("Cookies", function() {
 
         });
 
+        it("throws an exception for trying to get an unexisting cookie", function() {
+
+            $closure = function() {
+                $this->cookies['foo'];
+            };
+            expect($closure)->toThrow(new Exception("Unexisting cookie `'foo'`."));
+
+        });
+
         it("throws an exception with invalid names", function() {
 
             foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
@@ -53,6 +62,53 @@ describe("Cookies", function() {
                 expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
 
             }
+
+        });
+
+    });
+
+    describe("->offsetExists()", function() {
+
+        it('checks if a cookie exists', function() {
+
+            expect(isset($this->cookies['foo']))->toBe(false);
+
+            $this->cookies['foo'] = 'bar';
+            expect(isset($this->cookies['foo']))->toBe(true);
+
+        });
+
+    });
+
+    describe("->offsetUnset()", function() {
+
+        it('unsets all cookies', function() {
+
+            $this->cookies['foo'] = 'bar';
+            expect(isset($this->cookies['foo']))->toBe(true);
+
+            unset($this->cookies['foo']);
+            expect(isset($this->cookies['foo']))->toBe(false);
+
+        });
+
+        it('bails out on unexisting cookie', function() {
+
+            unset($this->cookies['foo']);
+            expect(isset($this->cookies['foo']))->toBe(false);
+
+        });
+
+    });
+
+    describe("->keys()", function() {
+
+        it('returns existing cookie names', function() {
+
+            $this->cookies['foo'] = 'bar';
+            $this->cookies['baz'] = 'foo';
+
+            expect($this->cookies->keys())->toBe(['foo', 'baz']);
 
         });
 
@@ -94,12 +150,20 @@ describe("Cookies", function() {
 
         it("create a cookie from an HTTP header", function() {
 
-            $data = Cookies::parseCookie('mycookie=the+cookie+value');
+            $generator = Cookies::parse('mycookie=the+cookie+value; mycookie2=the+cookie2+value');
 
-            $this->expect($data)->toBe([
+            $this->expect($generator->current())->toBe([
                 'name'     => 'mycookie',
                 'value'    => 'the cookie value'
             ]);
+
+            $generator->next();
+
+            $this->expect($generator->current())->toBe([
+                'name'     => 'mycookie2',
+                'value'    => 'the cookie2 value'
+            ]);
+
 
         });
 

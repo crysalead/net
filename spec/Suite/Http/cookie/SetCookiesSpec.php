@@ -55,7 +55,7 @@ describe("SetCookies", function() {
             $closure = function() {
                 $this->setCookies['foo'];
             };
-            expect($closure)->toThrow(new Exception("Unexisting set-cookie name `'foo'`."));
+            expect($closure)->toThrow(new Exception("Unexisting set-cookie `'foo'`."));
 
         });
 
@@ -69,6 +69,53 @@ describe("SetCookies", function() {
                 expect($closure)->toThrow(new Exception("Invalid set-cookie name `'ab{$invalid}ba'`."));
 
             }
+
+        });
+
+    });
+
+    describe("->offsetExists()", function() {
+
+        it('checks if a cookie exists', function() {
+
+            expect(isset($this->setCookies['foo']))->toBe(false);
+
+            $this->setCookies['foo'] = 'bar';
+            expect(isset($this->setCookies['foo']))->toBe(true);
+
+        });
+
+    });
+
+    describe("->offsetUnset()", function() {
+
+        it('unsets all cookies', function() {
+
+            $this->setCookies['foo'] = 'bar';
+            expect(isset($this->setCookies['foo']))->toBe(true);
+
+            unset($this->setCookies['foo']);
+            expect(isset($this->setCookies['foo']))->toBe(false);
+
+        });
+
+        it('bails out on unexisting cookie', function() {
+
+            unset($this->setCookies['foo']);
+            expect(isset($this->setCookies['foo']))->toBe(false);
+
+        });
+
+    });
+
+    describe("->keys()", function() {
+
+        it('returns existing cookie names', function() {
+
+            $this->setCookies['foo'] = 'bar';
+            $this->setCookies['baz'] = 'foo';
+
+            expect($this->setCookies->keys())->toBe(['foo', 'baz']);
 
         });
 
@@ -158,7 +205,7 @@ describe("SetCookies", function() {
 
         it("parses a cookie from an HTTP header", function() {
 
-            $data = SetCookies::parseSetCookie(
+            $data = SetCookies::parse(
                 'mycookie=the+cookie+value; Expires=Thu, 25 Dec 2014 00:00:00 GMT; Path=/blog; Domain=.domain.com; Secure; HttpOnly'
             );
 

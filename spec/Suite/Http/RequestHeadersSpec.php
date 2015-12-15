@@ -4,12 +4,12 @@ namespace Lead\Net\Spec\Suite\Http;
 use Exception;
 use Lead\Net\NetException;
 use Lead\Net\Http\Header;
-use Lead\Net\Http\Headers;
+use Lead\Net\Http\RequestHeaders;
 
-describe("Headers", function() {
+describe("RequestHeaders", function() {
 
     beforeEach(function() {
-        $this->headers = new Headers();
+        $this->headers = new RequestHeaders();
     });
 
     describe("->offsetGet()/->offsetSet()", function() {
@@ -163,7 +163,7 @@ Vary: Accept-Encoding, Cookie, User-Agent\r
 
 EOD;
 
-            $headers = new Headers();
+            $headers = new RequestHeaders();
             $headers->add($header);
             expect((string) $headers)->toBe($header);
 
@@ -193,7 +193,7 @@ EOD;
 
         it("adds a collection of headers from an header string", function() {
 
-            $headers = new Headers();
+            $headers = new RequestHeaders();
             $headers->add($this->expected);
 
             expect($headers->to('header'))->toBe($this->expected);
@@ -202,7 +202,7 @@ EOD;
 
         it("adds a collection of headers from an array of headers", function() {
 
-            $headers = new Headers();
+            $headers = new RequestHeaders();
             $headers->add([
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
@@ -215,7 +215,7 @@ EOD;
 
         it("adds a collection of headers from an array of key/value", function() {
 
-            $headers = new Headers();
+            $headers = new RequestHeaders();
             $headers->add([
                 'Date' => 'Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type' => 'text/html; charset=UTF-8',
@@ -238,27 +238,15 @@ EOD;
 
         it("adds cookies", function() {
 
-            $this->headers->add('Cookie: foo1=bar1, foo2=bar2, foo3=bar3');
+            $this->headers->add('Cookie: foo1=bar1; foo2=bar2; foo3=bar3');
             expect((string) $this->headers)->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3\r\n\r\n");
 
         });
 
-        it("adds set-cookies", function() {
+        it("adds cookies", function() {
 
-            $this->headers->add('Set-Cookie: foo1=bar1; Path=/');
-            $this->headers->add('Set-Cookie: foo2=bar2; Path=/');
-            $this->headers->add('Set-Cookie: foo3=bar3; Path=/');
-
-
-            $expected =<<<EOD
-Set-Cookie: foo1=bar1; Path=/\r
-Set-Cookie: foo2=bar2; Path=/\r
-Set-Cookie: foo3=bar3; Path=/\r
-\r
-
-EOD;
-
-            expect((string) $this->headers)->toBe($expected);
+            $this->headers->add('Cookie: foo1=bar1; foo1=bar2; foo1=bar3');
+            expect((string) $this->headers)->toBe("Cookie: foo1=bar1, foo1=bar2, foo1=bar3\r\n\r\n");
 
         });
 

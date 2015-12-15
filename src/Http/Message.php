@@ -35,13 +35,12 @@ abstract class Message extends \Lead\Net\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'version'  => '1.1',
-            'type'     => null,
-            'encoding' => null,
-            'headers'  => [],
-            'classes'  => [
+            'version'       => '1.1',
+            'type'          => null,
+            'encoding'      => null,
+            'headers'       => [],
+            'classes'       => [
                 'auth'    => 'Lead\Net\Http\Auth',
-                'headers' => 'Lead\Net\Http\Headers',
                 'media'   => 'Lead\Net\Http\Media',
                 'stream'  => 'Lead\Storage\Stream\Stream'
             ]
