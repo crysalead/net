@@ -105,7 +105,7 @@ describe("Cookies", function() {
 
     });
 
-    describe("::toCookie()", function() {
+    describe("::toHeader()", function() {
 
         it('generates HTTP Cookie header', function() {
 
@@ -114,14 +114,14 @@ describe("Cookies", function() {
             $cookies['foo2'] = 'bar2';
             $cookies['foo3'] = 'bar3';
 
-            expect(Cookies::toCookie($cookies))->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3");
+            expect(Cookies::toHeader($cookies))->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3");
 
         });
 
         it("encodes values", function() {
 
             $cookie = new Cookie('the cookie value');
-            $this->expect(Cookies::toCookie(['mycookie' => $cookie]))->toBe("Cookie: mycookie=the+cookie+value");
+            $this->expect(Cookies::toHeader(['mycookie' => $cookie]))->toBe("Cookie: mycookie=the+cookie+value");
 
         });
 
@@ -131,7 +131,7 @@ describe("Cookies", function() {
 
                 $closure = function() use ($invalid) {
                     $cookie = new Cookie('foo');
-                    Cookies::toCookie(["ab{$invalid}ba" => $cookie]);
+                    Cookies::toHeader(["ab{$invalid}ba" => $cookie]);
                 };
                 expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
 

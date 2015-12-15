@@ -4,7 +4,7 @@ namespace Lead\Net\Http\Cookie;
 use Exception;
 
 /**
- * Jar parser
+ * Jar parser.
  */
 class Jar
 {

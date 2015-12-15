@@ -2,7 +2,7 @@
 namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
-use Lead\Net\Http\Cookie\SetCookie;
+use Lead\Net\Http\Cookie\Cookie;
 use Lead\Net\Http\Cookie\SetCookies;
 
 describe("SetCookies", function() {
@@ -36,7 +36,7 @@ describe("SetCookies", function() {
 
         it("adds a cookie using an instance", function() {
 
-            $this->setCookies['foo'] = new SetCookie('bar');
+            $this->setCookies['foo'] = new Cookie('bar');
             expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
@@ -46,7 +46,7 @@ describe("SetCookies", function() {
             $closure = function() {
                 $this->setCookies['foo'] = (object) 'bar';
             };
-            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\SetCookie` instances are allowed in this collection.'));
+            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\Cookie` instances are allowed in this collection.'));
 
         });
 
@@ -176,7 +176,7 @@ describe("SetCookies", function() {
 
     });
 
-    describe("::toSetCookie()", function() {
+    describe("::toHeader()", function() {
 
         it('generates a SetCookie HTTP headers', function() {
 
@@ -185,7 +185,7 @@ describe("SetCookies", function() {
             $cookies['foo2'] = 'bar2';
             $cookies['foo3'] = 'bar3';
 
-            expect(SetCookies::toSetCookie($cookies))->toBe(join("\r\n", [
+            expect(SetCookies::toHeader($cookies))->toBe(join("\r\n", [
                 'Set-Cookie: foo1=bar1; Path=/',
                 'Set-Cookie: foo2=bar2; Path=/',
                 'Set-Cookie: foo3=bar3; Path=/'
@@ -198,7 +198,7 @@ describe("SetCookies", function() {
             $nextYear = date('Y') + 1;
             $expires = strtotime("{$nextYear}-12-25 00:00:00 UTC");
 
-            $cookie = new SetCookie('the cookie value', [
+            $cookie = new Cookie('the cookie value', [
                 'expires'  => $expires,
                 'path'     => '/blog',
                 'domain'   => '.domain.com',
@@ -208,7 +208,7 @@ describe("SetCookies", function() {
             ]);
 
             $date = gmdate('D, d M Y H:i:s \G\M\T', $expires);
-            $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
+            $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
                 "Set-Cookie: mycookie=the%20cookie%20value; Expires={$date}; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
             );
 
@@ -216,7 +216,7 @@ describe("SetCookies", function() {
 
         it("generates a custom SetCookie HTTP header using Max-Age instead of Expires", function() {
 
-            $cookie = new SetCookie('the cookie value', [
+            $cookie = new Cookie('the cookie value', [
                 'path'     => '/blog',
                 'domain'   => '.domain.com',
                 'max-age'  => '3600',
@@ -224,7 +224,7 @@ describe("SetCookies", function() {
                 'httponly' => true
             ]);
 
-            $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
+            $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
                 "Set-Cookie: mycookie=the%20cookie%20value; Max-Age=3600; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
             );
 
@@ -232,9 +232,9 @@ describe("SetCookies", function() {
 
         it("ignores not setted values but Path", function() {
 
-            $cookie = new SetCookie('the cookie value');
+            $cookie = new Cookie('the cookie value');
 
-            $this->expect(SetCookies::toSetCookie(['mycookie' => $cookie]))->toBe(
+            $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
                 "Set-Cookie: mycookie=the%20cookie%20value; Path=/"
             );
 
@@ -245,8 +245,8 @@ describe("SetCookies", function() {
             foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
 
                 $closure = function() use ($invalid) {
-                    $cookie = new SetCookie('foo');
-                    SetCookies::toSetCookie(["ab{$invalid}ba" => $cookie]);
+                    $cookie = new Cookie('foo');
+                    SetCookies::toHeader(["ab{$invalid}ba" => $cookie]);
                 };
                 expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
 

@@ -23,7 +23,7 @@ class Cookies extends \Lead\Collection\Collection
      */
     protected static $_formats = [
         'array'  => 'Lead\Net\Http\cookie\Cookies::toArray',
-        'header' => 'Lead\Net\Http\cookie\Cookies::toCookie'
+        'header' => 'Lead\Net\Http\cookie\Cookies::toHeader'
     ];
 
     /**
@@ -86,7 +86,7 @@ class Cookies extends \Lead\Collection\Collection
      * @param  object $cookies A `Cookies` collection.
      * @return string
      */
-    public static function toCookie($cookies)
+    public static function toHeader($cookies)
     {
         $parts = [];
         foreach ($cookies as $name => $cookie) {

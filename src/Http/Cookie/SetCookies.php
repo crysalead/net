@@ -5,7 +5,7 @@ use Exception;
 use Lead\Set\Set;
 
 /**
- * Collection of `SetCookie`.
+ * Collection of `Set-Cookie`.
  */
 class SetCookies extends \Lead\Collection\Collection
 {
@@ -37,7 +37,7 @@ class SetCookies extends \Lead\Collection\Collection
      */
     protected static $_formats = [
         'array'  => 'Lead\Net\Http\Cookie\SetCookies::toArray',
-        'header' => 'Lead\Net\Http\Cookie\SetCookies::toSetCookie'
+        'header' => 'Lead\Net\Http\Cookie\SetCookies::toHeader'
     ];
 
     /**
@@ -61,7 +61,7 @@ class SetCookies extends \Lead\Collection\Collection
             'path'    => '/',
             'classes' => [
                 'header' => 'Lead\Net\Http\Header',
-                'cookie' => 'Lead\Net\Http\Cookie\SetCookie'
+                'cookie' => 'Lead\Net\Http\Cookie\Cookie'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -228,7 +228,7 @@ class SetCookies extends \Lead\Collection\Collection
      * @param  object $cookies A `SetCookies` collection.
      * @return string
      */
-    public static function toSetCookie($setCookies)
+    public static function toHeader($setCookies)
     {
         $parts = [];
         foreach ($setCookies as $name => $cookie) {
