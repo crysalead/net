@@ -12,14 +12,14 @@ describe("Request", function() {
         it("sets default host header", function() {
 
             $request = new Request(['host' => 'www.domain.com', 'port'  => 80]);
-            expect((string) $request->headers()['Host'])->toBe('Host: www.domain.com');
+            expect((string) $request->headers['Host'])->toBe('Host: www.domain.com');
 
         });
 
         it("sets non default port number on host header", function() {
 
             $request = new Request(['host' => 'www.domain.com', 'port'  => 90]);
-            expect((string) $request->headers()['Host'])->toBe('Host: www.domain.com:90');
+            expect((string) $request->headers['Host'])->toBe('Host: www.domain.com:90');
 
         });
 
@@ -32,10 +32,60 @@ describe("Request", function() {
                 ]
             ]);
 
-            expect($request->headers()->cookies()->data())->toEqual([
+            expect($request->headers->cookies->data())->toEqual([
                 'foo' => 'bar',
                 'bar' => 'foo'
             ]);
+
+        });
+
+    });
+
+    describe("::create()", function() {
+
+        it("parses absolute url", function() {
+
+            $request = Request::create('https://username:password@www.domain.com:8000/foo?bar=baz#quz');
+            expect($request->data())->toEqual([
+                'method'   => 'GET',
+                'scheme'   => 'https',
+                'version'  => '1.1',
+                'host'     => 'www.domain.com:8000',
+                'port'     => 8000,
+                'path'     => '/foo',
+                'query'    => '?bar=baz',
+                'fragment' => 'quz',
+                'username' => 'username',
+                'password' => 'password',
+                'url'      => 'https://www.domain.com:8000/foo?bar=baz#quz',
+                'stream'   => $request->stream()
+            ]);
+
+        });
+
+        it("throw an exception when the passed url is invalid", function() {
+
+            $closure = function() {
+                Request::create('/relative/url');
+            };
+
+            expect($closure)->toThrow(new NetException("Invalid url: `'/relative/url'`."));
+
+        });
+
+    });
+
+    describe("->host()", function() {
+
+        it("sets the host", function() {
+
+            $request = new Request();
+            $request->host('www.example.com:8000');
+
+            expect($request->host())->toBe('www.example.com:8000');
+            expect($request->hostname())->toBe('www.example.com');
+            expect($request->port())->toBe('8000');
+            expect((string) $request->headers['Host'])->toBe('Host: www.example.com:8000');
 
         });
 
@@ -184,11 +234,9 @@ describe("Request", function() {
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
                 'port'     => 80,
-                'username' => 'username',
-                'password' => 'password',
                 'path'     => 'index.php'
             ]);
-            expect($request->url())->toBe('http://username:password@www.domain.com/index.php');
+            expect($request->url())->toBe('http://www.domain.com/index.php');
 
         });
 
@@ -198,11 +246,9 @@ describe("Request", function() {
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
                 'port'     => 8080,
-                'username' => 'username',
-                'password' => 'password',
                 'path'     => 'index.php'
             ]);
-            expect($request->url())->toBe('http://username:password@www.domain.com:8080/index.php');
+            expect($request->url())->toBe('http://www.domain.com:8080/index.php');
 
         });
 
@@ -210,20 +256,32 @@ describe("Request", function() {
 
     describe("->mode()", function() {
 
-        it("sets the request mode", function() {
+        it("sets the absolute request mode", function() {
 
             $request = new Request([
                 'scheme'   => 'http',
                 'host'     => 'www.domain.com',
-                'port'     => 80,
-                'username' => 'username',
-                'password' => 'password',
                 'path'     => 'index.php'
             ]);
             expect($request->line())->toBe('GET /index.php HTTP/1.1');
 
             $request->mode('absolute');
-            expect($request->line())->toBe('GET http://username:password@www.domain.com/index.php HTTP/1.1');
+            expect($request->line())->toBe('GET http://www.domain.com/index.php HTTP/1.1');
+
+        });
+
+        it("sets the asterisk mode", function() {
+
+            $request = new Request([
+                'scheme'   => 'http',
+                'host'     => 'www.domain.com',
+                'path'     => 'index.php'
+            ]);
+            expect($request->line())->toBe('GET /index.php HTTP/1.1');
+
+            $request->method('OPTIONS');
+            $request->mode('asterisk');
+            expect($request->line())->toBe('OPTIONS * HTTP/1.1');
 
         });
 
@@ -241,6 +299,9 @@ describe("Request", function() {
                 'path'     => 'index.php'
             ]);
             expect($request->line())->toBe('CONNECT username:password@www.domain.com HTTP/1.1');
+
+            $request->port(8000);
+            expect($request->line())->toBe('CONNECT username:password@www.domain.com:8000 HTTP/1.1');
 
         });
 
@@ -270,7 +331,7 @@ describe("Request", function() {
                 'password' => 'Boy',
                 'auth'     => 'Basic'
             ]);
-            expect((string) $request->headers()['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
+            expect((string) $request->headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
 
         });
 
@@ -287,7 +348,7 @@ describe("Request", function() {
                 ]
             ]);
 
-            expect((string) $request->headers()['Authorization'])->toMatch('~^Authorization: Digest~');
+            expect((string) $request->headers['Authorization'])->toMatch('~^Authorization: Digest~');
 
         });
 
@@ -298,10 +359,33 @@ describe("Request", function() {
                 'password' => 'Boy',
                 'auth'     => 'Basic'
             ]);
-            expect((string) $request->headers()['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
+            expect((string) $request->headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
 
             $request->auth(false);
-            expect(isset($request->headers()['Authorization']))->toBe(false);
+            expect(isset($request->headers['Authorization']))->toBe(false);
+
+        });
+
+    });
+
+    context("through ->headers()", function() {
+
+        beforeEach(function() {
+            $this->request = new Request();
+            $this->headers = $this->request->headers;
+        });
+
+        it("sets Cookie value", function() {
+
+            $this->headers['Cookie'] = 'foo1=bar1; foo2=bar2; foo3=bar3';
+            expect($this->headers->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
+
+        });
+
+        it("sets Cookie value with same cookie names", function() {
+
+            $this->headers['Cookie'] = 'foo1=bar1; foo1=bar2; foo1=bar3';
+            expect($this->headers->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo1=bar2; foo1=bar3");
 
         });
 
@@ -382,57 +466,54 @@ EOD;
 
     });
 
-    describe("->getScheme()", function() {
+    describe("->to('array')", function() {
 
-        it("delegates to `->scheme()`", function() {
+        it("exports default values", function() {
 
             $request = new Request();
 
-            expect($request)->toReceive('scheme');
-
-            $request->getScheme();
+            expect($request->to('array'))->toEqual([
+                'method'   => 'GET',
+                'scheme'   => 'http',
+                'version'  => '1.1',
+                'host'     => 'localhost',
+                'port'     => 80,
+                'path'     => '/',
+                'query'    => '',
+                'fragment' => '',
+                'username' => null,
+                'password' => null,
+                'url'      => 'http://localhost/',
+                'stream'   => $request->stream()
+            ]);
 
         });
 
-    });
+        it("exports a request", function() {
 
-    describe("->getHost()", function() {
+            $request = new Request([
+                'scheme'   => 'http',
+                'host'     => 'www.domain.com',
+                'port'     => 80,
+                'username' => 'username',
+                'password' => 'password',
+                'path'     => 'index.php'
+            ]);
 
-        it("delegates to `->host()`", function() {
-
-            $request = new Request();
-
-            expect($request)->toReceive('host');
-
-            $request->getHost();
-
-        });
-
-    });
-
-    describe("->getMethod()", function() {
-
-        it("delegates to `->method()`", function() {
-
-            $request = new Request();
-
-            expect($request)->toReceive('method');
-
-            $request->getMethod();
-
-        });
-
-    });
-
-    describe("->getRequestTarget()", function() {
-
-        it("delegates to `->path()`", function() {
-
-            $request = new Request();
-
-            expect($request)->toReceive('requestTarget');
-
-            $request->getRequestTarget();
+            expect($request->to('array'))->toEqual([
+                'method'   => 'GET',
+                'scheme'   => 'http',
+                'version'  => '1.1',
+                'host'     => 'www.domain.com',
+                'port'     => 80,
+                'path'     => '/index.php',
+                'query'    => '',
+                'fragment' => '',
+                'username' => 'username',
+                'password' => 'password',
+                'url'      => 'http://www.domain.com/index.php',
+                'stream'   => $request->stream()
+            ]);
 
         });
 
@@ -472,54 +553,27 @@ EOD;
 
     });
 
-    describe("->to('array')", function() {
+    describe("->__clone", function() {
 
-        it("exports default values", function() {
+        it("clones the headers but not the stream ressource", function() {
 
-            $request = new Request();
-
-            expect($request->to('array'))->toEqual([
-                'method'   => 'GET',
-                'scheme'   => 'http',
-                'version'  => '1.1',
-                'host'     => 'localhost',
-                'port'     => 80,
-                'path'     => '/',
-                'query'    => '',
-                'username' => null,
-                'password' => null,
-                'url'      => 'http://localhost/',
-                'headers'  => $request->headers(),
-                'stream'   => $request->stream()
-            ]);
+            $request = new Request(['body' => 'Body Message']);
+            $new = clone $request;
+            expect($request->headers)->not->toBe($new->headers);
+            expect($request->stream())->toBe($new->stream());
 
         });
 
-        it("exports a request", function() {
+        it("clones cookies", function() {
 
-            $request = new Request([
-                'scheme'   => 'http',
-                'host'     => 'www.domain.com',
-                'port'     => 80,
-                'username' => 'username',
-                'password' => 'password',
-                'path'     => 'index.php'
-            ]);
+            $request = new Request(['body' => 'Body Message']);
+            $cookies = $request->headers->cookies;
+            $cookies['foo'] = 'bar';
 
-            expect($request->to('array'))->toEqual([
-                'method'   => 'GET',
-                'scheme'   => 'http',
-                'version'  => '1.1',
-                'host'     => 'www.domain.com',
-                'port'     => 80,
-                'path'     => '/index.php',
-                'query'    => '',
-                'username' => 'username',
-                'password' => 'password',
-                'url'      => 'http://username:password@www.domain.com/index.php',
-                'headers'  => $request->headers(),
-                'stream'   => $request->stream()
-            ]);
+            $newRequest = clone $request;
+            $new = $newRequest->headers->cookies;
+            expect($cookies['foo'])->not->toBe($new['foo']);
+            expect($cookies['foo']->value())->toBe($new['foo']->value());
 
         });
 

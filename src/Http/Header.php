@@ -35,27 +35,26 @@ class Header extends \Lead\Collection\Collection
     /**
      * The constructor
      *
-     * @param array $data The data
+     * @param string $name  The header name
+     * @param array  $value The header value
      */
-    public function __construct($config = [])
+    public function __construct($name = '', $value = '')
     {
-        $defaults = [
-            'name' => '',
-            'data' => ''
-        ];
-        $config += $defaults;
+        if (func_num_args() === 1) {
+            $value = $name;
+            $name = '';
+        }
+        $value = is_array($value) ? join(',', $value) : $value;
 
-        $config['data'] = is_array($config['data']) ? join(',', $config['data']) : $config['data'];
-
-        $this->_name = $config['name'];
-        $this->_plain = $config['data'];
+        $this->_name = $name;
+        $this->_plain = $value;
 
         if (!empty($this->_plain)) {
-            $config['data'] = array_map('trim', explode(',', $this->_plain));
+            $data = array_map('trim', explode(',', $this->_plain));
         } else {
-            $config['data'] = [];
+            $data = [];
         }
-        parent::__construct($config);
+        parent::__construct($data);
     }
 
     /**
@@ -140,10 +139,7 @@ class Header extends \Lead\Collection\Collection
             return;
         }
 
-        return new static([
-            'name' => $values[0],
-            'data' => trim($values[1])
-        ]);
+        return new static($values[0], trim($values[1]));
     }
 
     /**

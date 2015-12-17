@@ -23,11 +23,11 @@ class Message
     protected $_classes = [];
 
     /**
-     * The string body of the message.
+     * The stream body.
      *
-     * @var string
+     * @var object
      */
-    protected $_body = '';
+    protected $_body = null;
 
     /**
      * Default chunk size
@@ -40,14 +40,9 @@ class Message
      * Constructor.
      *
      * @param array $config Available configuration options are:
-     *                      - `'scheme'`     _string_ : Transfer protocol to use (defaults `'tcp'`).
-     *                      - `'port'`       _integer_: Host port (defaults `80`).
-     *                      - `'host'`       _string_ : Host name or address (defaults `'localhost'`).
-     *                      - `'username'`   _string_ : Username (defaults `null`).
-     *                      - `'password'`   _string_ : Password (defaults `null`).
-     *                      - `'path'`       _string_ : Absolute path of the request. (defaults `'/'`).
      *                      - `'body'`       _mixed_  : The body string, resource or `storage\stream\Stream` instance
      *                                                  of the message (defaults `''`).
+     *
      */
     public function __construct($config = [])
     {
@@ -111,10 +106,10 @@ class Message
         if (func_num_args() === 0) {
             return $this->_body;
         }
-        $stream = $this->_classes['stream'];
-        if ($value instanceof $stream) {
+        if (is_object($value)) {
             $this->_body = $value;
         } else {
+            $stream = $this->_classes['stream'];
             $this->_body = new $stream(['data' => $value] + $options);
         }
         return $this;

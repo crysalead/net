@@ -3,7 +3,7 @@ namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
 use Lead\Net\Http\Cookie\Jar;
-use Lead\Net\Http\Cookie\Cookie;
+use Lead\Net\Http\Cookie\SetCookie;
 use Lead\Net\Http\Cookie\SetCookies;
 
 describe("Jar", function() {
@@ -31,7 +31,7 @@ describe("Jar", function() {
         	$nextYear = date('Y') + 1;
             $expires = strtotime("{$nextYear}-12-25 00:00:00 UTC");
 
-            $cookie = new Cookie('the cookie value', [
+            $cookie = new SetCookie('the cookie value', [
                 'expires'  => $expires,
                 'path'     => '/blog',
                 'domain'   => '.domain.com',
@@ -51,7 +51,7 @@ describe("Jar", function() {
             foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
 
                 $closure = function() use ($invalid) {
-                    $cookie = new Cookie('foo');
+                    $cookie = new SetCookie('foo');
                     Jar::toJar(["ab{$invalid}ba" => $cookie]);
                 };
                 expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));

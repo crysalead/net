@@ -9,6 +9,8 @@ use Lead\Set\Set;
  */
 class SetCookies extends \Lead\Collection\Collection
 {
+    const NAME = 'Set-Cookie';
+
     /**
      * Class dependencies
      *
@@ -56,18 +58,22 @@ class SetCookies extends \Lead\Collection\Collection
      */
     public function __construct($config = []) {
         $defaults = [
+            'data'    => [],
             'secure'  => false,
             'domain'  => null,
             'path'    => '/',
             'classes' => [
                 'header' => 'Lead\Net\Http\Header',
-                'cookie' => 'Lead\Net\Http\Cookie\Cookie'
+                'cookie' => 'Lead\Net\Http\Cookie\SetCookie'
             ]
         ];
         $config = Set::merge($defaults, $config);
         $this->_classes = $config['classes'];
-        unset($config['classes']);
         $this->_scope = $config;
+
+        foreach ($config['data'] as $key => $value) {
+            $this[$key] = $value;
+        }
     }
 
     /**
@@ -81,7 +87,7 @@ class SetCookies extends \Lead\Collection\Collection
     {
         $cookie = $this->_classes['cookie'];
         if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid set-cookie name `'{$name}'`.");
+            throw new Exception("Invalid Set-Cookie name `'{$name}'`.");
         }
         $value = $this->_autobox($value);
         if (!$value instanceof $cookie) {
@@ -106,7 +112,7 @@ class SetCookies extends \Lead\Collection\Collection
         $data = [];
 
         if (!isset($this->_hashes[$name])) {
-            throw new Exception("Unexisting set-cookie `'{$name}'`.");
+            throw new Exception("Unexisting Set-Cookie `'{$name}'`.");
         }
         foreach ($this->_hashes[$name] as $key => $hash) {
             $data[] = $this->_data[$hash];
@@ -204,11 +210,21 @@ class SetCookies extends \Lead\Collection\Collection
     }
 
     /**
+     * Clones the cookies.
+     */
+    public function __clone()
+    {
+        foreach ($this->_data as $key => $value) {
+            $this->_data[$key] = clone $value;
+        }
+    }
+
+    /**
      * Parses Set-Cookie header string value.
      *
      * @param  string $value The Set-Cookie header string value.
      * @param  string $url   The URL of the response.
-     * @return array         The cookie data array.
+     * @return array         The Set-Cookie data array.
      */
     public static function parse($value, $url = null)
     {
@@ -247,7 +263,7 @@ class SetCookies extends \Lead\Collection\Collection
                 break;
             }
         }
-        return $config;
+        return [$config];
     }
 
     /**
@@ -264,7 +280,7 @@ class SetCookies extends \Lead\Collection\Collection
                 $parts[] = static::_setCookieValue($name, $cookie);
             }
         }
-        return $parts ? 'Set-Cookie: ' . join("\r\nSet-Cookie: ", $parts) : '';
+        return $parts ? static::NAME . ': ' . join("\r\nSet-Cookie: ", $parts) : '';
     }
 
     /**
@@ -277,7 +293,7 @@ class SetCookies extends \Lead\Collection\Collection
     protected static function _setCookieValue($name, $cookie)
     {
         if (!Cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
+            throw new Exception("Invalid Set-Cookie name `'{$name}'`.");
         }
 
         $data = $cookie->data();

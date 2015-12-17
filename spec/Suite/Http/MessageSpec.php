@@ -2,18 +2,10 @@
 namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
-use Lead\Net\Http\RequestHeaders;
+use Lead\Net\Http\Message;
+use Lead\Net\Http\Headers;
 
 use Kahlan\Plugin\Stub;
-
-function Message($config = []) {
-    $message = Stub::classname(['extends' => 'Lead\Net\Http\Message']);
-    return new $message($config + [
-        'classes' => [
-            'headers' => 'Lead\Net\Http\RequestHeaders'
-        ]
-    ]);
-}
 
 describe("Message", function() {
 
@@ -21,20 +13,19 @@ describe("Message", function() {
 
         it("sets default values", function() {
 
-            $message = Message([
+            $message = new Message([
                 'type'     => 'text/plain',
                 'encoding' => 'UTF-8'
             ]);
 
-            $headers = $message->headers();
-            expect($headers)->toBeAnInstanceOf(RequestHeaders::class);
-            expect((string) $headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
+            expect($message->headers)->toBeAnInstanceOf(Headers::class);
+            expect((string) $message->headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
 
         });
 
         it("parses passed headers", function() {
 
-            $message = Message(['headers' => [
+            $message = new Message(['headers' => [
                 'User-Agent: Mozilla/5.0',
                 'Cache-Control: no-cache'
             ]]);
@@ -46,7 +37,7 @@ Cache-Control: no-cache\r
 
 EOD;
 
-            expect(RequestHeaders::toHeader($message->headers()))->toBe($expected);
+            expect(Headers::toHeader($message->headers))->toBe($expected);
 
         });
 
@@ -56,7 +47,7 @@ EOD;
 
         it("returns the protocol", function() {
 
-            $message = Message();
+            $message = new Message();
             expect($message->protocol())->toBe('HTTP/1.1');
 
         });
@@ -66,14 +57,14 @@ EOD;
 
         it("returns the protocol version", function() {
 
-            $message = Message();
+            $message = new Message();
             expect($message->version())->toBe('1.1');
 
         });
 
         it("gets/sets the protocol version", function() {
 
-            $message = Message();
+            $message = new Message();
             $message->version('1.0');
             expect($message->version())->toBe('1.0');
 
@@ -84,7 +75,7 @@ EOD;
 
         it("gets/sets the content type ", function() {
 
-            $message = Message();
+            $message = new Message();
             expect($message->type('application/json'))->toBe($message);
             expect($message->type())->toBe('application/json');
 
@@ -95,17 +86,17 @@ EOD;
 
         it("returns the content type initialized using headers", function() {
 
-            $message = Message(['headers' => [
+            $message = new Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
             expect($message->type())->toBe('application/json');
-            expect($message->headers()['Content-Type']->value())->toBe('application/json; charset=UTF-8');
+            expect($message->headers['Content-Type']->value())->toBe('application/json; charset=UTF-8');
 
         });
 
         it("removes the content type ", function() {
 
-            $message = Message();
+            $message = new Message();
             expect($message->type('application/json'))->toBe($message);
             expect($message->type())->toBe('application/json');
 
@@ -120,7 +111,7 @@ EOD;
 
         it("gets/sets the content type charset encoding", function() {
 
-            $message = Message(['headers' => [
+            $message = new Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
             expect($message->encoding())->toBe('UTF-8');
@@ -131,7 +122,7 @@ EOD;
 
         it("returns `null` when no encoding has been defined", function() {
 
-            $message = Message();
+            $message = new Message();
             expect($message->encoding())->toBe(null);
 
         });
@@ -139,7 +130,7 @@ EOD;
         it("throws an exception when no Content-Type has been defined", function() {
 
             $closure = function() {
-                $message = Message();
+                $message = new Message();
                 $message->encoding('UTF-8');
             };
 
@@ -161,18 +152,18 @@ EOD;
 
         it("sets headers as a string", function() {
 
-            $message = Message(['headers' => $this->headers]);
-            expect($message->headers()->to('header'))->toBe($this->headers);
+            $message = new Message(['headers' => $this->headers]);
+            expect($message->headers->to('header'))->toBe($this->headers);
 
         });
 
         it("sets headers as an object", function() {
 
-            $headers = new RequestHeaders();
-            $headers->add($this->headers);
+            $headers = new Headers();
+            $headers->push($this->headers);
 
-            $message = Message(['headers' => $headers]);
-            expect($message->headers()->to('header'))->toBe($this->headers);
+            $message = new Message(['headers' => $headers]);
+            expect($message->headers->to('header'))->toBe($this->headers);
 
         });
 
@@ -182,7 +173,7 @@ EOD;
 
         it("endodes according to the Content-Type", function() {
 
-            $message = Message();
+            $message = new Message();
             $message->type("application/json");
 
             expect($message->body(""))->toBe($message);
@@ -195,7 +186,7 @@ EOD;
 
         it("decodes according to the Content-Type", function() {
 
-            $message = Message();
+            $message = new Message();
             $message->type("application/json");
 
             expect($message->plain('""'))->toBe($message);
@@ -203,6 +194,18 @@ EOD;
 
             expect($message->plain('{"name":"value"}'))->toBe($message);
             expect($message->body())->toBe(['name' => 'value']);
+
+        });
+
+    });
+
+    describe("->line()", function() {
+
+        it("retuns an empty string", function() {
+
+            $message = new Message(['body' => 'Body Message']);
+
+            expect($message->line())->toBe('');
 
         });
 

@@ -16,7 +16,7 @@ describe("Response", function() {
             expect($response->data())->toBe([
                 'status'  => [200, 'OK'],
                 'version' => '1.1',
-                'headers' => $response->headers(),
+                'headers' => $response->headers,
                 'body'    => $response->stream()
             ]);
 
@@ -38,7 +38,7 @@ describe("Response", function() {
                 ]
             ]);
 
-            expect($response->headers()->cookies()->data())->toEqual([
+            expect($response->headers->cookies->data())->toEqual([
                 'foo' => [
                     [
                         'value'    => 'bar',
@@ -110,7 +110,7 @@ Pragma: no-cache\r
 
 EOD;
 
-            expect($response->headers()->to('header'))->toBe($expected);
+            expect($response->headers->to('header'))->toBe($expected);
 
         });
 
@@ -130,7 +130,7 @@ Pragma: no-cache\r
 \r
 
 EOD;
-            expect($response->headers()->to('header'))->toBe($expected);
+            expect($response->headers->to('header'))->toBe($expected);
 
         });
 
@@ -164,6 +164,30 @@ EOD;
 
     });
 
+    context("through ->headers()", function() {
+
+        it("sets Set-Cookie values", function() {
+
+            $response = new Response();
+            $response->headers['Set-Cookie'] = 'foo1=bar1; Path=/';
+            $response->headers['Set-Cookie'] = 'foo2=bar2; Path=/';
+            $response->headers['Set-Cookie'] = 'foo3=bar3; Path=/';
+
+
+            $expected =<<<EOD
+Set-Cookie: foo1=bar1; Path=/\r
+Set-Cookie: foo2=bar2; Path=/\r
+Set-Cookie: foo3=bar3; Path=/\r
+\r
+
+EOD;
+
+            expect((string) $response->headers)->toBe($expected);
+
+        });
+
+    });
+
     describe("->toString()", function() {
 
         it("casts the response as a string", function() {
@@ -174,7 +198,7 @@ EOD;
                 ],
                 'body' => ['hello' => 'world']
             ]);
-            $cookies = $response->headers()->cookies();
+            $cookies = $response->headers->cookies;
 
             $cookies['foo'] = 'bar';
             $cookies['bin'] = 'baz';
@@ -196,11 +220,37 @@ EOD;
 
     });
 
+    describe("->__clone", function() {
+
+        it("clones the headers but not the stream ressource", function() {
+
+            $response = new Response(['body' => 'Body Message']);
+            $new = clone $response;
+            expect($response->headers)->not->toBe($new->headers);
+            expect($response->stream())->toBe($new->stream());
+
+        });
+
+        it("clones cookies", function() {
+
+            $response = new Response(['body' => 'Body Message']);
+            $cookies = $response->headers->cookies;
+            $cookies['foo'] = 'bar';
+
+            $newRequest = clone $response;
+            $new = $newRequest->headers->cookies;
+            expect($cookies['foo'][0])->not->toBe($new['foo'][0]);
+            expect($cookies['foo'][0]->value())->toBe($new['foo'][0]->value());
+
+        });
+
+    });
+
     describe("::create()", function() {
 
         it("creates a response with some set-cookies", function() {
 
-            $message = join("\r\n", array(
+            $message = join("\r\n", [
                 'HTTP/1.1 200 OK',
                 'Connection: close',
                 'Content-Type: text/plain;charset=UTF8',
@@ -210,7 +260,7 @@ EOD;
                 'Set-Cookie: test=foo%2Bbin; Path=/test; Domain=.domain.com',
                 '',
                 'Test!'
-            ));
+            ]);
             $cookies = [
                 'doctor' => [
                     [
@@ -245,7 +295,7 @@ EOD;
                 ]
             ];
             $response = Response::create($message);
-            expect($response->headers()->cookies()->data())->toBe($cookies);
+            expect($response->headers->cookies->data())->toBe($cookies);
             expect((string) $response)->toBe($message);
 
         });

@@ -9,13 +9,15 @@ use Lead\Set\Set;
  */
 class Response extends \Lead\Net\Http\Message
 {
+    use Psr7\MessageTrait, Psr7\ResponseTrait;
+
     /**
      * Contains all exportable formats and their handler
      *
      * @var array
      */
     protected static $_formats = [
-        'array'   => 'Lead\Net\Http\Response::toArray'
+        'array' => 'Lead\Net\Http\Response::toArray'
     ];
 
     /**
@@ -93,7 +95,7 @@ class Response extends \Lead\Net\Http\Message
             'status'        => [],
             'cookies'       => [],
             'classes' => [
-                'headers' => 'Lead\Net\Http\ResponseHeaders'
+                'cookies' => 'Lead\Net\Http\Cookie\SetCookies'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -103,10 +105,8 @@ class Response extends \Lead\Net\Http\Message
         if ($config['status']) {
             $this->status($config['status']);
         }
-        $cookies = $this->headers()->cookies();
-        foreach ($config['cookies'] as $key => $value) {
-            $cookies[$key] = $value;
-        }
+        $cookies = $this->_classes['cookies'];
+        $this->headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**
@@ -156,11 +156,11 @@ class Response extends \Lead\Net\Http\Message
      */
     public function digest()
     {
-        if (!isset($this->_headers['WWW-Authenticate'])) {
+        if (!isset($this->headers['WWW-Authenticate'])) {
             return [];
         }
         $auth = $this->_classes['auth'];
-        return $auth::decode($this->_headers['WWW-Authenticate']);
+        return $auth::decode($this->headers['WWW-Authenticate']);
     }
 
     /**
@@ -188,7 +188,7 @@ class Response extends \Lead\Net\Http\Message
             ];
         }
         foreach ($headers as $header) {
-            $this->headers()->add($header);
+            $this->headers->push($header);
         }
     }
 
@@ -200,7 +200,7 @@ class Response extends \Lead\Net\Http\Message
     public function toString()
     {
         static::_setContentLength($this);
-        return $this->line() . "\r\n" . (string) $this->_headers . (string) $this->_body;
+        return $this->line() . "\r\n" . (string) $this->headers . (string) $this->_body;
     }
 
     /**
@@ -225,15 +225,14 @@ class Response extends \Lead\Net\Http\Message
 
         preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', array_shift($headers), $matches);
 
-        $response->headers()->add($headers);
-        $headers = $response->headers();
+        $response->headers->push($headers);
 
         if ($matches) {
             $response->version($matches[1]);
             $response->status([$matches[2], isset($matches[3]) ? $matches[3] : '']);
         }
 
-        if (isset($headers['Transfer-Encoding']) && $headers['Transfer-Encoding']->value() === 'chunked') {
+        if ($response->headers['Transfer-Encoding']->value() === 'chunked') {
             $stream = fopen('data://text/plain;base64,' . base64_encode($body), 'r');
             stream_filter_append($stream, 'dechunk');
             $body = trim(stream_get_contents($stream));
@@ -256,7 +255,7 @@ class Response extends \Lead\Net\Http\Message
         return [
             'status'  => $response->status(),
             'version' => $response->version(),
-            'headers' => $response->headers(),
+            'headers' => $response->headers,
             'body'    => $response->stream()
         ];
     }

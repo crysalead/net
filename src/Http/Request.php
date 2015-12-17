@@ -13,13 +13,15 @@ use Lead\Net\Scheme;
  */
 class Request extends \Lead\Net\Http\Message
 {
+    use Psr7\MessageTrait, Psr7\RequestTrait;
+
     /**
      * Contains all exportable formats and their handler
      *
      * @var array
      */
     protected static $_formats = [
-        'array'   => 'Lead\Net\Http\Request::toArray'
+        'array' => 'Lead\Net\Http\Request::toArray'
     ];
 
     /**
@@ -87,6 +89,13 @@ class Request extends \Lead\Net\Http\Message
     protected $_query = [];
 
     /**
+     * Fragement found in the URL after the '#'.
+     *
+     * @var array
+     */
+    protected $_fragment = '';
+
+    /**
      * Authentication type and parameters for HTTP Basic or Digest.
      *
      * Any array with a 'nonce' attribute implies Digest authentication; all other non-empty values
@@ -126,22 +135,24 @@ class Request extends \Lead\Net\Http\Message
             'method'        => 'GET',
             'path'          => '',
             'query'         => [],
+            'fragment'      => '',
             'auth'          => null,
             'cookies'       => [],
             'mode'          => 'origin',
             'classes' => [
-                'headers' => 'Lead\Net\Http\RequestHeaders'
+                'cookies' => 'Lead\Net\Http\Cookie\Cookies'
             ]
         ];
+
         $config = Set::merge($defaults, $config);
 
         parent::__construct($config);
 
-        if (!isset($this->_headers['User-Agent'])) {
-            $this->headers()->add('User-Agent: Mozilla/5.0', true);
+        if (!isset($this->headers['User-Agent'])) {
+            $this->headers->prepend('User-Agent', 'Mozilla/5.0');
         }
-        if (!isset($this->_headers['Connection'])) {
-            $this->headers()->add('Connection: Close', true);
+        if (!isset($this->headers['Connection'])) {
+            $this->headers->prepend('Connection', 'Close');
         }
 
         $this->mode($config['mode']);
@@ -153,12 +164,11 @@ class Request extends \Lead\Net\Http\Message
         $this->method($config['method']);
         $this->path($config['path']);
         $this->query($config['query']);
+        $this->fragment($config['fragment']);
         $this->auth($config['auth']);
 
-        $cookies = $this->headers()->cookies();
-        foreach ($config['cookies'] as $key => $value) {
-            $cookies[$key] = $value;
-        }
+        $cookies = $this->_classes['cookies'];
+        $this->headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**
@@ -232,7 +242,7 @@ class Request extends \Lead\Net\Http\Message
      */
     public function path($path = null)
     {
-        if (func_num_args() === 0) {
+        if (!func_num_args()) {
             return $this->_path;
         }
         $this->_path = '/' . ltrim($path, '/');
@@ -265,7 +275,7 @@ class Request extends \Lead\Net\Http\Message
         if (func_num_args() === 0) {
             return $this->_username;
         }
-        $this->_username = $username;
+        $this->_username = $username ?: null;
         return $this;
     }
 
@@ -280,7 +290,7 @@ class Request extends \Lead\Net\Http\Message
         if (func_num_args() === 0) {
             return $this->_password;
         }
-        $this->_password = $password;
+        $this->_password = $password ?: null;
         return $this;
     }
 
@@ -291,18 +301,11 @@ class Request extends \Lead\Net\Http\Message
      */
     public function url()
     {
-        $scheme = $this->_classes['scheme'];
-        $name = $this->scheme();
-        $port = $this->port();
-
-        if ($scheme::registered($name)) {
-            $port = $port === $scheme::port($name) ? null : $port;
-        }
-
-        $port = $port ? ':' . $port : '';
-        $scheme = $name ? $name . '://' : '//';
-        $credential = $this->credential();
-        return $scheme . ($credential ? $credential. '@' : '') . $this->host() . $port . $this->path();
+        $scheme = $this->scheme();
+        $scheme = $scheme ? $scheme . '://' : '//';
+        $query = $this->query() ? '?' . http_build_query($this->query()) : '';
+        $fragment = $this->fragment() ? '#' . $this->fragment() : '';
+        return $scheme . $this->host() . $this->path() . $query . $fragment;
     }
 
     /**
@@ -331,12 +334,22 @@ class Request extends \Lead\Net\Http\Message
     public function host($host = null)
     {
         if (func_num_args() === 0) {
-            return $this->_host;
+            $scheme = $this->_classes['scheme'];
+            $port = $scheme::port($this->_scheme) !== $this->_port ? $this->_port : null;
+            return ($port !== null ? "{$this->_host}:{$port}" : $this->_host);
+        }
+        if (strpos($host, ':')) {
+            list($host, $port) = explode(':', $host);
+            $this->port($port);
         }
         $this->_host = $host;
-        $port = Scheme::port($this->_scheme) !== $this->_port ? $this->_port : '';
-        $this->headers()->add('Host: ' . ($port ? "{$this->_host}:{$port}" : $this->_host), true);
+        $this->headers->prepend('Host', $this->host());
         return $this;
+    }
+
+    public function hostname()
+    {
+        return $this->_host;
     }
 
     /**
@@ -346,28 +359,35 @@ class Request extends \Lead\Net\Http\Message
      */
     public function requestTarget()
     {
-        if ($this->method() === 'CONNECT') {
+        if ($this->method() === 'CONNECT' ||  $this->mode() === 'authority') {
             $credential = $this->credential();
             return ($credential ? $credential. '@' : '') . $this->host();
         }
         if ($this->mode() === 'absolute') {
             return $this->url();
         }
+        if ($this->mode() === 'asterisk') {
+            return '*';
+        }
         $query = $this->query() ? '?' . http_build_query($this->query()) : '';
-        return $this->path() . $query;
+        $fragment = $this->fragment();
+        return $this->path() . $query . ($fragment ? '#' . $fragment : '');
     }
 
     /**
      * Sets the request authorization.
      *
-     * @param  mixed  $auth Any array with a 'nonce' attribute implies Digest authentication. Defaults to Basic authentication otherwise.
+     * @param  mixed  $auth Any array with a 'nonce' attribute implies Digest authentication.
+     *                      Defaults to Basic authentication otherwise.
      *                      If `false` the Authorization header will be removed.
      * @return mixed
      */
     public function auth($auth = true)
     {
+        if ($auth === false) {
+            unset($this->headers['Authorization']);
+        }
         if (!$auth) {
-            unset($this->_headers['Authorization']);
             return;
         }
         if (is_array($auth) && !empty($auth['nonce'])) {
@@ -378,14 +398,14 @@ class Request extends \Lead\Net\Http\Message
         }
         $auth = $this->_classes['auth'];
         $data = $auth::encode($this->username(), $this->password(), $data);
-        $this->_headers['Authorization'] = $auth::header($data);
+        $this->headers['Authorization'] = $auth::header($data);
         return $this;
     }
 
     /**
      * Gets/sets the query string.
      *
-     * @param  array  $qs The query string to set or none to get the defined one.
+     * @param  string|array $qs The query string to set or none to get the defined one.
      * @return string
      */
     public function query($qs = null)
@@ -393,8 +413,45 @@ class Request extends \Lead\Net\Http\Message
         if (func_num_args() === 0) {
             return $this->_query;
         }
+        if (is_string($qs)) {
+            parse_str($qs, $qs);
+        }
         $this->_query = $qs + $this->_query;
         return $this;
+    }
+
+    /**
+     * Gets/sets the fragment string.
+     *
+     * @param  string $fragment The fragment string to set or none to get the defined one.
+     * @return string
+     */
+    public function fragment($fragment = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_fragment;
+        }
+        $this->_fragment = $fragment;
+        return $this;
+    }
+
+    /**
+     * Creates a request instance using an absolute URL.
+     *
+     * @param  string $url    An absolute URL.
+     * @param  array  $config The config array.
+     * @return self
+     */
+    public static function create($url = null, $config = [])
+    {
+        if (func_num_args()) {
+            if(!preg_match('~^(?:[a-z]+:)?//~i', $url) || !$defaults = parse_url($url)) {
+                throw new NetException("Invalid url: `'{$url}'`.");
+            }
+            $defaults['username'] = isset($defaults['user']) ? $defaults['user'] : null;
+            $defaults['password'] = isset($defaults['pass']) ? $defaults['pass'] : null;
+        }
+        return new static($config + $defaults);
     }
 
     /**
@@ -420,6 +477,7 @@ class Request extends \Lead\Net\Http\Message
     public static function toArray($request, $options = [])
     {
         static::_setContentLength($request);
+
         return [
             'method'   => $request->method(),
             'scheme'   => $request->scheme(),
@@ -428,34 +486,11 @@ class Request extends \Lead\Net\Http\Message
             'port'     => $request->port(),
             'path'     => $request->path(),
             'query'    => $request->query() ? '?' . http_build_query($request->query()) : '',
+            'fragment' => $request->fragment(),
             'username' => $request->username(),
             'password' => $request->password(),
             'url'      => $request->url(),
-            'headers'  => $request->headers(),
             'stream'   => $request->stream()
         ];
-    }
-
-    /**
-     * Method aliases
-     */
-    public function getScheme()
-    {
-        return $this->scheme();
-    }
-
-    public function getHost()
-    {
-        return $this->host();
-    }
-
-    public function getMethod()
-    {
-        return $this->method();
-    }
-
-    public function getRequestTarget()
-    {
-        return $this->requestTarget();
     }
 }

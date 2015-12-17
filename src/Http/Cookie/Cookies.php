@@ -10,26 +10,14 @@ use Lead\Set\Set;
  */
 class Cookies extends \Lead\Collection\Collection
 {
+    const NAME = 'Cookie';
+
     /**
      * Class dependencies
      *
      * @var array
      */
     protected $_classes = [];
-
-    /**
-     * Hashes to names map.
-     *
-     * @var array
-     */
-    protected $_names = [];
-
-    /**
-     * Map to hashes map.
-     *
-     * @var array
-     */
-    protected $_hashes = [];
 
     /**
      * Contains all exportable formats and their handler
@@ -47,8 +35,10 @@ class Cookies extends \Lead\Collection\Collection
      * @param $config The config. Possible values are:
      *                - `'classes'`  _array_ : The class dependencies.
      */
-    public function __construct($config = []) {
+    public function __construct($config = [])
+    {
         $defaults = [
+            'data'    => [],
             'classes' => [
                 'header' => 'Lead\Net\Http\Header',
                 'cookie' => 'Lead\Net\Http\Cookie\Cookie'
@@ -56,6 +46,10 @@ class Cookies extends \Lead\Collection\Collection
         ];
         $config = Set::merge($defaults, $config);
         $this->_classes = $config['classes'];
+
+        foreach ($config['data'] as $key => $value) {
+            $this[$key] = $value;
+        }
     }
 
     /**
@@ -69,7 +63,7 @@ class Cookies extends \Lead\Collection\Collection
     {
         $cookie = $this->_classes['cookie'];
         if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
+            throw new Exception("Invalid Cookie name `'{$name}'`.");
         }
         if (!is_object($value)) {
             $value = isset($value['value']) ? new $cookie($value['value']) : new $cookie($value);
@@ -77,95 +71,55 @@ class Cookies extends \Lead\Collection\Collection
         if (!$value instanceof $cookie) {
             throw new Exception("Error, only `{$cookie}` instances are allowed in this collection.");
         }
-
-        $hash = spl_object_hash($value);
-        $this->_hashes[$name][] = $hash;
-        $this->_names[$hash] = $name;
-
-        return $this->_data[$hash] = $value;
+        return $this->_data[$name] = $value;
     }
 
-    /**
-     * Checks if a cookie of a specific name exists.
-     *
-     * @param  string  $name The cookie name.
-     * @return boolean
-     */
-    public function offsetExists($name)
-    {
-        return isset($this->_hashes[$name]);
-    }
-
-    /**
-     * Removes all cookies of a specific name.
-     *
-     * @param string $name The cookie name.
-     */
-    public function offsetUnset($name)
-    {
-        if (!isset($this->_hashes[$name])) {
-            return;
-        }
-        foreach ($this->_hashes[$name] as $hash) {
-            unset($this->_data[$hash]);
-            unset($this->_names[$hash]);
-        }
-        unset($this->_hashes[$name]);
-    }
-
-    /**
-     * Gets a cookie.
-     *
-     * @see http://tools.ietf.org/html/rfc6265, section 5.4.2
-     * @see Cookies with longer paths are listed before cookies with shorter paths.
+   /**
+     * Gets a set-cookie.
      *
      * @param  string $name  The cookie name.
-     * @return object        The first cookie occurrence matching the required name.
+     * @param  object $value The cookie.
+     * @return object        The setted cookie.
      */
     public function offsetGet($name)
     {
-        if (!isset($this->_hashes[$name])) {
-            throw new Exception("Unexisting cookie `'{$name}'`.");
+        if (!array_key_exists($name, $this->_data)) {
+            throw new Exception("Unexisting Cookie `'{$name}'`.");
         }
-        return $this->_data[reset($this->_hashes[$name])];
+        return $this->_data[$name];
     }
 
     /**
-     * Returns the key of the current item.
-     *
-     * @return scalar Scalar on success or `null` on failure.
+     * Clones the cookies.
      */
-    public function key()
+    public function __clone()
     {
-        $hash = key($this->_data);
-        return $this->_names[$hash];
-    }
-
-    /**
-     * Returns the item keys.
-     *
-     * @return array The keys of the items.
-     */
-    public function keys()
-    {
-        return array_keys($this->_hashes);
+        foreach ($this->_data as $key => $value) {
+            $this->_data[$key] = clone $value;
+        }
     }
 
     /**
      * Parses a Cookie header value.
      *
-     * @param  string    $header A Cookie header value.
-     * @return Generator         A generator.
+     * @param  string  $header A Cookie header value.
+     * @return array           An array of parsed cookies.
      */
-    public static function parse($value)
+    public static function parse($header)
     {
-        $cookies = explode(';', $value);
+        $cookies = explode(';', $header);
+        $data = [];
         foreach ($cookies as $cookie) {
             list($name, $value) = explode('=', $cookie);
             $name = trim($name);
             $value = urldecode($value);
-            yield compact('name', 'value');
+            if (!isset($data[$name])) {
+                $data[$name] = ['name' => $name, 'value' => [$value]];
+            } else {
+                $data[$name]['value'][] = $value;
+            }
         }
+        return array_values($data);
     }
 
     /**
@@ -180,7 +134,7 @@ class Cookies extends \Lead\Collection\Collection
         foreach ($cookies as $name => $cookie) {
             $parts[] = static::_cookieValue($name, $cookie);
         }
-        return $parts ? 'Cookie: ' . join(', ', $parts) : '';
+        return $parts ? static::NAME . ': ' . join('; ', $parts) : '';
     }
 
     /**
@@ -195,7 +149,11 @@ class Cookies extends \Lead\Collection\Collection
         if (!Cookie::isValidName($name)) {
             throw new Exception("Invalid cookie name `'{$name}'`.");
         }
-        return $name . '=' . urlencode($cookie->value());
+        $result = [];
+        foreach ($cookie->data() as $value) {
+            $result[] = $name . '=' . urlencode($value);
+        }
+        return join('; ', $result);
     }
 
     /**

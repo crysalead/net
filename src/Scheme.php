@@ -3,7 +3,7 @@ namespace Lead\Net;
 
 class Scheme
 {
-    const DEFAULTS = [
+    protected static $_schemes = [
         'ftp'    => 21,
         'ssh'    => 22,
         'telnet' => 23,
@@ -14,8 +14,6 @@ class Scheme
         'https'  => 443,
         'smtps'  => 587
     ];
-
-    protected static $_schemes = Scheme::DEFAULTS;
 
     /**
      * Registers a scheme and its associated default port.
@@ -72,6 +70,16 @@ class Scheme
      */
     public static function reset()
     {
-        static::$_schemes = static::DEFAULTS;
+        static::$_schemes = [
+            'ftp'    => 21,
+            'ssh'    => 22,
+            'telnet' => 23,
+            'smtp'   => 25,
+            'http'   => 80,
+            'sftp'   => 115,
+            'imap'   => 143,
+            'https'  => 443,
+            'smtps'  => 587
+        ];
     }
 }

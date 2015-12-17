@@ -83,11 +83,23 @@ describe("Scheme", function() {
 
         it("resets to default schemes", function() {
 
+            $defaults = [
+                'ftp'    => 21,
+                'ssh'    => 22,
+                'telnet' => 23,
+                'smtp'   => 25,
+                'http'   => 80,
+                'sftp'   => 115,
+                'imap'   => 143,
+                'https'  => 443,
+                'smtps'  => 587
+            ];
+
             Scheme::unregister('http');
-            expect(Scheme::registered())->not->toBe(Scheme::DEFAULTS);
+            expect(Scheme::registered())->not->toBe($defaults);
 
             Scheme::reset();
-            expect(Scheme::registered())->toBe(Scheme::DEFAULTS);
+            expect(Scheme::registered())->toBe($defaults);
 
         });
 

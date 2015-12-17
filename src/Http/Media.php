@@ -79,91 +79,6 @@ class Media
     }
 
     /**
-     * Performs Content-Type negotiation on a `Request` object, by iterating over the accepted
-     * types in sequence, from most preferred to least, and attempting to match each one against a
-     * content type defined by `Media::type()`, until a match is found. If more than one defined
-     * type matches for a given content type, they will be checked in the order they were added
-     * (usually, this corresponds to the order they were defined in the application bootstrapping
-     * process).
-     *
-     * @param object $request The instance of `lithium\action\Request` which contains the details of
-     *               the request to be content-negotiated.
-     * @return string Returns the first matching type name, i.e. `'html'` or `'json'`.
-     */
-    public static function negotiate($request)
-    {
-        $self = get_called_class();
-
-        $match = function($name) use ($self, $request) {
-            if (($cfg = $self::type($name)) && $self::match($request, compact('name') + $cfg)) {
-                return true;
-            }
-            return false;
-        };
-
-        if (($type = $request->type) && $match($type)) {
-            return $type;
-        }
-
-        foreach ($request->accepts(true) as $type) {
-            if (!$types = (array) static::_types($type)) {
-                continue;
-            }
-            foreach ($types as $name) {
-                if (!$match($name)) {
-                    continue;
-                }
-                return $name;
-            }
-        }
-    }
-
-    /**
-     * Assists `Media::negotiate()` in processing the negotiation conditions of a content type, by
-     * iterating through the conditions and checking each one against the `Request` object.
-     *
-     * @param object $request The instance of `lithium\action\Request` to be checked against a
-     *               set of conditions (if applicable).
-     * @param array $config Represents a content type configuration, which is an array containing 3
-     *              keys:
-     *              - `'name'` _string_: The type name, i.e. `'html'` or `'json'`.
-     *              - `'content'` _mixed_: One or more content types that the configuration
-     *                represents, i.e. `'text/html'`, `'application/xhtml+xml'` or
-     *                `'application/json'`, or an array containing multiple content types.
-     *              - `'options'` _array_: An array containing rendering information, and an
-     *                optional `'conditions'` key, which contains an array of matching parameters.
-     *                For more details on these matching parameters, see `Media::type()`.
-     * @return boolean Returns `true` if the information in `$request` matches the type
-     *         configuration in `$config`, otherwise false.
-     */
-    public static function match($request, $config)
-    {
-        if (!isset($config['options']['conditions'])) {
-            return true;
-        }
-        $conditions = $config['options']['conditions'];
-
-        foreach ($conditions as $key => $value) {
-            switch (true) {
-                case $key === 'type':
-                    if ($value !== ($request->type === $config['name'])) {
-                        return false;
-                    }
-                break;
-                case strpos($key, ':'):
-                    if ($request->get($key) !== $value) {
-                        return false;
-                    }
-                break;
-                case ($request->is($key) !== $value):
-                    return false;
-                break;
-            }
-        }
-        return true;
-    }
-
-    /**
      * For media types registered in `$_handlers` which include an `'encode'` setting, encodes data
      * according to the specified media type.
      *
@@ -272,5 +187,4 @@ class Media
         static::$_handlers = [];
         static::$_types = [];
     }
-
 }

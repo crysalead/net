@@ -2,7 +2,7 @@
 namespace Lead\Net\Spec\Suite\Http\Cookie;
 
 use Exception;
-use Lead\Net\Http\Cookie\Cookie;
+use Lead\Net\Http\Cookie\SetCookie;
 use Lead\Net\Http\Cookie\SetCookies;
 
 describe("SetCookies", function() {
@@ -13,7 +13,7 @@ describe("SetCookies", function() {
 
     describe("->offsetSet()", function() {
 
-        it("adds Cookies", function() {
+        it("sets a Set-Cookie", function() {
 
             $this->setCookies['foo'] = 'bar';
 
@@ -21,7 +21,7 @@ describe("SetCookies", function() {
 
         });
 
-        it("adds a cookie using the array syntax", function() {
+        it("sets a Set-Cookie using the array syntax", function() {
 
             $this->setCookies['foo'] = [
                 'value'    => 'bar',
@@ -34,28 +34,57 @@ describe("SetCookies", function() {
 
         });
 
-        it("adds a cookie using an instance", function() {
+        it("sets a Set-Cookie using an instance", function() {
 
-            $this->setCookies['foo'] = new Cookie('bar');
+            $this->setCookies['foo'] = new SetCookie('bar');
             expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
 
-        it("throws an exception if the set-cookie is an invalid instance", function() {
+        it("overrides a Set-Cookie", function() {
+
+            $this->setCookies['foo'] = [
+                'value'    => 'bar',
+                'expires'  => 'Thu, 25 Dec 2014 00:00:00 GMT',
+                'httponly' => true
+            ];
+
+            $this->setCookies['foo'] = [
+                'value'    => 'baz',
+                'expires'  => 'Fri, 25 Dec 2015 00:00:00 GMT',
+                'httponly' => false
+            ];
+            expect($this->setCookies['foo'][0]->value())->toBe('baz');
+            expect($this->setCookies['foo'][0]->expires())->toBe(1451001600);
+            expect($this->setCookies['foo'][0]->httponly())->toBe(false);
+
+        });
+
+        it("throws an exception if the Set-Cookie is an invalid instance", function() {
 
             $closure = function() {
                 $this->setCookies['foo'] = (object) 'bar';
             };
-            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\Cookie` instances are allowed in this collection.'));
+            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\SetCookie` instances are allowed in this collection.'));
 
         });
 
-        it("throws an exception for trying to get an unexisting set-cookie", function() {
+        it("throws an exception for trying to get an unexisting Set-Cookie", function() {
 
             $closure = function() {
                 $this->setCookies['foo'];
             };
-            expect($closure)->toThrow(new Exception("Unexisting set-cookie `'foo'`."));
+            expect($closure)->toThrow(new Exception("Unexisting Set-Cookie `'foo'`."));
+
+        });
+
+        it("throws an exception when trying to set multiple values for a Set-Cookie", function() {
+
+            $closure = function() {
+                $this->setCookies['foo'] = 'bar';
+                $this->setCookies['foo'][] = 'baz';
+            };
+            expect($closure)->toThrow('`E_NOTICE` Indirect modification of overloaded element of Lead\Net\Http\Cookie\SetCookies has no effect');
 
         });
 
@@ -66,7 +95,7 @@ describe("SetCookies", function() {
                 $closure = function() use ($invalid) {
                     $this->setCookies["ab{$invalid}ba"] = 'bar';
                 };
-                expect($closure)->toThrow(new Exception("Invalid set-cookie name `'ab{$invalid}ba'`."));
+                expect($closure)->toThrow(new Exception("Invalid Set-Cookie name `'ab{$invalid}ba'`."));
 
             }
 
@@ -76,7 +105,7 @@ describe("SetCookies", function() {
 
     describe("->offsetExists()", function() {
 
-        it('checks if a cookie exists', function() {
+        it('checks if a Set-Cookie exists', function() {
 
             expect(isset($this->setCookies['foo']))->toBe(false);
 
@@ -89,7 +118,7 @@ describe("SetCookies", function() {
 
     describe("->offsetUnset()", function() {
 
-        it('unsets all cookies', function() {
+        it('unsets all Set-Cookie of the same name', function() {
 
             $this->setCookies['foo'] = 'bar';
             expect(isset($this->setCookies['foo']))->toBe(true);
@@ -157,7 +186,7 @@ describe("SetCookies", function() {
 
     describe("->data()", function() {
 
-        it('exports set-cookies', function() {
+        it('exports Set-Cookies', function() {
 
             $this->setCookies['foo1'] = ['value' => 'bar1', 'path' => '/home'];
             $this->setCookies['foo1'] = ['value' => 'bar11', 'path' => '/home/index'];
@@ -203,13 +232,13 @@ describe("SetCookies", function() {
 
     describe("::parseSetCookie()", function() {
 
-        it("parses a cookie from an HTTP header", function() {
+        it("parses a Set-Cookie from an HTTP header", function() {
 
             $data = SetCookies::parse(
                 'mycookie=the+cookie+value; Expires=Thu, 25 Dec 2014 00:00:00 GMT; Path=/blog; Domain=.domain.com; Secure; HttpOnly'
             );
 
-            $this->expect($data)->toBe([
+            $this->expect($data)->toBe([[
                 'secure'   => true,
                 'domain'   => '.domain.com',
                 'path'     => '/blog',
@@ -217,7 +246,7 @@ describe("SetCookies", function() {
                 'value'    => 'the cookie value',
                 'expires'  => 'Thu, 25 Dec 2014 00:00:00 GMT',
                 'httponly' => true
-            ]);
+            ]]);
 
         });
 
@@ -225,7 +254,7 @@ describe("SetCookies", function() {
 
     describe("::toHeader()", function() {
 
-        it('generates a SetCookie HTTP headers', function() {
+        it('generates a Set-Cookie HTTP headers', function() {
 
             $cookies = new SetCookies();
             $cookies['foo1'] = 'bar1';
@@ -240,12 +269,12 @@ describe("SetCookies", function() {
 
         });
 
-        it("generates a custom SetCookie HTTP header", function() {
+        it("generates a custom Set-Cookie HTTP header", function() {
 
             $nextYear = date('Y') + 1;
             $expires = strtotime("{$nextYear}-12-25 00:00:00 UTC");
 
-            $cookie = new Cookie('the cookie value', [
+            $cookie = new SetCookie('the cookie value', [
                 'expires'  => $expires,
                 'path'     => '/blog',
                 'domain'   => '.domain.com',
@@ -261,9 +290,9 @@ describe("SetCookies", function() {
 
         });
 
-        it("generates a custom SetCookie HTTP header using Max-Age instead of Expires", function() {
+        it("generates a custom Set-Cookie HTTP header using Max-Age instead of Expires", function() {
 
-            $cookie = new Cookie('the cookie value', [
+            $cookie = new SetCookie('the cookie value', [
                 'path'     => '/blog',
                 'domain'   => '.domain.com',
                 'max-age'  => '3600',
@@ -279,7 +308,7 @@ describe("SetCookies", function() {
 
         it("ignores not setted values but Path", function() {
 
-            $cookie = new Cookie('the cookie value');
+            $cookie = new SetCookie('the cookie value');
 
             $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
                 "Set-Cookie: mycookie=the%20cookie%20value; Path=/"
@@ -292,10 +321,10 @@ describe("SetCookies", function() {
             foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
 
                 $closure = function() use ($invalid) {
-                    $cookie = new Cookie('foo');
+                    $cookie = new SetCookie('foo');
                     SetCookies::toHeader(["ab{$invalid}ba" => $cookie]);
                 };
-                expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
+                expect($closure)->toThrow(new Exception("Invalid Set-Cookie name `'ab{$invalid}ba'`."));
 
             }
 

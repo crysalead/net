@@ -4,12 +4,12 @@ namespace Lead\Net\Spec\Suite\Http;
 use Exception;
 use Lead\Net\NetException;
 use Lead\Net\Http\Header;
-use Lead\Net\Http\RequestHeaders;
+use Lead\Net\Http\Headers;
 
-describe("RequestHeaders", function() {
+describe("Headers", function() {
 
     beforeEach(function() {
-        $this->headers = new RequestHeaders();
+        $this->headers = new Headers();
     });
 
     describe("->offsetGet()/->offsetSet()", function() {
@@ -25,9 +25,7 @@ describe("RequestHeaders", function() {
 
         it("sets an header instance", function() {
 
-            $this->headers['Content-Type'] = new Header([
-                'data' => 'text/plain'
-            ]);
+            $this->headers['Content-Type'] = new Header('text/plain');
 
             expect($this->headers['Content-Type']->value())->toBe('text/plain');
             expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
@@ -75,16 +73,6 @@ describe("RequestHeaders", function() {
             };
 
             expect($closure)->toThrow(new Exception("Error, invalid header name, can't be empty."));
-
-        });
-
-        it("throws an exception with a non scalar value", function() {
-
-            $closure = function() {
-                $this->headers['name'] = ['value'];
-            };
-
-            expect($closure)->toThrow(new Exception("Error, only scalar value are allowed as header value."));
 
         });
 
@@ -151,27 +139,7 @@ describe("RequestHeaders", function() {
 
     });
 
-    describe("->__toString()", function() {
-
-        it("casts in string", function() {
-
-            $header = <<<EOD
-Date: Thu, 25 Dec 2014 00:00:00 GMT\r
-Content-Type: text/html; charset=UTF-8\r
-Vary: Accept-Encoding, Cookie, User-Agent\r
-\r
-
-EOD;
-
-            $headers = new RequestHeaders();
-            $headers->add($header);
-            expect((string) $headers)->toBe($header);
-
-        });
-
-    });
-
-    describe("->add()", function() {
+    describe("->push()", function() {
 
         beforeEach(function() {
 
@@ -184,26 +152,42 @@ Vary: Accept-Encoding, Cookie, User-Agent\r
 EOD;
         });
 
-        it("adds an header", function() {
+        it("pushes an header", function() {
 
-            $this->headers->add('Content-Type: text/plain');
+            $this->headers->push('Content-Type', 'text/plain');
             expect($this->headers['Content-Type']->data())->toBe(['text/plain']);
 
         });
 
-        it("adds a collection of headers from an header string", function() {
+        it("pushes an header instance", function() {
 
-            $headers = new RequestHeaders();
-            $headers->add($this->expected);
+            $this->headers->push('Content-Type', new Header(['data' => 'text/plain']));
+
+            expect($this->headers['Content-Type']->value())->toBe('text/plain');
+            expect($this->headers['Content-Type']->to('array'))->toBe(['text/plain']);
+
+        });
+
+        it("pushes an header using a plain string definition", function() {
+
+            $this->headers->push('Content-Type: text/plain');
+            expect($this->headers['Content-Type']->data())->toBe(['text/plain']);
+
+        });
+
+        it("pushes a collection of headers from an header string", function() {
+
+            $headers = new Headers();
+            $headers->push($this->expected);
 
             expect($headers->to('header'))->toBe($this->expected);
 
         });
 
-        it("adds a collection of headers from an array of headers", function() {
+        it("pushes a collection of headers from an array of headers", function() {
 
-            $headers = new RequestHeaders();
-            $headers->add([
+            $headers = new Headers();
+            $headers->push([
                 'Date: Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type: text/html; charset=UTF-8',
                 'Vary: Accept-Encoding, Cookie, User-Agent'
@@ -213,13 +197,26 @@ EOD;
 
         });
 
-        it("adds a collection of headers from an array of key/value", function() {
+        it("pushes a collection of headers from an array of key/value", function() {
 
-            $headers = new RequestHeaders();
-            $headers->add([
-                'Date' => 'Thu, 25 Dec 2014 00:00:00 GMT',
+            $headers = new Headers();
+            $headers->push([
+                'Date'         => 'Thu, 25 Dec 2014 00:00:00 GMT',
                 'Content-Type' => 'text/html; charset=UTF-8',
-                'Vary' => ['Accept-Encoding', 'Cookie', 'User-Agent']
+                'Vary'         => ['Accept-Encoding', 'Cookie', 'User-Agent']
+            ]);
+
+            expect($headers->to('header'))->toBe($this->expected);
+
+        });
+
+        it("pushes a collection of header instances", function() {
+
+            $headers = new Headers();
+            $headers->push([
+                new Header('Date', 'Thu, 25 Dec 2014 00:00:00 GMT'),
+                new Header('Content-Type','text/html; charset=UTF-8'),
+                new Header('Vary', ['Accept-Encoding', 'Cookie', 'User-Agent'])
             ]);
 
             expect($headers->to('header'))->toBe($this->expected);
@@ -228,35 +225,33 @@ EOD;
 
         it("overrides an header and its letter case definition", function() {
 
-            $this->headers->add('Content-Type: text/plain');
+            $this->headers->push('Content-Type: text/plain');
             expect((string) $this->headers['Content-Type'])->toBe('Content-Type: text/plain');
 
-            $this->headers->add('CONTENT-TYPE: application/json');
+            $this->headers->push('CONTENT-TYPE: application/json');
             expect((string) $this->headers['Content-Type'])->toBe('CONTENT-TYPE: application/json');
-
-        });
-
-        it("adds cookies", function() {
-
-            $this->headers->add('Cookie: foo1=bar1; foo2=bar2; foo3=bar3');
-            expect((string) $this->headers)->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3\r\n\r\n");
-
-        });
-
-        it("adds cookies", function() {
-
-            $this->headers->add('Cookie: foo1=bar1; foo1=bar2; foo1=bar3');
-            expect((string) $this->headers)->toBe("Cookie: foo1=bar1, foo1=bar2, foo1=bar3\r\n\r\n");
 
         });
 
         it("throws an exception for invalid HTTP headers", function() {
 
             $closure = function() {
-                $this->headers->add('HTTP/1.1 200 OK');
+                $this->headers->push('HTTP/1.1 200 OK');
             };
 
             expect($closure)->toThrow(new NetException("Invalid HTTP header: `'HTTP/1.1 200 OK'`."));
+
+        });
+
+    });
+
+    describe("->prepend()", function() {
+
+        it("prepends an header", function() {
+
+            $this->headers->push('Content-Type', 'text/plain');
+            $this->headers->prepend('Host', 'localhost');
+            expect((string) $this->headers)->toBe("Host: localhost\r\nContent-Type: text/plain\r\n\r\n");
 
         });
 
@@ -271,6 +266,41 @@ EOD;
 
             $this->headers->clear();
             expect(isset($this->headers['Content-Type']))->toBe(false);
+        });
+
+    });
+
+    describe("->__toString()", function() {
+
+        it("casts in string", function() {
+
+            $header = <<<EOD
+Date: Thu, 25 Dec 2014 00:00:00 GMT\r
+Content-Type: text/html; charset=UTF-8\r
+Vary: Accept-Encoding, Cookie, User-Agent\r
+\r
+
+EOD;
+
+            $headers = new Headers();
+            $headers->push($header);
+            expect((string) $headers)->toBe($header);
+
+        });
+
+    });
+
+    describe("->__clone", function() {
+
+        it("clones headers", function() {
+
+            $headers = new Headers();
+            $headers['Content-Type'] = 'text/html';
+
+            $new = clone $headers;
+            expect($headers['Content-Type'])->not->toBe($new['Content-Type']);
+            expect($headers['Content-Type']->value())->toBe($new['Content-Type']->value());
+
         });
 
     });

@@ -159,11 +159,9 @@ describe("Message", function() {
 
         it("casts to a string", function() {
 
-            $message = new Message([
-                'body'   => 'Body Message'
-            ]);
+            $message = new Message(['body' => 'Body Message']);
 
-            expect((string) $message)->toBe("Body Message");
+            expect((string) $message)->toBe('Body Message');
 
         });
 

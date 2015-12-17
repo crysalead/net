@@ -13,24 +13,43 @@ describe("Cookies", function() {
 
     describe("->offsetSet()", function() {
 
-        it('adds a cookie', function() {
+        it('sets a cookie', function() {
 
             $this->cookies['foo'] = 'bar';
             expect($this->cookies['foo']->value())->toBe('bar');
 
         });
 
-        it('adds a cookie using the array syntax', function() {
+        it('sets a cookie using the array syntax', function() {
 
             $this->cookies['foo'] = ['value' => 'bar'];
             expect($this->cookies['foo']->value())->toBe('bar');
 
         });
 
-        it('adds a cookie using an instance', function() {
+        it('sets a cookie using an instance', function() {
 
             $this->cookies['foo'] = new Cookie('bar');
             expect($this->cookies['foo']->value())->toBe('bar');
+
+        });
+
+        it("sets multiple values for a cookie", function() {
+
+            $this->cookies['foo1'] = new Cookie('bar1');
+            $this->cookies['foo1'][] = new Cookie('bar2');
+            $this->cookies['foo1'][] = new Cookie('bar3');
+
+            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo1=bar2; foo1=bar3");
+
+        });
+
+        it("overrides a cookie value", function() {
+
+            $this->cookies['foo1'] = new Cookie('bar1');
+            $this->cookies['foo1'] = new Cookie('bar2');
+
+            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar2");
 
         });
 
@@ -48,7 +67,7 @@ describe("Cookies", function() {
             $closure = function() {
                 $this->cookies['foo'];
             };
-            expect($closure)->toThrow(new Exception("Unexisting cookie `'foo'`."));
+            expect($closure)->toThrow(new Exception("Unexisting Cookie `'foo'`."));
 
         });
 
@@ -59,7 +78,7 @@ describe("Cookies", function() {
                 $closure = function() use ($invalid) {
                     $this->cookies["ab{$invalid}ba"] = 'bar';
                 };
-                expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
+                expect($closure)->toThrow(new Exception("Invalid Cookie name `'ab{$invalid}ba'`."));
 
             }
 
@@ -122,7 +141,7 @@ describe("Cookies", function() {
             $this->cookies['foo2'] = 'bar2';
             $this->cookies['foo3'] = 'bar3';
 
-            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3");
+            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
 
         });
 
@@ -150,20 +169,22 @@ describe("Cookies", function() {
 
         it("create a cookie from an HTTP header", function() {
 
-            $generator = Cookies::parse('mycookie=the+cookie+value; mycookie2=the+cookie2+value');
+            $cookies = Cookies::parse('mycookie=the+cookie+value; mycookie2=the+cookie2+value');
 
-            $this->expect($generator->current())->toBe([
-                'name'     => 'mycookie',
-                'value'    => 'the cookie value'
+            $this->expect($cookies)->toEqual([
+                [
+                    'name'     => 'mycookie',
+                    'value'    => [
+                        'the cookie value'
+                    ]
+                ],
+                [
+                    'name'     => 'mycookie2',
+                    'value'    => [
+                        'the cookie2 value'
+                    ]
+                ]
             ]);
-
-            $generator->next();
-
-            $this->expect($generator->current())->toBe([
-                'name'     => 'mycookie2',
-                'value'    => 'the cookie2 value'
-            ]);
-
 
         });
 
@@ -178,7 +199,7 @@ describe("Cookies", function() {
             $cookies['foo2'] = 'bar2';
             $cookies['foo3'] = 'bar3';
 
-            expect(Cookies::toHeader($cookies))->toBe("Cookie: foo1=bar1, foo2=bar2, foo3=bar3");
+            expect(Cookies::toHeader($cookies))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
 
         });
 
