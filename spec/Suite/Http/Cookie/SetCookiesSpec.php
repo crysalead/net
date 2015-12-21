@@ -80,6 +80,8 @@ describe("SetCookies", function() {
 
         it("throws an exception when trying to set multiple values for a Set-Cookie", function() {
 
+            skipIf(defined('HHVM_VERSION'));
+
             $closure = function() {
                 $this->setCookies['foo'] = 'bar';
                 $this->setCookies['foo'][] = 'baz';
