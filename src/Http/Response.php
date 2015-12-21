@@ -233,9 +233,14 @@ class Response extends \Lead\Net\Http\Message
         }
 
         if ($response->headers['Transfer-Encoding']->value() === 'chunked') {
-            $stream = fopen('data://text/plain;base64,' . base64_encode($body), 'r');
-            stream_filter_append($stream, 'dechunk');
-            $body = trim(stream_get_contents($stream));
+            $decoded = '';
+            while (!empty($body)) {
+                $pos = strpos($body, "\r\n");
+                $len = hexdec(substr($body, 0, $pos));
+                $decoded .= substr($body, $pos + 2, $len);
+                $body = substr($body, $pos + 2 + $len);
+            }
+            $body = $decoded;
         }
 
         $response->plain($body);
