@@ -246,7 +246,7 @@ EOD;
 
     });
 
-    describe("::create()", function() {
+    describe("::parse()", function() {
 
         it("creates a response with some set-cookies", function() {
 
@@ -294,7 +294,7 @@ EOD;
                     ]
                 ]
             ];
-            $response = Response::create($message);
+            $response = Response::parse($message);
             expect($response->headers->cookies->data())->toBe($cookies);
             expect((string) $response)->toBe($message);
 
@@ -323,7 +323,7 @@ EOD;
             $body .= ".</p></body></html>\r\n";
             $body .= "0\r\n";
 
-            $response = Response::create($headers . $body);
+            $response = Response::parse($headers . $body);
 
             $expected = <<<EOD
 <html><body><p>The file you requested is 3,400 bytes long and was last modified: Fri, 25 Dec 2015 00:00:00 GMT.</p></body></html>
@@ -337,7 +337,7 @@ EOD;
         it("throws an exception if the message can't be parsed", function() {
 
             $closure = function() {
-                Response::create('');
+                Response::parse('');
             };
 
             expect($closure)->toThrow(new NetException('The CRLFCRLF separator between headers and body is missing.'));

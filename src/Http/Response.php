@@ -210,7 +210,7 @@ class Response extends \Lead\Net\Http\Message
      * @param  string $options Additionnal options.
      * @return object          Returns a request instance.
      */
-    public static function create($message, $options = [])
+    public static function parse($message, $options = [])
     {
         $parts = explode("\r\n\r\n", $message, 2);
         if (count($parts) < 2) {

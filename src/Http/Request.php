@@ -442,7 +442,7 @@ class Request extends \Lead\Net\Http\Message
      * @param  array  $config The config array.
      * @return self
      */
-    public static function create($url = null, $config = [])
+    public static function parseUrl($url = null, $config = [])
     {
         if (func_num_args()) {
             if(!preg_match('~^(?:[a-z]+:)?//~i', $url) || !$defaults = parse_url($url)) {
