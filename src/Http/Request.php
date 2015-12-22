@@ -11,7 +11,7 @@ use Lead\Net\Scheme;
  * Facilitates HTTP request creation by assembling connection and path info, `GET` and `POST` data,
  * and authentication credentials in a single, stateful object.
  */
-class Request extends \Lead\Net\Http\Message
+class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\RequestInterface
 {
     use Psr7\MessageTrait, Psr7\RequestTrait;
 

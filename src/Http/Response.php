@@ -7,7 +7,7 @@ use Lead\Set\Set;
 /**
  * Parses and stores the status, headers and body of an HTTP response.
  */
-class Response extends \Lead\Net\Http\Message
+class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\ResponseInterface
 {
     use Psr7\MessageTrait, Psr7\ResponseTrait;
 
