@@ -55,7 +55,7 @@ describe("Request", function() {
             $request = new Request();
 
             expect($request->data())->toEqual([
-                'base'     => '',
+                'basePath' => '',
                 'locale'   => null,
                 'data'     => [],
                 'params'   => [],
@@ -172,25 +172,25 @@ EOD;
         it("applies the ignore pattern to the base path", function() {
 
             $request = new Request([
-                'base'   => '/base/path/webroot/index.php',
-                'ignore' => '/webroot/index.php'
+                'basePath' => '/base/path/webroot/index.php',
+                'ignore'   => '/webroot/index.php'
             ]);
 
-            expect($request->base())->toBe('/base/path');
+            expect($request->basePath())->toBe('/base/path');
 
         });
 
     });
 
-    describe("->base()", function() {
+    describe("->basePath()", function() {
 
         it("sets the base path", function() {
 
             $request = new Request();
-            expect($request->base())->toBe('');
+            expect($request->basePath())->toBe('');
 
-            $request->base('/base/path');
-            expect($request->base())->toBe('/base/path');
+            $request->basePath('/base/path');
+            expect($request->basePath())->toBe('/base/path');
 
         });
 
@@ -198,11 +198,11 @@ EOD;
 
             $request = new Request();
 
-            $request->base('/base/path/');
-            expect($request->base())->toBe('/base/path');
+            $request->basePath('/base/path/');
+            expect($request->basePath())->toBe('/base/path');
 
-            $request->base('/');
-            expect($request->base())->toBe('');
+            $request->basePath('/');
+            expect($request->basePath())->toBe('');
 
         });
 
@@ -210,8 +210,8 @@ EOD;
 
             $request = new Request();
 
-            $request->base('base/path/');
-            expect($request->base())->toBe('/base/path');
+            $request->basePath('base/path/');
+            expect($request->basePath())->toBe('/base/path');
 
         });
 
@@ -221,10 +221,10 @@ EOD;
                 'ignore' => '/webroot/index.php'
             ]);
 
-            expect($request->base())->toBe('');
+            expect($request->basePath())->toBe('');
 
-            $request->base('/base/path/webroot/index.php');
-            expect($request->base())->toBe('/base/path');
+            $request->basePath('/base/path/webroot/index.php');
+            expect($request->basePath())->toBe('/base/path');
 
         });
 
@@ -245,16 +245,16 @@ EOD;
         it("lazily applies the ignore pattern on the base path", function() {
 
             $request = new Request([
-                'base'   => '/base/path/webroot/index.php'
+                'basePath' => '/base/path/webroot/index.php'
             ]);
 
-            expect($request->base())->toBe('/base/path/webroot/index.php');
+            expect($request->basePath())->toBe('/base/path/webroot/index.php');
 
             $request->ignore('/webroot/index.php');
-            expect($request->base())->toBe('/base/path');
+            expect($request->basePath())->toBe('/base/path');
 
             $request->ignore(null);
-            expect($request->base())->toBe('/base/path/webroot/index.php');
+            expect($request->basePath())->toBe('/base/path/webroot/index.php');
 
         });
 
@@ -345,23 +345,23 @@ EOD;
             $request = Request::ingoing();
 
             expect($request->data())->toEqual([
-                'base' => '/base/path/webroot/index.php',
-                'locale' => null,
-                'data' => $_FILES + $_POST,
-                'params' => [],
-                'env' => $request->env,
-                'method' => 'GET',
-                'scheme' => 'http',
-                'version' => '1.1',
-                'host' => 'localhost',
-                'port' => 80,
-                'path' => '/app',
-                'query' => '?get=value',
+                'basePath' => '/base/path/webroot/index.php',
+                'locale'   => null,
+                'data'     => $_FILES + $_POST,
+                'params'   => [],
+                'env'      => $request->env,
+                'method'   => 'GET',
+                'scheme'   => 'http',
+                'version'  => '1.1',
+                'host'     => 'localhost',
+                'port'     => 80,
+                'path'     => '/app',
+                'query'    => '?get=value',
                 'fragment' => '',
                 'username' => null,
                 'password' => null,
-                'url' => 'http://localhost/app?get=value',
-                'stream' => $request->stream()
+                'url'      => 'http://localhost/app?get=value',
+                'stream'   => $request->stream()
             ]);
 
         });
@@ -547,7 +547,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->base())->toBe('/base/path/webroot');
+            expect($request->basePath())->toBe('/base/path/webroot');
 
         });
 

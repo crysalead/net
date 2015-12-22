@@ -41,14 +41,14 @@ class Request extends \Lead\Net\Http\Request
      *
      * @var string
      */
-    protected $_root = null;
+    protected $_basePathTmp = null;
 
     /**
      * Base path.
      *
      * @var string
      */
-    protected $_base = null;
+    protected $_basePath = null;
 
     /**
      * Ignore pattern for the base path.
@@ -69,14 +69,14 @@ class Request extends \Lead\Net\Http\Request
      *
      * @param array $config The available configuration options are the following. Further
      *                      options are inherited from the parent classes.
-     *                      - `'base'`    _string_  : (defaults to `null`).
-     *                      - `'url'`     _string_  : (defaults to `null`).
-     *                      - `'data'`    _array_   : Additional data to use when initializing
-     *                                                the request. Defaults to `[]`.
-     *                      - `'stream'`  _resource_: Stream to read from in order to get the message
-     *                                                body when method is POST, PUT or PATCH and data is empty.
-     *                                                When not provided `php://input` will be used for reading.
-     *                      - `'env'`     _array_   : Only for populating headers
+     *                      - `'basePath'` _string_  : (defaults to `null`).
+     *                      - `'url'`      _string_  : (defaults to `null`).
+     *                      - `'data'`     _array_   : Additional data to use when initializing
+     *                                                 the request. Defaults to `[]`.
+     *                      - `'stream'`   _resource_: Stream to read from in order to get the message
+     *                                                 body when method is POST, PUT or PATCH and data is empty.
+     *                                                 When not provided `php://input` will be used for reading.
+     *                      - `'env'`      _array_   : Only for populating headers
      */
     public function __construct($config = [])
     {
@@ -106,7 +106,7 @@ class Request extends \Lead\Net\Http\Request
         $this->params = $config['params'];
 
         $this->ignore($config['ignore']);
-        $this->base($config['base']);
+        $this->basePath($config['basePath']);
         $this->locale($config['locale']);
 
         if (isset($this->data['_method'])) {
@@ -193,35 +193,35 @@ class Request extends \Lead\Net\Http\Request
         $scriptDir = dirname($scriptName);
 
         if (stripos($path, $scriptName) === 0) {
-            $base = $scriptName;
+            $basePath = $scriptName;
         } elseif (stripos($path, $scriptDir) === 0) {
-            $base = $scriptDir !== '/' ? $scriptDir : '';
+            $basePath = $scriptDir !== '/' ? $scriptDir : '';
         }
 
-        $base = isset($base) && $base !== '/' ? '/' . trim($base, '/') : '';
+        $basePath = isset($basePath) && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
 
         return $defaults += [
-            'path' => '/' . (trim(substr($path, strlen($base)), '/') ?: '/'),
-            'base' => $base
+            'path'     => '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/'),
+            'basePath' => $basePath
         ];
     }
 
     /**
      * Gets/sets the base path of the current request.
      *
-     * @param  string      $base The base path to set or none to get the setted one.
+     * @param  string      $basePath The base path to set or none to get the setted one.
      * @return string|self
      */
-    public function base($base = null)
+    public function basePath($basePath = null)
     {
         if (!func_num_args()) {
-            return $this->_base;
+            return $this->_basePath;
         }
-        $this->_root = $base;
+        $this->_basePathTmp = $basePath;
         if (isset($this->_ignore)) {
-            $base = str_replace($this->_ignore, '', $base);
+            $basePath = str_replace($this->_ignore, '', $basePath);
         }
-        $this->_base = $base && $base !== '/' ? '/' . trim($base, '/') : '';
+        $this->_basePath = $basePath && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
         return $this;
     }
 
@@ -237,7 +237,7 @@ class Request extends \Lead\Net\Http\Request
             return $this->_ignore;
         }
         $this->_ignore = $ignore;
-        $this->base($this->_root);
+        $this->basePath($this->_basePathTmp);
         return $this;
     }
 
@@ -365,11 +365,11 @@ class Request extends \Lead\Net\Http\Request
     {
         static::_setContentLength($request);
         return [
-            'base'   => $request->base(),
-            'locale' => $request->locale(),
-            'data'   => $request->data,
-            'params' => $request->params,
-            'env'    => $request->env
+            'basePath' => $request->basePath(),
+            'locale'   => $request->locale(),
+            'data'     => $request->data,
+            'params'   => $request->params,
+            'env'      => $request->env
         ] + parent::toArray($request);
     }
 }
