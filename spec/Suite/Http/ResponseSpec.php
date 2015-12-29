@@ -250,6 +250,10 @@ EOD;
 
         it("creates a response with some set-cookies", function() {
 
+            Monkey::patch('time', function() {
+                return strtotime('24 Dec 2015');
+            });
+
             $message = join("\r\n", [
                 'HTTP/1.1 200 OK',
                 'Connection: close',
