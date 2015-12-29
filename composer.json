@@ -17,7 +17,11 @@
     },
     "autoload": {
         "psr-4": {
-            "Lead\\Net\\": "src/",
+            "Lead\\Net\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
             "Lead\\Net\\Spec\\": "spec/"
         }
     },
