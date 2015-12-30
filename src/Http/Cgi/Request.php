@@ -55,7 +55,7 @@ class Request extends \Lead\Net\Http\Request
      *
      * @var string|array
      */
-    protected $_ignore = null;
+    protected $_ignorePath = null;
 
     /**
      * Holds the value of the current locale, set through the `locale()` method.
@@ -104,7 +104,7 @@ class Request extends \Lead\Net\Http\Request
         $this->data = $config['data'];
         $this->params = $config['params'];
 
-        $this->ignore($config['ignore']);
+        $this->ignorePath($config['ignorePath']);
         $this->basePath($config['basePath']);
         $this->locale($config['locale']);
 
@@ -173,16 +173,16 @@ class Request extends \Lead\Net\Http\Request
         }
 
         $defaults = [
-            'version'  => $version,
-            'scheme'   => strtolower($scheme) . ($env['HTTPS'] ? 's' : ''),
-            'host'     => $env['HTTP_HOST'],
-            'username' => $username,
-            'password' => $password,
-            'auth'     => null,
-            'ignore'   => '~index.php$~',
-            'method'   => $env['REQUEST_METHOD'],
-            'headers'  => $headers,
-            'env'      => $env
+            'version'    => $version,
+            'scheme'     => strtolower($scheme) . ($env['HTTPS'] ? 's' : ''),
+            'host'       => $env['HTTP_HOST'],
+            'username'   => $username,
+            'password'   => $password,
+            'auth'       => null,
+            'ignorePath' => '~index.php$~',
+            'method'     => $env['REQUEST_METHOD'],
+            'headers'    => $headers,
+            'env'        => $env
         ];
 
         $uri = $env['REQUEST_URI'];
@@ -214,8 +214,8 @@ class Request extends \Lead\Net\Http\Request
             return $this->_basePath;
         }
         $this->_basePathTmp = $basePath;
-        if (isset($this->_ignore)) {
-            $basePath = preg_replace($this->_ignore, '', $basePath);
+        if (isset($this->_ignorePath)) {
+            $basePath = preg_replace($this->_ignorePath, '', $basePath);
         }
         $this->_basePath = $basePath && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
         return $this;
@@ -224,15 +224,15 @@ class Request extends \Lead\Net\Http\Request
     /**
      * Gets/sets the ignore pattern for the base path.
      *
-     * @param  string|array $ignore The ignore pattern to set or none to get the setted one.
+     * @param  string|array $ignorePath The ignore pattern to set or none to get the setted one.
      * @return mixed
      */
-    public function ignore($ignore = null)
+    public function ignorePath($ignorePath = null)
     {
         if (!func_num_args()) {
-            return $this->_ignore;
+            return $this->_ignorePath;
         }
-        $this->_ignore = $ignore;
+        $this->_ignorePath = $ignorePath;
         $this->basePath($this->_basePathTmp);
         return $this;
     }

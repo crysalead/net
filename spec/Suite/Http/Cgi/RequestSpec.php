@@ -172,8 +172,8 @@ EOD;
         it("applies the ignore pattern to the base path", function() {
 
             $request = new Request([
-                'basePath' => '/base/path/webroot/index.php',
-                'ignore'   => '~/webroot/index.php$~'
+                'basePath'   => '/base/path/webroot/index.php',
+                'ignorePath' => '~/webroot/index.php$~'
             ]);
 
             expect($request->basePath())->toBe('/base/path');
@@ -218,7 +218,7 @@ EOD;
         it("lazily applies a base path", function() {
 
             $request = new Request([
-                'ignore' => '~/webroot/index.php$~'
+                'ignorePath' => '~/webroot/index.php$~'
             ]);
 
             expect($request->basePath())->toBe('');
@@ -230,15 +230,15 @@ EOD;
 
     });
 
-    describe("->ignore()", function() {
+    describe("->ignorePath()", function() {
 
         it("sets the ignore pattern", function() {
 
             $request = new Request();
-            expect($request->ignore())->toBe('~index.php$~');
+            expect($request->ignorePath())->toBe('~index.php$~');
 
-            $request->ignore('~/webroot/index.php$~');
-            expect($request->ignore())->toBe('~/webroot/index.php$~');
+            $request->ignorePath('~/webroot/index.php$~');
+            expect($request->ignorePath())->toBe('~/webroot/index.php$~');
 
         });
 
@@ -250,10 +250,10 @@ EOD;
 
             expect($request->basePath())->toBe('/base/path/webroot');
 
-            $request->ignore('~/webroot/index.php$~');
+            $request->ignorePath('~/webroot/index.php$~');
             expect($request->basePath())->toBe('/base/path');
 
-            $request->ignore(null);
+            $request->ignorePath(null);
             expect($request->basePath())->toBe('/base/path/webroot/index.php');
 
         });
