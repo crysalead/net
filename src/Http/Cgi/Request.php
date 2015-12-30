@@ -81,7 +81,6 @@ class Request extends \Lead\Net\Http\Request
     public function __construct($config = [])
     {
         $defaults = [
-            'ignore'    => null,
             'locale'    => null,
             'data'      => [],
             'params'    => [],
@@ -134,7 +133,7 @@ class Request extends \Lead\Net\Http\Request
             'CONTENT_TYPE'    => 'text/html; charset=utf-8',
             'HTTP_HOST'       => 'localhost',
             'SERVER_PORT'     => 80,
-            'SCRIPT_NAME'     => '/index.php',
+            'SCRIPT_NAME'     => '/',
             'REQUEST_URI'     => '/',
             'REQUEST_METHOD'  => 'GET'
         ]);
@@ -180,7 +179,7 @@ class Request extends \Lead\Net\Http\Request
             'username' => $username,
             'password' => $password,
             'auth'     => null,
-            'ignore'   => '',
+            'ignore'   => '~index.php$~',
             'method'   => $env['REQUEST_METHOD'],
             'headers'  => $headers,
             'env'      => $env
@@ -189,19 +188,16 @@ class Request extends \Lead\Net\Http\Request
         $uri = $env['REQUEST_URI'];
         list($path) = explode('?', $uri, 2);
 
-        $scriptName = $env['SCRIPT_NAME'];
-        $scriptDir = dirname($scriptName);
+        $basePath = $env['SCRIPT_NAME'] !== '/' ? '/' . trim($env['SCRIPT_NAME'], '/') : '';
 
-        if (stripos($path, $scriptName) === 0) {
-            $basePath = $scriptName;
-        } elseif (stripos($path, $scriptDir) === 0) {
-            $basePath = $scriptDir !== '/' ? $scriptDir : '';
+        $i = 0;
+        $len = min(strlen($path), strlen($basePath));
+        while ($i < $len && $path[$i] === $basePath[$i]) {
+            $i++;
         }
 
-        $basePath = isset($basePath) && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
-
         return $defaults += [
-            'path'     => '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/'),
+            'path'     => '/' . (trim(substr($path, $i), '/') ?: '/'),
             'basePath' => $basePath
         ];
     }
@@ -219,7 +215,7 @@ class Request extends \Lead\Net\Http\Request
         }
         $this->_basePathTmp = $basePath;
         if (isset($this->_ignore)) {
-            $basePath = str_replace($this->_ignore, '', $basePath);
+            $basePath = preg_replace($this->_ignore, '', $basePath);
         }
         $this->_basePath = $basePath && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
         return $this;
