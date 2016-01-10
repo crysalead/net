@@ -49,4 +49,25 @@ describe("Format", function() {
 
     });
 
+    describe("::remove()", function() {
+
+        it("remove a format", function() {
+
+            Format::set([
+                'csv' => ['application/csv'],
+                'pdf' => ['application/pdf']
+            ]);
+
+            expect(Format::get('csv'))->not->toBe(null);
+            expect(Format::get('pdf'))->not->toBe(null);
+
+            Format::remove(['csv', 'pdf']);
+
+            expect(Format::get('csv'))->toBe(null);
+            expect(Format::get('pdf'))->toBe(null);
+
+        });
+
+    });
+
 });

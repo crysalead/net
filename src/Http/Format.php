@@ -45,10 +45,6 @@ class Format
      */
     public static function set($format, $definition = [])
     {
-        if ($definition === false) {
-            unset(static::$_formats[$type]);
-        }
-
         if (func_num_args() === 1) {
             foreach ($format as $key => $value) {
                 static::set($key, ['type' => $value]);
@@ -65,6 +61,20 @@ class Format
         $definition['type'] = (array) $definition['type'];
 
         static::$_formats[$format] = $definition;
+    }
+
+    /**
+     * Removes a format.
+     *
+     * @param string|array $format The format to remove of an array of them.
+     */
+    public static function remove($format)
+    {
+        $formats = (array) $format;
+
+        foreach ($formats as $format) {
+            unset(static::$_formats[$format]);
+        }
     }
 
     /**
