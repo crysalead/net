@@ -206,7 +206,7 @@ class Request extends \Lead\Net\Http\Request
             'username'   => $username,
             'password'   => $password,
             'auth'       => null,
-            'ignorePath' => '~index.php$~',
+            'ignorePath' => null,
             'method'     => $env['REQUEST_METHOD'],
             'headers'    => $headers,
             'env'        => $env
@@ -215,16 +215,23 @@ class Request extends \Lead\Net\Http\Request
         $uri = $env['REQUEST_URI'];
         list($path) = explode('?', $uri, 2);
 
-        $basePath = $env['SCRIPT_NAME'] !== '/' ? '/' . trim($env['SCRIPT_NAME'], '/') : '';
+        $basePath = '/' . ltrim($env['SCRIPT_NAME'], '/');
 
-        $i = 0;
-        $len = min(strlen($path), strlen($basePath));
-        while ($i < $len && $path[$i] === $basePath[$i]) {
-            $i++;
+        if (strncmp($basePath, $path, strlen($basePath)) === 0){
+            $path = '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/');
+            $basePath = '/' . ltrim(dirname($env['SCRIPT_NAME']), '/');
+        } else {
+            $i = 0;
+            $len = min(strlen($path), strlen($basePath));
+            while ($i < $len && $path[$i] === $basePath[$i]) {
+                $i++;
+            }
+            $basePath = substr($path, 0, $i);
+            $path = '/' . (trim(substr($path, $i), '/') ?: '/');
         }
 
         return $defaults += [
-            'path'     => '/' . (trim(substr($path, $i), '/') ?: '/'),
+            'path'     => $path,
             'basePath' => $basePath
         ];
     }
@@ -364,7 +371,7 @@ class Request extends \Lead\Net\Http\Request
             return $this->_basePath;
         }
         $this->_basePathTmp = $basePath;
-        if (isset($this->_ignorePath)) {
+        if ($this->_ignorePath) {
             $basePath = preg_replace($this->_ignorePath, '', $basePath);
         }
         $this->_basePath = $basePath && $basePath !== '/' ? '/' . trim($basePath, '/') : '';

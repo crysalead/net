@@ -311,12 +311,12 @@ EOD;
         it("lazily applies a base path", function() {
 
             $request = new Request([
-                'ignorePath' => '~/webroot/index.php$~'
+                'ignorePath' => '~/webroot$~'
             ]);
 
             expect($request->basePath())->toBe('');
 
-            $request->basePath('/base/path/webroot/index.php');
+            $request->basePath('/base/path/webroot');
             expect($request->basePath())->toBe('/base/path');
 
         });
@@ -328,45 +328,27 @@ EOD;
         it("sets the ignore pattern", function() {
 
             $request = new Request();
-            expect($request->ignorePath())->toBe('~index.php$~');
+            expect($request->ignorePath())->toBe(null);
 
-            $request->ignorePath('~/webroot/index.php$~');
-            expect($request->ignorePath())->toBe('~/webroot/index.php$~');
+            $request->ignorePath('~/webroot$~');
+            expect($request->ignorePath())->toBe('~/webroot$~');
 
         });
 
         it("lazily applies the ignore pattern on the base path", function() {
 
             $request = new Request([
-                'basePath' => '/base/path/webroot/index.php'
+                'basePath' => '/base/path/webroot'
             ]);
 
             expect($request->basePath())->toBe('/base/path/webroot');
 
-            $request->ignorePath('~/webroot/index.php$~');
+            $request->ignorePath('~/webroot$~');
             expect($request->basePath())->toBe('/base/path');
 
             $request->ignorePath(null);
-            expect($request->basePath())->toBe('/base/path/webroot/index.php');
+            expect($request->basePath())->toBe('/base/path/webroot');
 
-        });
-
-    });
-
-    describe("->accepts()", function() {
-
-        it("parses accept header", function() {
-
-            $request = new Request();
-            $request->headers['Accept'] = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1,text/html;level=2;q=0.4, */*;q=0.5';
-
-            expect($request->accepts())->toEqual([
-                "text/html;level=1" => 1,
-                "text/html" => 0.7,
-                "text/html;level=2" => 0.4,
-                "text/*" => 0.3,
-                "*/*" => 0.5
-            ]);
         });
 
     });
@@ -407,7 +389,7 @@ EOD;
 
     });
 
-    describe("->referer()", function() {
+    describe("->accepts()", function() {
 
         it("parses accept header", function() {
 
@@ -439,6 +421,38 @@ EOD;
 
             expect($request->data())->toEqual([
                 'basePath' => '/base/path/webroot',
+                'locale'   => null,
+                'data'     => $_FILES + $_POST,
+                'params'   => [],
+                'env'      => $request->env,
+                'method'   => 'GET',
+                'scheme'   => 'http',
+                'version'  => '1.1',
+                'host'     => 'localhost',
+                'port'     => 80,
+                'path'     => '/app',
+                'query'    => '?get=value',
+                'fragment' => '',
+                'username' => null,
+                'password' => null,
+                'url'      => 'http://localhost/app?get=value',
+                'stream'   => $request->stream()
+            ]);
+
+        });
+
+        it("supports url rewriting", function() {
+
+            $this->globals = defineGlobals([
+                'SERVER' => [
+                    'REQUEST_URI' => '/base/path/app?get=value'
+                ]
+            ]);
+
+            $request = Request::ingoing();
+
+            expect($request->data())->toEqual([
+                'basePath' => '/base/path',
                 'locale'   => null,
                 'data'     => $_FILES + $_POST,
                 'params'   => [],
