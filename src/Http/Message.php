@@ -56,6 +56,7 @@ class Message extends \Lead\Net\Message
             'version'       => '1.1',
             'type'          => null,
             'encoding'      => null,
+            'format'        => null,
             'headers'       => [],
             'classes'       => [
                 'auth'    => 'Lead\Net\Http\Auth',
@@ -69,7 +70,6 @@ class Message extends \Lead\Net\Message
         $this->_classes = $config['classes'];
 
         $this->version($config['version']);
-
 
         if (is_object($config['headers'])) {
             $this->headers = $config['headers'];
@@ -86,6 +86,8 @@ class Message extends \Lead\Net\Message
         if ($config['encoding']) {
             $this->encoding($config['encoding']);
         }
+
+        $this->format($config['format']);
 
         parent::__construct($config);
     }
@@ -154,27 +156,16 @@ class Message extends \Lead\Net\Message
      */
     public function format($format = null)
     {
-        if (!func_num_args()) {
-            if (!$this->_format) {
-                $format = $this->_classes['format'];
-                $this->format($format::suitable($this->type(), $this));
-            }
-            return $this->_format;
-        }
         if (!$format) {
-            return;
+            return $this->_format;
         }
 
         $formatter = $this->_classes['format'];
         if (!$type = $formatter::type($format)){
             throw new NetException("The `'$format'` format is undefiened or has no valid Content-Type defined.");
         }
-        $this->type($type);
-
-        if (!$formatter::match($format, $this)) {
-            throw new NetException("The request is not compatible with `'$format'` requirements, can't set the format to `'$format'`.");
-        }
         $this->_format = $format;
+        $this->type($type);
 
         return $this;
     }
@@ -216,6 +207,9 @@ class Message extends \Lead\Net\Message
         $format = $this->format();
 
         if (func_num_args() === 1) {
+            if (!$format && !is_string($value)) {
+                throw new NetException("The data must be a string when no format is defined.");
+            }
             $this->stream($format ? $formatter::encode($format, $value) : $value);
             return $this;
         }

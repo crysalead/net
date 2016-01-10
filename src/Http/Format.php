@@ -53,6 +53,7 @@ class Format
         }
 
         $definition += [
+            'cast'       => true,
             'type'       => ['text/html'],
             'decode'     => null,
             'encode'     => null,
@@ -119,83 +120,38 @@ class Format
     }
 
     /**
-     * Performs Content-Type negotiation on a `Request` object, by iterating over the accepted
-     * types in sequence, from most preferred to least, and attempting to match a format
-     * defined by `Format::set()`.
+     * Iterates through all existing formats to match a compatible one for the provided request.
      *
-     * @param  object $request A request instance .
-     * @return string          Returns the first matching format, i.e. `'html'` or `'json'`.
-     */
-    public static function negotiate($request)
-    {
-        foreach ($request->accepts() as $type) {
-            if ($format = static::suitable($type, $request)) {
-                return $format;
-            }
-        }
-        return static::suitable($request->type(), $request);
-    }
-
-    /**
-     * Iterates through all existing format to match the one compatible to the provided content type and request.
-     *
-     * @param  string  $type    A content type.
      * @param  object  $request An instance of request.
+     * @param  string  $type    An overriding content type.
      * @return boolean          Returns a compatible format name or `null` if none matched.
      */
-    public static function suitable($type, $request)
+    public static function suitable($request, $type = null)
     {
         $formats = static::$_formats;
 
+        if (func_num_args() === 1) {
+            $type = $request->type();
+        }
+
         foreach ($formats as $format => $definition) {
-            if (!static::_match($type, $definition, $request)) {
+            if (!in_array($type, $definition['type'], true)) {
                 continue;
+            }
+            foreach ($definition['conditions'] as $key => $value) {
+                switch (true) {
+                    case strpos($key, ':'):
+                        if ($request->get($key) !== $value) {
+                            continue 2;
+                        }
+                    break;
+                    case ($request->is($key) !== $value):
+                        continue 2;
+                    break;
+                }
             }
             return $format;
         }
-    }
-
-    /**
-     * Checks if a request is matchable with specific format.
-     *
-     * @param  string  $format  The format to match.
-     * @param  object  $request An instance of request.
-     * @return boolean          Returns `true` if the request matches the format, `false` otherwise.
-     */
-    public static function match($format, $request)
-    {
-        if (!$definition = static::get($format)) {
-            return false;
-        }
-        return static::_match($request->type(), $definition, $request);
-    }
-
-    /**
-     * Helper for `suitable()` && `match`.
-     *
-     * @param  string  $type       A content type.
-     * @param  string  $definition A format definition.
-     * @param  object  $request    An instance of request.
-     * @return boolean             Returns `true` if the request matches the format definition, `false` otherwise.
-     */
-    public static function _match($type, $definition, $request)
-    {
-        if (!in_array($type, $definition['type'], true)) {
-            return false;
-        }
-        foreach ($definition['conditions'] as $key => $value) {
-            switch (true) {
-                case strpos($key, ':'):
-                    if ($request->get($key) !== $value) {
-                        return false;
-                    }
-                break;
-                case ($request->is($key) !== $value):
-                    return false;
-                break;
-            }
-        }
-        return true;
     }
 
     /**
@@ -204,24 +160,24 @@ class Format
      * @param  string $format  The media format into which `$data` will be encoded.
      * @param  mixed  $data    Arbitrary data you wish to encode.
      * @param  array  $options Handler-specific options.
-     * @return mixed           The encoded data.
+     * @return string          The encoded string data.
      */
     public static function encode($format, $data, $options = [])
     {
         $definition = static::get($format);
 
         if (empty($definition['encode'])) {
-            return $data;
+            if (is_string($data)) {
+                return $data;
+            }
+            throw new NetException("The `$format` format requires data needs to be a string.");
         }
 
         $cast = function($data) {
-            if (!is_object($data)) {
-                return $data;
-            }
             return method_exists($data, 'to') ? $data->to('array') : get_object_vars($data);
         };
 
-        if (!empty($handler['cast'])) {
+        if (!empty($definition['cast'])) {
             $data = is_object($data) ? $cast($data) : $data;
         }
 
@@ -233,9 +189,9 @@ class Format
      * Decodes data according to the specified media format.
      *
      * @param  string $format  The media format into which `$data` will be decoded.
-     * @param  mixed  $data    Arbitrary data you wish to decode.
+     * @param  string $data    String data to decode.
      * @param  array  $options Handler-specific options.
-     * @return mixed           The decoded data.
+     * @return mixed           The arbitrary decoded data.
      */
     public static function decode($format, $data, $options = [])
     {
@@ -271,9 +227,6 @@ class Format
             'type'   => ['application/json', 'application/x-json'],
             'encode' => 'json_encode',
             'decode' => function($data) {
-                if ($data === '') {
-                    return '""';
-                }
                 return json_decode($data, true);
             }
         ]);

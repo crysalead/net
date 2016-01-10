@@ -2,6 +2,7 @@
 namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
+use Lead\Net\Http\Request;
 use Lead\Net\Http\Response;
 
 use Kahlan\Plugin\Monkey;
@@ -103,6 +104,7 @@ describe("Response", function() {
             $response->cache(false);
 
             $expected = <<<EOD
+Content-Type: text/html\r
 Expires: Mon, 26 Jul 1997 05:00:00 GMT\r
 Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0\r
 Pragma: no-cache\r
@@ -124,6 +126,7 @@ EOD;
             $response->cache(1451001600);
 
             $expected = <<<EOD
+Content-Type: text/html\r
 Expires: Fri, 25 Dec 2015 00:00:00 GMT\r
 Cache-Control: max-age=600\r
 Pragma: no-cache\r
@@ -175,6 +178,7 @@ EOD;
 
 
             $expected =<<<EOD
+Content-Type: text/html\r
 Set-Cookie: foo1=bar1; Path=/\r
 Set-Cookie: foo2=bar2; Path=/\r
 Set-Cookie: foo3=bar3; Path=/\r
@@ -182,7 +186,26 @@ Set-Cookie: foo3=bar3; Path=/\r
 
 EOD;
 
-            expect((string) $response->headers)->toBe($expected);
+            expect($response->headers->to('header'))->toBe($expected);
+
+        });
+
+    });
+
+    describe("->negociate()", function() {
+
+        it("negociates a format from a request", function() {
+
+            $request = new Request();
+            $response = new Response();
+
+            $request->headers['Accept'] = "text/html;q=0.2,application/json,application/xml;q=0.9,*/*;q=0.8";
+            $response->negotiate($request);
+            expect($response->format())->toBe('json');
+
+            $request->headers['Accept'] = "text/html,application/json;q=0.2,application/xml;q=0.9,*/*;q=0.8";
+            $response->negotiate($request);
+            expect($response->format())->toBe('html');
 
         });
 
@@ -193,10 +216,8 @@ EOD;
         it("casts the response as a string", function() {
 
             $response = new Response([
-                'headers' => [
-                    'Content-Type: application/json'
-                ],
-                'body' => ['hello' => 'world']
+                'format' => 'json',
+                'body'   => ['hello' => 'world']
             ]);
             $cookies = $response->headers->cookies;
 
@@ -225,10 +246,8 @@ EOD;
         it("casts the response as a string", function() {
 
             $response = new Response([
-                'headers' => [
-                    'Content-Type: application/json'
-                ],
-                'body' => ['hello' => 'world']
+                'format' => 'json',
+                'body'   => ['hello' => 'world']
             ]);
             $cookies = $response->headers->cookies;
 

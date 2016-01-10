@@ -172,6 +172,21 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     }
 
     /**
+     * Gets/sets the format of the request.
+     *
+     * @param  string      $format A format name.
+     * @return string|self
+     */
+    public function format($format = null)
+    {
+        if (!$this->_format) {
+            $formatter = $this->_classes['format'];
+            $this->_format = $formatter::suitable($this);
+        }
+        return parent::format($format);
+    }
+
+    /**
      * Returns information about the type of content that the client is requesting.
      *
      * @param  boolean $all If `true` lists all accepted content types

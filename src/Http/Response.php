@@ -92,8 +92,10 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     public function __construct($config = [])
     {
         $defaults = [
-            'status'        => [],
-            'cookies'       => [],
+            'status'   => 200,
+            'location' => null,
+            'format'   => 'html',
+            'cookies'  => [],
             'classes' => [
                 'cookies' => 'Lead\Net\Http\Cookie\SetCookies'
             ]
@@ -102,11 +104,32 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
 
         parent::__construct($config);
 
-        if ($config['status']) {
-            $this->status($config['status']);
+        $this->status($config['status']);
+
+        if ($config['location']) {
+            $this->headers['Location'] = $config['location'];
         }
+
         $cookies = $this->_classes['cookies'];
         $this->headers->cookies = new $cookies(['data' => $config['cookies']]);
+    }
+
+    /**
+     * Performs a format negotiation from a `Request` object, by iterating over the accepted
+     * content types in sequence, from most preferred to least.
+     *
+     * @param  object $request A request instance .
+     */
+    public function negotiate($request)
+    {
+        $formatter = $this->_classes['format'];
+        foreach ($request->accepts() as $type => $value) {
+            if ($format = $formatter::suitable($request, $type)) {
+                $this->format($format);
+                return;
+            }
+        }
+        $this->format($formatter::suitable($request) ?: 'html');
     }
 
     /**
@@ -246,7 +269,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         if (count($parts) < 2) {
             throw new NetException("The CRLFCRLF separator between headers and body is missing.");
         }
-        $response = new static($options);
+        $response = new static($options + ['format' => null]);
 
         list($header, $body) = $parts;
 

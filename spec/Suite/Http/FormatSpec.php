@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http;
 
+use Lead\Collection\Collection;
 use Lead\Net\Http\Format;
 use Lead\Net\Http\Response;
 
@@ -65,6 +66,66 @@ describe("Format", function() {
 
             expect(Format::get('csv'))->toBe(null);
             expect(Format::get('pdf'))->toBe(null);
+
+        });
+
+    });
+
+    describe("::encode()", function() {
+
+        it("encodes in json", function() {
+
+            $json = Format::encode('json', ['key' => 'value']);
+
+            expect($json)->toBe('{"key":"value"}');
+
+        });
+
+        it("encodes objects in json", function() {
+
+            $json = Format::encode('json', new Collection(['key' => 'value']));
+
+            expect($json)->toBe('{"key":"value"}');
+
+        });
+
+        it("encodes in form data", function() {
+
+            $json = Format::encode('form', ['key1' => 'value1', 'key2' => 'value2']);
+
+            expect($json)->toBe('key1=value1&key2=value2');
+
+        });
+
+    });
+
+    describe("::decode()", function() {
+
+        it("decodes json", function() {
+
+            $data = Format::decode('json', '{"key":"value"}');
+
+            expect($data)->toBe(['key' => 'value']);
+
+        });
+
+        it("decodes form data", function() {
+
+            $data = Format::decode('form', 'key1=value1&key2=value2');
+
+            expect($data)->toBe(['key1' => 'value1', 'key2' => 'value2']);
+
+        });
+
+    });
+
+    describe("::to()", function() {
+
+        it("delegates to `::encode()`", function() {
+
+            expect(Format::class)->toReceive('::encode')->with('json', '', ['key' => 'value']);
+
+            Format::to('json', '', ['key' => 'value']);
 
         });
 
