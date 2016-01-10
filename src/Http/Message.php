@@ -10,6 +10,17 @@ use Lead\Net\NetException;
 class Message extends \Lead\Net\Message
 {
     /**
+     * Contains all exportable formats and their handler
+     *
+     * @var array
+     */
+    protected static $_formats = [
+        'array'   => 'Lead\Net\Message::toArray',
+        'string'  => 'Lead\Net\Http\Message::toString',
+        'message' => 'Lead\Net\Http\Message::toMessage'
+    ];
+
+    /**
      * The headers instance.
      *
      * @var object
@@ -166,41 +177,29 @@ class Message extends \Lead\Net\Message
     }
 
     /**
-     * Magic method to convert object to string.
+     * Magic method to convert the instance into an HTTP message string.
+     *
+     * @return string
+     */
+    public function toMessage()
+    {
+        static::_setContentLength($this);
+        return $this->line() . "\r\n" . (string) $this->headers . $this->toString();
+    }
+
+    /**
+     * Magic method convert the instance body into a string.
      *
      * @return string
      */
     public function toString()
     {
-        static::_setContentLength($this);
         if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
-            $content = '';
-            $this->toChunks(function($chunk) use (&$content) { $content .= $chunk; });
-            return $content;
+            $body = '';
+            $this->toChunks(function($chunk) use (&$body) { $body .= $chunk; });
+            return $body;
         }
-        return $this->line() . "\r\n" . (string) $this->headers . (string) $this->_body;
-    }
-
-    /**
-     * Flushes the content of a Message chunk by chunk.
-     *
-     * @param Closure $closure The process closure.
-     * @param Closure $size    The size of the chunks to process.
-     */
-    public function toChunks($closure, $size = null)
-    {
-        $size = $size > 0 ? $size : $this->chunkSize();
-        $stream = $this->stream();
-        $headers = $this->line() . "\r\n" . (string) $this->headers;
-        $closure($headers, strlen($headers));
-        while($chunk = $stream->read($size)) {
-            $readed = strlen($chunk);
-            $closure(dechex($readed) . "\r\n" . $chunk . "\r\n", $readed);
-        }
-        $closure("0\r\n", 0);
-        if ($stream->isSeekable()) {
-            $stream->rewind();
-        }
+        return (string) $this->_body;
     }
 
     /**

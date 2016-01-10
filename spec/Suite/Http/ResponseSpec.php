@@ -188,7 +188,7 @@ EOD;
 
     });
 
-    describe("->toString()", function() {
+    describe("->toMessage()", function() {
 
         it("casts the response as a string", function() {
 
@@ -214,7 +214,29 @@ Set-Cookie: foo=bin; Path=/foo\r
 \r
 {"hello":"world"}
 EOD;
-            expect($response->toString())->toBe($expected);
+            expect($response->toMessage())->toBe($expected);
+
+        });
+
+    });
+
+    describe("->toString()", function() {
+
+        it("casts the response as a string", function() {
+
+            $response = new Response([
+                'headers' => [
+                    'Content-Type: application/json'
+                ],
+                'body' => ['hello' => 'world']
+            ]);
+            $cookies = $response->headers->cookies;
+
+            $cookies['foo'] = 'bar';
+            $cookies['bin'] = 'baz';
+            $cookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
+
+            expect($response->toString())->toBe('{"hello":"world"}');
 
         });
 
@@ -300,7 +322,7 @@ EOD;
             ];
             $response = Response::parse($message);
             expect($response->headers->cookies->data())->toBe($cookies);
-            expect((string) $response)->toBe($message);
+            expect($response->toMessage())->toBe($message);
 
         });
 

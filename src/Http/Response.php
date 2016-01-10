@@ -193,14 +193,44 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     }
 
     /**
-     * Magic method to convert object to string.
+     * Renders a response by writing headers and output.
      *
-     * @return string
+     * @see https://bugs.php.net/bug.php?id=18029
      */
-    public function toString()
+    public function render()
     {
         static::_setContentLength($this);
-        return $this->line() . "\r\n" . (string) $this->headers . (string) $this->_body;
+        header($this->line());
+        foreach ($this->headers as $header) {
+            header($header->to('header'));
+        }
+        if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
+            $this->toChunks(function($chunk) use (&$body) {
+                echo $chunk;
+                return connection_status() === CONNECTION_NORMAL;
+            });
+            return '';
+        }
+        $parts = str_split((string) $this->_body, $this->chunkSize());
+
+        foreach($parts as $chunk) {
+            echo $chunk;
+            if (connection_status() !== CONNECTION_NORMAL) {
+                break;
+            }
+        }
+    }
+
+    /**
+     * Renders a response instance to a string.
+     * This doesn't actually return a string, but does a direct render and returns an empty string.
+     *
+     * @return string An empty string.
+     */
+    public function __toString()
+    {
+        $this->render();
+        return '';
     }
 
     /**

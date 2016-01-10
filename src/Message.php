@@ -34,7 +34,7 @@ class Message
      *
      * @var array
      */
-    protected $_chunkSize = 256;
+    protected $_chunkSize = 4096;
 
     /**
      * Constructor.
@@ -128,6 +128,28 @@ class Message
         }
         $this->_chunkSize = $chunkSize;
         return $this;
+    }
+
+    /**
+     * Flushes the content of a Message chunk by chunk.
+     *
+     * @param Closure $closure The process closure.
+     * @param Closure $size    The size of the chunks to process.
+     */
+    public function toChunks($closure, $size = null)
+    {
+        $size = $size > 0 ? $size : $this->chunkSize();
+        $stream = $this->stream();
+        while($chunk = $stream->read($size)) {
+            $readed = strlen($chunk);
+            if ($closure(dechex($readed) . "\r\n" . $chunk . "\r\n", $readed) === false) {
+                break;
+            }
+        }
+        $closure("0\r\n", 0);
+        if ($stream->isSeekable()) {
+            $stream->rewind();
+        }
     }
 
     /**

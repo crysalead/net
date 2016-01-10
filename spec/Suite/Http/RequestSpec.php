@@ -391,7 +391,37 @@ describe("Request", function() {
 
     });
 
-    describe("->toString()", function() {
+    describe("->toMessage()", function() {
+
+        it("casts the instance to a string", function() {
+
+            $headers = [
+                'Date: Thu, 25 Dec 2014 00:00:00 GMT',
+                'Content-Type: text/html; charset=UTF-8',
+                'Vary: Accept-Encoding, Cookie, User-Agent',
+            ];
+
+            $request = new Request([
+                'headers' => $headers,
+                'body'    => 'Body Message'
+            ]);
+
+
+            $expected =<<<EOD
+GET / HTTP/1.1\r
+Host: localhost\r
+Connection: Close\r
+User-Agent: Mozilla/5.0\r
+Date: Thu, 25 Dec 2014 00:00:00 GMT\r
+Content-Type: text/html; charset=UTF-8\r
+Vary: Accept-Encoding, Cookie, User-Agent\r
+\r
+Body Message
+EOD;
+
+            expect($request->toMessage())->toBe($expected);
+
+        });
 
         it("adds the Content-Length for POST request", function() {
 
@@ -412,7 +442,7 @@ Content-Length: 25\r
 name1=value1&name2=value2
 EOD;
 
-            expect($request->toString())->toBe($expected);
+            expect($request->toMessage())->toBe($expected);
 
         });
 
@@ -441,7 +471,7 @@ name1=value1&name2=value2\r
 
 EOD;
 
-            expect($request->toString())->toBe($expected);
+            expect($request->toMessage())->toBe($expected);
 
         });
 
@@ -456,7 +486,7 @@ EOD;
                     'type'   => 'application/x-www-form-urlencoded',
                     'plain'  => $stream
                 ]);
-                $request->toString();
+                $request->toMessage();
             };
 
 
@@ -519,7 +549,7 @@ EOD;
 
     });
 
-    describe("->__toString()", function() {
+    describe("->toString()", function() {
 
         it("casts to a string", function() {
 
@@ -534,20 +564,7 @@ EOD;
                 'body'    => 'Body Message'
             ]);
 
-
-            $expected =<<<EOD
-GET / HTTP/1.1\r
-Host: localhost\r
-Connection: Close\r
-User-Agent: Mozilla/5.0\r
-Date: Thu, 25 Dec 2014 00:00:00 GMT\r
-Content-Type: text/html; charset=UTF-8\r
-Vary: Accept-Encoding, Cookie, User-Agent\r
-\r
-Body Message
-EOD;
-
-            expect((string) $request)->toBe($expected);
+            expect($request->toString())->toBe('Body Message');
 
         });
 
