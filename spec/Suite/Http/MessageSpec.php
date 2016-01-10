@@ -174,7 +174,7 @@ EOD;
         it("endodes according to the Content-Type", function() {
 
             $message = new Message();
-            $message->type("application/json");
+            $message->format("json");
 
             expect($message->body(""))->toBe($message);
             expect($message->plain())->toBe('""');
@@ -187,7 +187,7 @@ EOD;
         it("decodes according to the Content-Type", function() {
 
             $message = new Message();
-            $message->type("application/json");
+            $message->format("json");
 
             expect($message->plain('""'))->toBe($message);
             expect($message->body())->toBe("");

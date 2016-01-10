@@ -1,25 +1,23 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http;
 
-use Lead\Net\Http\Media;
+use Lead\Net\Http\Format;
 use Lead\Net\Http\Response;
 
-describe("Media", function() {
+describe("Format", function() {
 
     beforeEach(function() {
 
-        Media::reset();
+        Format::reset();
 
     });
 
-    describe("::type()", function() {
+    describe("::set()", function() {
 
         it("supports custom handlers", function() {
 
-            $response = new Response();
-            $response->type('application/csv');
-
-            Media::type('application/csv', [
+            Format::set('csv', [
+                'type'   => ['application/csv'],
                 'encode' => function($data) {
                     ob_start();
                     $out = fopen('php://output', 'w');
@@ -30,6 +28,9 @@ describe("Media", function() {
                     return ob_get_clean();
                 }
             ]);
+
+            $response = new Response();
+            $response->format('csv');
 
             $data = [
                 ['John', 'Doe', '123 Main St.', 'Anytown, CA', '91724'],

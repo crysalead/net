@@ -35,6 +35,13 @@ class Message extends \Lead\Net\Message
     protected $_version = '1.1';
 
     /**
+     * The message format.
+     *
+     * @var string
+     */
+    protected $_format = null;
+
+    /**
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options. Possible values are:
@@ -52,7 +59,7 @@ class Message extends \Lead\Net\Message
             'headers'       => [],
             'classes'       => [
                 'auth'    => 'Lead\Net\Http\Auth',
-                'media'   => 'Lead\Net\Http\Media',
+                'format'  => 'Lead\Net\Http\Format',
                 'stream'  => 'Lead\Storage\Stream\Stream',
                 'headers' => 'Lead\Net\Http\Headers'
             ]
@@ -121,6 +128,7 @@ class Message extends \Lead\Net\Message
                 return;
             }
             list($type) = explode(';', $this->headers['Content-Type']->value(), 2);
+
             return $type;
         }
 
@@ -129,7 +137,45 @@ class Message extends \Lead\Net\Message
             return $this;
         }
 
-        $this->headers['Content-Type'] = $type;
+        if (isset($this->headers['Content-Type'])) {
+            list($old, $encoding) = explode(';', $this->headers['Content-Type']->value(), 2) + [null, null];
+        }
+
+        list($type) = explode(';', $type, 2);
+        $this->headers['Content-Type'] = $type . (isset($encoding) ? ';' . $encoding : '');
+        return $this;
+    }
+
+    /**
+     * Gets/sets the format of the request.
+     *
+     * @param  string      $format A format name.
+     * @return string|self
+     */
+    public function format($format = null)
+    {
+        if (!func_num_args()) {
+            if (!$this->_format) {
+                $format = $this->_classes['format'];
+                $this->format($format::suitable($this->type(), $this));
+            }
+            return $this->_format;
+        }
+        if (!$format) {
+            return;
+        }
+
+        $formatter = $this->_classes['format'];
+        if (!$type = $formatter::type($format)){
+            throw new NetException("The `'$format'` format is undefiened or has no valid Content-Type defined.");
+        }
+        $this->type($type);
+
+        if (!$formatter::match($format, $this)) {
+            throw new NetException("The request is not compatible with `'$format'` requirements, can't set the format to `'$format'`.");
+        }
+        $this->_format = $format;
+
         return $this;
     }
 
@@ -166,14 +212,14 @@ class Message extends \Lead\Net\Message
      */
     public function body($value = null)
     {
-        $media = $this->_classes['media'];
-        $type = $this->type();
+        $formatter = $this->_classes['format'];
+        $format = $this->format();
 
         if (func_num_args() === 1) {
-            $this->stream($type ? $media::encode($type, $value) : $value);
+            $this->stream($format ? $formatter::encode($format, $value) : $value);
             return $this;
         }
-        return $type ? $media::decode($type, (string) $this->_body) : (string) $this->_body;
+        return $format ? $formatter::decode($format, (string) $this->_body) : (string) $this->_body;
     }
 
     /**

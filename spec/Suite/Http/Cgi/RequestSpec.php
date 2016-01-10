@@ -182,6 +182,99 @@ EOD;
 
     });
 
+    describe("->is()", function() {
+
+        it("checks ssl", function() {
+
+            $request = new Request(['env' => ['HTTPS' => 'off']]);
+            expect($request->is('ssl'))->toBe(false);
+
+            $request = new Request(['env' => ['HTTPS' => 'on']]);
+            expect($request->is('ssl'))->toBe(true);
+
+            $request = new Request(['env' => ['HTTPS' => null]]);
+            expect($request->is('ssl'))->toBe(false);
+
+        });
+
+        it("checks format", function() {
+
+            $request = new Request([
+                'env' => [
+                    'CONTENT_TYPE' => 'application/json; charset=UTF-8',
+                    'REQUEST_METHOD' => 'POST'
+                ]
+            ]);
+            expect($request->is('json'))->toBe(true);
+            expect($request->is('html'))->toBe(false);
+            expect($request->is('foo'))->toBe(false);
+
+        });
+
+        it("checks mobile", function() {
+
+            $iPhone = 'Mozilla/5.0 (iPhone; U; CPU like Mac OS X; en) AppleWebKit/420+ (KHTML, like ';
+            $iPhone .= 'Gecko) Version/3.0 Mobile/1A535b Safari/419.3';
+            $request = new Request(['env' => ['HTTP_USER_AGENT' => $iPhone]]);
+            expect($request->is('mobile'))->toBe(true);
+
+            $android = 'Mozilla/5.0 (Linux; U; Android 0.5; en-us) AppleWebKit/522+ (KHTML, like ';
+            $android .= 'Gecko) Safari/419.3';
+            $request = new Request(['env' => ['HTTP_USER_AGENT' => $android]]);
+            expect($request->is('mobile'))->toBe(true);
+
+        });
+
+    });
+
+    describe("->detect()", function() {
+
+        it("detects from rules", function() {
+
+            $request = new Request([
+                'env' => ['SOME_COOL_DETECTION' => true]
+            ]);
+            $request->detect('cool', ['env:SOME_COOL_DETECTION' => true]);
+
+            expect($request->is('cool'))->toBe(true);
+            expect($request->is('foo'))->toBe(false);
+
+        });
+
+        it("detects with regexp based rules", function() {
+            $request = new Request([
+                'env' => [
+                    'HTTP_USER_AGENT' => 'Mozilla/5.0 (iPhone; U; XXXXX like Mac OS X; en) AppleWebKit/420+'
+                ]
+            ]);
+            $request->detect('iPhone', ['http:user-agent' => '~iPhone~']);
+            expect($request->is('iPhone'))->toBe(true);
+
+        });
+
+        it("detects with closure rules", function() {
+
+            $request = new Request();
+            $request->detect('cool', function ($request) { return true; });
+            $request->detect('notCool', function ($request) { return false; });
+
+            expect($request->is('cool'))->toBe(true);
+            expect($request->is('notCool'))->toBe(false);
+
+        });
+
+        it("allows array definition", function() {
+            $request = new Request();
+            $request->detect([
+                'cool' => function ($request) {
+                    return true;
+                }
+            ]);
+            expect($request->is('cool'))->toBe(true);
+        });
+
+    });
+
     describe("->basePath()", function() {
 
         it("sets the base path", function() {

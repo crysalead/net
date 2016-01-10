@@ -172,6 +172,29 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     }
 
     /**
+     * Returns information about the type of content that the client is requesting.
+     *
+     * @param  boolean $all If `true` lists all accepted content types
+     * @return mixed        Returns the negociated type or the accepted content types sorted by
+     *                      client preference if `$all` is set to `true`.
+     */
+    public function accepts()
+    {
+        $accepts = $this->hasHeader('Accept') ? $this->getHeader('Accept') : ['text/html'];
+
+        foreach ($accepts as $i => $value) {
+            list($type, $q) = preg_split('/;\s*q\s*=\s*/', $value, 2) + [$value, 1.0];
+            $stars = substr_count($type, '*');
+            $score = $stars ? (0.03 - $stars * 0.01) : $q;
+            $score = $score * 100000 + strlen($type); //RFC 4288 assumes a max length of 127/127 = 255 chars for mime.
+            $preferences[$score][strtolower(trim($type))] = (float) $q;
+        }
+        krsort($preferences);
+        $preferences = call_user_func_array('array_merge', $preferences);
+        return $preferences;
+    }
+
+    /**
      * Gets/sets the request's mode.
      *
      * @param  string      $mode The mode of the message

@@ -65,6 +65,14 @@ class Request extends \Lead\Net\Http\Request
     protected $_locale = null;
 
     /**
+     * Options used to detect features of the request, using `is()`.
+     * Custom detectors can be added using `detect()`.
+     *
+     * @var array
+     */
+    protected $_detectors = [];
+
+    /**
      * Constructor
      *
      * @param array $config The available configuration options are the following. Further
@@ -88,6 +96,23 @@ class Request extends \Lead\Net\Http\Request
             'classes'   => [
                 'environment' => 'Lead\Env\Env',
                 'auth'        => 'Lead\Net\Http\Auth'
+            ],
+            'detectors' => [
+                'mobile'  => ['http:user-agent'       => [
+                    'iPhone', 'MIDP', 'AvantGo', 'BlackBerry', 'J2ME', 'Opera Mini', 'DoCoMo', 'NetFront',
+                    'Nokia', 'PalmOS', 'PalmSource', 'portalmmm', 'Plucker', 'ReqwirelessWeb', 'iPod',
+                    'SonyEricsson', 'Symbian', 'UP\.Browser', 'Windows CE', 'Xiino', 'Android'
+                ]],
+                'ajax'    => ['http:x-requested-with' => 'XMLHttpRequest'],
+                'flash'   => ['http:user-agent'       => 'Shockwave Flash'],
+                'ssl'     => ['http:ssl'              =>  true],
+                'get'     => ['http:method'           => 'GET'],
+                'post'    => ['http:method'           => 'POST'],
+                'put'     => ['http:method'           => 'PUT'],
+                'patch'   => ['http:method'           => 'PATCH'],
+                'delete'  => ['http:method'           => 'DELETE'],
+                'head'    => ['http:method'           => 'HEAD'],
+                'options' => ['http:method'           => 'OPTIONS']
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -103,6 +128,8 @@ class Request extends \Lead\Net\Http\Request
         $this->env = $config['env'];
         $this->data = $config['data'];
         $this->params = $config['params'];
+
+        $this->_detectors = $config['detectors'];
 
         $this->ignorePath($config['ignorePath']);
         $this->basePath($config['basePath']);
@@ -203,6 +230,129 @@ class Request extends \Lead\Net\Http\Request
     }
 
     /**
+     * This method allows easy extraction of any request data using a prefixed key syntax. By
+     * passing keys in the form of `'prefix:key'`, it is possible to query different information of
+     * various different types, including GET and POST data, and server environment variables. The
+     * full list of prefixes is as follows:
+     *
+     * - `'data'`: Retrieves values from POST data.
+     * - `'params'`: Retrieves query parameters returned from the routing system.
+     * - `'query'`: Retrieves values from GET data.
+     * - `'env'`: Retrieves values from the server or environment, such as `'env:https'`, or custom
+     *   environment values, like `'env:base'`. See the `env()` method for more info.
+     * - `'http'`: Retrieves header values (i.e. `'http:accept'`), or the HTTP request method (i.e.
+     *   `'http:method'`).
+     *
+     * This method is used in several different places in the framework in order to provide the
+     * ability to act conditionally on different aspects of the request. See `Media::type()` (the
+     * section on content negotiation) and the routing system for more information.
+     *
+     *
+     * @param  string $key A prefixed key indicating what part of the request data the requested
+     *                     value should come from, and the name of the value to retrieve, in lower case.
+     * @return string      Returns the value of a GET, POST, routing environment, or HTTP header variable.
+     */
+    public function get($key)
+    {
+        list($var, $key) = explode(':', $key);
+
+        switch (true) {
+            case in_array($var, array('params', 'data', 'query')):
+                return isset($this->{$var}[$key]) ? $this->{$var}[$key] : null;
+            case ($var === 'env'):
+                $key = strtoupper($key);
+                return isset($this->env[$key]) ? $this->env[$key] : null;
+            case ($var === 'http'):
+                if ($key === 'method') {
+                    return $this->method();
+                }
+                if ($key === 'ssl') {
+                    return isset($this->env['HTTPS']) ? $this->env['HTTPS'] : false;
+                }
+                return isset($this->headers[$key]) ? $this->headers[$key] : null;
+        }
+    }
+
+    /**
+     * Provides a simple syntax for making assertions about the properties of a request.
+     *
+     * The default detectors include the following:
+     *
+     * - `'mobile'`: Uses a regular expression to match common mobile browser user agents.
+     * - `'ajax'`: Checks to see if the `X-Requested-With` header is present, and matches the value
+     *    `'XMLHttpRequest'`.
+     * - `'flash'`: Checks to see if the user agent is `'Shockwave Flash'`.
+     * - `'ssl'`: Verifies that the request is SSL-secured.
+     * - `'get'` / `'post'` / `'put'` / `'delete'` / `'head'` / `'options'`: Checks that the HTTP
+     *   request method matches the one specified.
+     *
+     * In addition to the above, this method also accepts media format names to
+     * make assertions against the format of the request body (for POST or PUT requests), i.e.
+     * `$request->is('json')`. This will return `true` if the client has made a POST request with
+     * JSON data.
+     *
+     * For information about adding custom detectors or overriding the ones in the core, see the
+     * `detect()` method.
+     *
+     * @param  string  $flag The name of the flag to check, which should be the name of a valid
+     *                       detector of media format.
+     * @return boolean       Returns `true` if the detector check succeeds of the request match
+     *                       the media format, otherwise `false`.
+     */
+    public function is($flag)
+    {
+        if (!isset($this->_detectors[$flag])) {
+            return $flag === $this->format();
+        }
+        $detector = $this->_detectors[$flag];
+
+        if (is_callable($detector)) {
+            return $detector($this);
+        }
+        if (!is_array($detector)) {
+            throw new Exception("Invalid `'{$flag}'` detector definition.");
+        }
+        list($key, $check) = each($detector);
+        $value = $this->get($key);
+
+        if (is_array($check)) {
+            return !!preg_match('~' . join('|', $check) . '~i', $value);
+        }
+        if (preg_match('~^(?P<char>\~|/|@|#).*?(?P=char)$~', $check)) {
+            return !!preg_match($check, $value);
+        }
+        return $check === $value;
+    }
+
+    /**
+     * Creates a detector used with `is()`. A detector is a boolean check that is created to
+     * determine something about a request.
+     *
+     * A detector check can be either an exact string match or a regular expression match against a
+     * header or environment variable. A detector check can also be a closure that accepts the
+     * `Request` object instance as a parameter.
+     *
+     *
+     * @param string $flag     The name of the detector check.
+     * @param mixed  $detector Detectors can be specified in the following ways:
+     *                         - A key/value array containing a header/environment variable name as key, and a value to match
+     *                           against. The value part of the array must be an exact match to the header or
+     *                           variable value.
+     *                         - A key/value array containing a header/environment variable name as key, and a regular
+     *                           expression as value.
+     *                         - A closure which accepts an instance of the `Request` object and returns a boolean
+     *                           value.
+     */
+    public function detect($flag, $detector = null)
+    {
+        if (is_array($flag)) {
+            $this->_detectors = $flag + $this->_detectors;
+        } else {
+            $this->_detectors[$flag] = $detector;
+        }
+    }
+
+    /**
      * Gets/sets the base path of the current request.
      *
      * @param  string      $basePath The base path to set or none to get the setted one.
@@ -235,29 +385,6 @@ class Request extends \Lead\Net\Http\Request
         $this->_ignorePath = $ignorePath;
         $this->basePath($this->_basePathTmp);
         return $this;
-    }
-
-    /**
-     * Returns information about the type of content that the client is requesting.
-     *
-     * @param  boolean $all If `true` lists all accepted content types
-     * @return mixed        Returns the negociated type or the accepted content types sorted by
-     *                      client preference if `$all` is set to `true`.
-     */
-    public function accepts()
-    {
-        $accepts = $this->hasHeader('Accept') ? $this->getHeader('Accept') : ['text/html'];
-
-        foreach ($accepts as $i => $value) {
-            list($type, $q) = preg_split('/;\s*q\s*=\s*/', $value, 2) + [$value, 1.0];
-            $stars = substr_count($type, '*');
-            $score = $stars ? (0.03 - $stars * 0.01) : $q;
-            $score = $score * 100000 + strlen($type); //RFC 4288 assumes a max length of 127/127 = 255 chars for mime.
-            $preferences[$score][strtolower(trim($type))] = (float) $q;
-        }
-        krsort($preferences);
-        $preferences = call_user_func_array('array_merge', $preferences);
-        return $preferences;
     }
 
     /**
