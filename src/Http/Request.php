@@ -180,8 +180,8 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     public function format($format = null)
     {
         if (!$this->_format) {
-            $formatter = $this->_classes['format'];
-            $this->_format = $formatter::suitable($this);
+            $media = $this->_classes['media'];
+            $this->_format = $media::suitable($this);
         }
         return parent::format($format);
     }

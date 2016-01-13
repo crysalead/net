@@ -122,9 +122,9 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function negotiate($request)
     {
-        $formatter = $this->_classes['format'];
+        $media = $this->_classes['media'];
         foreach ($request->accepts() as $type => $value) {
-            if ($format = $formatter::suitable($request, $type)) {
+            if ($format = $media::suitable($request, $type)) {
                 $this->format($format);
                 return;
             }

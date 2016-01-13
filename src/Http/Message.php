@@ -60,7 +60,7 @@ class Message extends \Lead\Net\Message
             'headers'       => [],
             'classes'       => [
                 'auth'    => 'Lead\Net\Http\Auth',
-                'format'  => 'Lead\Net\Http\Format',
+                'media'   => 'Lead\Net\Http\Media',
                 'stream'  => 'Lead\Storage\Stream\Stream',
                 'headers' => 'Lead\Net\Http\Headers'
             ]
@@ -160,9 +160,9 @@ class Message extends \Lead\Net\Message
             return $this->_format;
         }
 
-        $formatter = $this->_classes['format'];
-        if (!$type = $formatter::type($format)){
-            throw new NetException("The `'$format'` format is undefiened or has no valid Content-Type defined.");
+        $media = $this->_classes['media'];
+        if (!$type = $media::type($format)){
+            throw new NetException("The `'$format'` format is undefined or has no valid Content-Type defined check the `Media` class.");
         }
         $this->_format = $format;
         $this->type($type);
@@ -201,19 +201,19 @@ class Message extends \Lead\Net\Message
      * @param  mixed       $value The data to set as body message.
      * @return string|self
      */
-    public function body($value = null)
+    public function body($value = null, $options = [])
     {
-        $formatter = $this->_classes['format'];
+        $media = $this->_classes['media'];
         $format = $this->format();
 
-        if (func_num_args() === 1) {
+        if (func_num_args() >= 1) {
             if (!$format && !is_string($value)) {
                 throw new NetException("The data must be a string when no format is defined.");
             }
-            $this->stream($format ? $formatter::encode($format, $value) : $value);
+            $this->stream($format ? $media::encode($format, $value, $options) : $value);
             return $this;
         }
-        return $format ? $formatter::decode($format, (string) $this->_body) : (string) $this->_body;
+        return $format ? $media::decode($format, (string) $this->_body) : (string) $this->_body;
     }
 
     /**

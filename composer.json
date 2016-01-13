@@ -6,11 +6,11 @@
     "require": {
         "php": ">=5.5",
         "crysalead/collection": "~2.0",
+        "crysalead/env": "~1.0",
         "crysalead/set": "~2.0",
         "crysalead/storage-stream": "~1.0",
         "crysalead/text": "~2.0",
-        "psr/http-message": "~1.0",
-        "crysalead/env": "~1.0"
+        "psr/http-message": "~1.0"
     },
     "require-dev": {
         "crysalead/kahlan": "~2.0"

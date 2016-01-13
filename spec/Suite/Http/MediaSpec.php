@@ -3,13 +3,14 @@ namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Collection\Collection;
 use Lead\Net\Http\Format;
+use Lead\Net\Http\Media;
 use Lead\Net\Http\Response;
 
-describe("Format", function() {
+describe("Media", function() {
 
-    beforeEach(function() {
+    afterEach(function() {
 
-        Format::reset();
+        Media::reset();
 
     });
 
@@ -17,8 +18,7 @@ describe("Format", function() {
 
         it("supports custom handlers", function() {
 
-            Format::set('csv', [
-                'type'   => ['application/csv'],
+            Media::set('csv', ['application/csv'], [
                 'encode' => function($data) {
                     ob_start();
                     $out = fopen('php://output', 'w');
@@ -54,18 +54,16 @@ describe("Format", function() {
 
         it("remove a format", function() {
 
-            Format::set([
-                'csv' => ['application/csv'],
-                'pdf' => ['application/pdf']
-            ]);
+            Media::set('csv', []);
+            Media::set('pdf', []);
 
-            expect(Format::get('csv'))->not->toBe(null);
-            expect(Format::get('pdf'))->not->toBe(null);
+            expect(Media::get('csv'))->not->toBe(null);
+            expect(Media::get('pdf'))->not->toBe(null);
 
-            Format::remove(['csv', 'pdf']);
+            Media::remove(['csv', 'pdf']);
 
-            expect(Format::get('csv'))->toBe(null);
-            expect(Format::get('pdf'))->toBe(null);
+            expect(Media::get('csv'))->toBe(null);
+            expect(Media::get('pdf'))->toBe(null);
 
         });
 
@@ -75,7 +73,7 @@ describe("Format", function() {
 
         it("encodes in json", function() {
 
-            $json = Format::encode('json', ['key' => 'value']);
+            $json = Media::encode('json', ['key' => 'value']);
 
             expect($json)->toBe('{"key":"value"}');
 
@@ -83,7 +81,7 @@ describe("Format", function() {
 
         it("encodes objects in json", function() {
 
-            $json = Format::encode('json', new Collection(['key' => 'value']));
+            $json = Media::encode('json', new Collection(['key' => 'value']));
 
             expect($json)->toBe('{"key":"value"}');
 
@@ -91,7 +89,7 @@ describe("Format", function() {
 
         it("encodes in form data", function() {
 
-            $json = Format::encode('form', ['key1' => 'value1', 'key2' => 'value2']);
+            $json = Media::encode('form', ['key1' => 'value1', 'key2' => 'value2']);
 
             expect($json)->toBe('key1=value1&key2=value2');
 
@@ -103,7 +101,7 @@ describe("Format", function() {
 
         it("decodes json", function() {
 
-            $data = Format::decode('json', '{"key":"value"}');
+            $data = Media::decode('json', '{"key":"value"}');
 
             expect($data)->toBe(['key' => 'value']);
 
@@ -111,7 +109,7 @@ describe("Format", function() {
 
         it("decodes form data", function() {
 
-            $data = Format::decode('form', 'key1=value1&key2=value2');
+            $data = Media::decode('form', 'key1=value1&key2=value2');
 
             expect($data)->toBe(['key1' => 'value1', 'key2' => 'value2']);
 
@@ -123,9 +121,9 @@ describe("Format", function() {
 
         it("delegates to `::encode()`", function() {
 
-            expect(Format::class)->toReceive('::encode')->with('json', '', ['key' => 'value']);
+            expect(Media::class)->toReceive('::encode')->with('json', '', ['key' => 'value']);
 
-            Format::to('json', '', ['key' => 'value']);
+            Media::to('json', '', ['key' => 'value']);
 
         });
 

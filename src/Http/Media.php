@@ -2,9 +2,9 @@
 namespace Lead\Net\Http;
 
 /**
- * The `Format` class facilitates content negociation and data encoding/decoding.
+ * The `Media` class sets encoding/decoding handlers for formats.
  */
-class Format
+class Media
 {
     /**
      * Format definitions.
@@ -19,9 +19,9 @@ class Format
      * Example of a CSV format definition.
      *
      * ```php
-     *  Media::set('csv', [
-     *      'type'   => ['application/csv'],
-     *      'encode' => function($data) {
+     *  Media::set('csv', ['application/csv'], [
+     *      'cast'   => true,
+     *      'encode' => function($data, $options = []) {
      *          ob_start();
      *          $out = fopen('php://output', 'w');
      *          foreach ($data as $record) {
@@ -30,7 +30,7 @@ class Format
      *          fclose($out);
      *          return ob_get_clean();
      *      },
-     *      'decode' => function($data) {
+     *      'decode' => function($data, $options = []) {
      *          $lines = explode(PHP_EOL, $data);
      *          $array = [];
      *          foreach ($lines as $line) {
@@ -43,23 +43,17 @@ class Format
      * @param  string $format     The format to register.
      * @param  array  $definition The definition array.
      */
-    public static function set($format, $definition = [])
+    public static function set($format, $type, $definition = [])
     {
-        if (func_num_args() === 1) {
-            foreach ($format as $key => $value) {
-                static::set($key, ['type' => $value]);
-            }
-            return;
-        }
+        $type = $type ? (array) $type : ['text/html'];
 
         $definition += [
             'cast'       => true,
-            'type'       => ['text/html'],
             'decode'     => null,
             'encode'     => null,
+            'type'       => $type,
             'conditions' => []
         ];
-        $definition['type'] = (array) $definition['type'];
 
         static::$_formats[$format] = $definition;
     }
@@ -105,21 +99,6 @@ class Format
     }
 
     /**
-     * Alias for `encode()` included for interface compatibility with `Lead\Collection\Collection::to()`,
-     * which allows a collection object to be exported to any format supported by a `Format` handler.
-     *
-     * @param  mixed $format  Format into which data will be converted, i.e. `'json'`.
-     * @param  mixed $data    Either an array or object (usually an instance of `Collection`) which will
-     *                        be converted into the specified format.
-     * @param  array $options Additional handler-specific options to pass to the content handler.
-     * @return mixed
-     */
-    public static function to($format, $data, $options = [])
-    {
-        return static::encode($format, $data, $options);
-    }
-
-    /**
      * Iterates through all existing formats to match a compatible one for the provided request.
      *
      * @param  object  $request An instance of request.
@@ -155,9 +134,24 @@ class Format
     }
 
     /**
-     * Encodes data according to the specified media format.
+     * Alias for `encode()` included for interface compatibility with `Lead\Collection\Collection::to()`,
+     * which allows a collection object to be exported to any format supported by a `Format` handler.
      *
-     * @param  string $format  The media format into which `$data` will be encoded.
+     * @param  mixed $format  Format into which data will be converted, i.e. `'json'`.
+     * @param  mixed $data    Either an array or object (usually an instance of `Collection`) which will
+     *                        be converted into the specified format.
+     * @param  array $options Additional handler-specific options to pass to the content handler.
+     * @return mixed
+     */
+    public static function to($format, $data, $options = [])
+    {
+        return static::encode($format, $data, $options);
+    }
+
+    /**
+     * Encodes data according to the specified format.
+     *
+     * @param  string $format  The format into which `$data` will be encoded.
      * @param  mixed  $data    Arbitrary data you wish to encode.
      * @param  array  $options Handler-specific options.
      * @return string          The encoded string data.
@@ -186,9 +180,9 @@ class Format
     }
 
     /**
-     * Decodes data according to the specified media format.
+     * Decodes data according to the specified format.
      *
-     * @param  string $format  The media format into which `$data` will be decoded.
+     * @param  string $format  The format into which `$data` will be decoded.
      * @param  string $data    String data to decode.
      * @param  array  $options Handler-specific options.
      * @return mixed           The arbitrary decoded data.
@@ -205,34 +199,28 @@ class Format
     }
 
     /**
-     * Resets the `Media` class to its default state.
+     * Resets the `Format` class to its default state.
      */
     public static function reset()
     {
         static::$_formats = [];
 
-        static::set([
-            'html' => ['text/html', 'application/xhtml+xml'],
-            'form' => ['application/x-www-form-urlencoded', 'multipart/form-data'],
-            'json' => ['application/json'],
-            'rss'  => ['application/rss+xml'],
-            'atom' => ['application/atom+xml'],
-            'css'  => ['text/css'],
-            'js'   => ['application/javascript', 'text/javascript'],
-            'text' => ['text/plain'],
-            'xml'  => ['application/xml', 'application/soap+xml', 'text/xml']
-        ]);
+        static::set('html', ['text/html', 'application/xhtml+xml']);
+        static::set('rss',  ['application/rss+xml']);
+        static::set('atom', ['application/atom+xml']);
+        static::set('css',  ['text/css']);
+        static::set('js',   ['application/javascript', 'text/javascript']);
+        static::set('text', ['text/plain']);
+        static::set('xml',  ['application/xml', 'application/soap+xml', 'text/xml']);
 
-        static::set('json', [
-            'type'   => ['application/json', 'application/x-json'],
+        static::set('json', ['application/json'], [
             'encode' => 'json_encode',
             'decode' => function($data) {
                 return json_decode($data, true);
             }
         ]);
 
-        static::set('form', [
-            'type'   => ['application/x-www-form-urlencoded', 'multipart/form-data'],
+        static::set('form', ['application/x-www-form-urlencoded', 'multipart/form-data'], [
             'encode' => 'http_build_query',
             'decode' => function($data) {
                 $decoded = array();
@@ -243,4 +231,4 @@ class Format
     }
 }
 
-Format::reset();
+Media::reset();
