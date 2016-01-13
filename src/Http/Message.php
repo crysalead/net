@@ -265,7 +265,7 @@ class Message extends \Lead\Net\Message
      *
      * @param object $request
      */
-    public static function _setContentLength($request)
+    protected static function _setContentLength($request)
     {
         if ($request->headers['Transfer-Encoding']->value() === 'chunked') {
             return;
