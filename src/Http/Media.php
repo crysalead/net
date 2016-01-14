@@ -122,7 +122,7 @@ class Media
             foreach ($definition['conditions'] as $key => $value) {
                 switch (true) {
                     case strpos($key, ':'):
-                        if ($request->get($key) !== $value) {
+                        if ($request->attr($key) !== $value) {
                             continue 2;
                         }
                     break;

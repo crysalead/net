@@ -38,11 +38,11 @@ describe("Media", function() {
                 ['Jane', 'Doe', '124 Main St.', 'Anytown, CA', '91724']
             ];
 
-            $response->body($data);
+            $response->set($data);
 
             $expected = 'John,Doe,"123 Main St.","Anytown, CA",91724' . "\n";
             $expected .= 'Jane,Doe,"124 Main St.","Anytown, CA",91724' . "\n";
-            expect($response->plain())->toBe($expected);
+            expect($response->body())->toBe($expected);
 
             expect((string) $response->headers['Content-Type'])->toBe('Content-Type: application/csv');
 

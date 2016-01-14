@@ -53,12 +53,13 @@ class Message extends \Lead\Net\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'version'       => '1.1',
-            'type'          => null,
-            'encoding'      => null,
-            'format'        => null,
-            'headers'       => [],
-            'classes'       => [
+            'version'  => '1.1',
+            'type'     => null,
+            'encoding' => null,
+            'format'   => null,
+            'data'     => null,
+            'headers'  => [],
+            'classes'  => [
                 'auth'    => 'Lead\Net\Http\Auth',
                 'media'   => 'Lead\Net\Http\Media',
                 'stream'  => 'Lead\Storage\Stream\Stream',
@@ -90,6 +91,10 @@ class Message extends \Lead\Net\Message
         $this->format($config['format']);
 
         parent::__construct($config);
+
+        if ($config['data'] !== null) {
+            $this->set($config['data']);
+        }
     }
 
     /**
@@ -196,24 +201,35 @@ class Message extends \Lead\Net\Message
     }
 
     /**
+     * Gets the body of this message.
+     *
+     * @param  array $options The decoding options.
+     * @return mixed          The formatted body.
+     */
+    public function get($options = [])
+    {
+        $media = $this->_classes['media'];
+        $format = $this->format();
+        return $format ? $media::decode($format, (string) $this->_body) : (string) $this->_body;
+    }
+
+    /**
      * Gets/sets the body of this message.
      *
-     * @param  mixed       $value The data to set as body message.
-     * @return string|self
+     * @param  mixed      $value   The formatted body.
+     * @param  array      $options The encoding options.
+     * @return mixed|self
      */
-    public function body($value = null, $options = [])
+    public function set($value = null, $options = [])
     {
         $media = $this->_classes['media'];
         $format = $this->format();
 
-        if (func_num_args() >= 1) {
-            if (!$format && !is_string($value)) {
-                throw new NetException("The data must be a string when no format is defined.");
-            }
-            $this->stream($format ? $media::encode($format, $value, $options) : $value);
-            return $this;
+        if (!$format && !is_string($value)) {
+            throw new NetException("The data must be a string when no format is defined.");
         }
-        return $format ? $media::decode($format, (string) $this->_body) : (string) $this->_body;
+        $this->stream($format ? $media::encode($format, $value, $options) : $value);
+        return $this;
     }
 
     /**

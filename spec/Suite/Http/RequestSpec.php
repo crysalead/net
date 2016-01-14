@@ -403,7 +403,7 @@ describe("Request", function() {
 
             $request = new Request([
                 'headers' => $headers,
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
 
@@ -428,7 +428,7 @@ EOD;
             $request = new Request([
                 'method'  => 'POST',
                 'type'    => 'application/x-www-form-urlencoded',
-                'body'    => ['name1' => 'value1', 'name2' => 'value2']
+                'data'    => ['name1' => 'value1', 'name2' => 'value2']
             ]);
 
             $expected =<<<EOD
@@ -454,7 +454,7 @@ EOD;
                     'Transfer-Encoding: chunked'
                 ],
                 'type'    => 'application/x-www-form-urlencoded',
-                'body'    => ['name1' => 'value1', 'name2' => 'value2']
+                'data'    => ['name1' => 'value1', 'name2' => 'value2']
             ]);
 
             $expected =<<<EOD
@@ -484,7 +484,7 @@ EOD;
                 $request = new Request([
                     'method' => 'POST',
                     'type'   => 'application/x-www-form-urlencoded',
-                    'plain'  => $stream
+                    'body'   => $stream
                 ]);
                 $request->toMessage();
             };
@@ -561,7 +561,7 @@ EOD;
 
             $request = new Request([
                 'headers' => $headers,
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
             expect($request->toString())->toBe('Body Message');
@@ -574,7 +574,7 @@ EOD;
 
         it("clones the headers but not the stream ressource", function() {
 
-            $request = new Request(['body' => 'Body Message']);
+            $request = new Request(['data' => 'Body Message']);
             $new = clone $request;
             expect($request->headers)->not->toBe($new->headers);
             expect($request->stream())->toBe($new->stream());
@@ -583,7 +583,7 @@ EOD;
 
         it("clones cookies", function() {
 
-            $request = new Request(['body' => 'Body Message']);
+            $request = new Request(['data' => 'Body Message']);
             $cookies = $request->headers->cookies;
             $cookies['foo'] = 'bar';
 

@@ -123,11 +123,13 @@ class Request extends \Lead\Net\Http\Request
         }
 
         $config += $this->_defaults($config);
-        parent::__construct($config);
 
         $this->env = $config['env'];
         $this->data = $config['data'];
         $this->params = $config['params'];
+
+        unset($config['data']);
+        parent::__construct($config);
 
         $this->_detectors = $config['detectors'];
 
@@ -259,7 +261,7 @@ class Request extends \Lead\Net\Http\Request
      *                     value should come from, and the name of the value to retrieve, in lower case.
      * @return string      Returns the value of a GET, POST, routing environment, or HTTP header variable.
      */
-    public function get($key)
+    public function attr($key)
     {
         list($var, $key) = explode(':', $key);
 
@@ -320,7 +322,7 @@ class Request extends \Lead\Net\Http\Request
             throw new Exception("Invalid `'{$flag}'` detector definition.");
         }
         list($key, $check) = each($detector);
-        $value = $this->get($key);
+        $value = $this->attr($key);
 
         if (is_array($check)) {
             return !!preg_match('~' . join('|', $check) . '~i', $value);

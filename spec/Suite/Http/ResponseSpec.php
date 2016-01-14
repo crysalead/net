@@ -217,7 +217,7 @@ EOD;
 
             $response = new Response([
                 'format' => 'json',
-                'body'   => ['hello' => 'world']
+                'data'   => ['hello' => 'world']
             ]);
             $cookies = $response->headers->cookies;
 
@@ -247,7 +247,7 @@ EOD;
 
             $response = new Response([
                 'format' => 'json',
-                'body'   => ['hello' => 'world']
+                'data'   => ['hello' => 'world']
             ]);
             $cookies = $response->headers->cookies;
 

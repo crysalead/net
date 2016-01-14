@@ -169,31 +169,35 @@ EOD;
 
     });
 
-    describe("->body()", function() {
+    describe("->set()", function() {
 
         it("endodes according to the Content-Type", function() {
 
             $message = new Message();
             $message->format("json");
 
-            expect($message->body(""))->toBe($message);
-            expect($message->plain())->toBe('""');
+            expect($message->set(""))->toBe($message);
+            expect($message->body())->toBe('""');
 
-            expect($message->body(['name' => 'value']))->toBe($message);
-            expect($message->plain())->toBe('{"name":"value"}');
+            expect($message->set(['name' => 'value']))->toBe($message);
+            expect($message->body())->toBe('{"name":"value"}');
 
         });
+
+    });
+
+    describe("->get()", function() {
 
         it("decodes according to the Content-Type", function() {
 
             $message = new Message();
             $message->format("json");
 
-            expect($message->plain('""'))->toBe($message);
-            expect($message->body())->toBe("");
+            expect($message->body('""'))->toBe($message);
+            expect($message->get())->toBe("");
 
-            expect($message->plain('{"name":"value"}'))->toBe($message);
-            expect($message->body())->toBe(['name' => 'value']);
+            expect($message->body('{"name":"value"}'))->toBe($message);
+            expect($message->get())->toBe(['name' => 'value']);
 
         });
 

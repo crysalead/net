@@ -296,7 +296,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             $body = $decoded;
         }
 
-        $response->plain($body);
+        $response->body($body);
         return $response;
     }
 

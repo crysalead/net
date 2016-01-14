@@ -50,7 +50,7 @@ describe("MessageTrait", function() {
 
             $request = new Request([
                 'headers' => $headers,
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
             expect($request->getHeaders())->toEqual([
@@ -73,7 +73,7 @@ describe("MessageTrait", function() {
 
             $request = new Request([
                 'headers' => ['Content-Type: text/html; charset=UTF-8'],
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
 
@@ -91,7 +91,7 @@ describe("MessageTrait", function() {
 
             $request = new Request([
                 'headers' => ['Content-Type: text/html; charset=UTF-8'],
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
 
@@ -108,7 +108,7 @@ describe("MessageTrait", function() {
 
             $request = new Request([
                 'headers' => ['Content-Type: text/html; charset=UTF-8'],
-                'body'    => 'Body Message'
+                'data'    => 'Body Message'
             ]);
 
 
@@ -172,7 +172,7 @@ describe("MessageTrait", function() {
 
         it("gets the stream body", function() {
 
-            $request = new Request(['body' => 'Body Message']);
+            $request = new Request(['data' => 'Body Message']);
             $body = $request->getBody();
             expect($body)->toBeAnInstanceOf(StreamInterface::class);
             expect((string) $body)->toBe('Body Message');
@@ -185,7 +185,7 @@ describe("MessageTrait", function() {
 
         it("creates a new request with the provided stream", function() {
 
-            $request = new Request(['body' => 'Body Message']);
+            $request = new Request(['data' => 'Body Message']);
 
             $stream = new Stream('New Message');
             $new = $request->withBody($stream);

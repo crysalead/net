@@ -48,7 +48,6 @@ class Message
     {
         $defaults = [
             'body'      => '',
-            'plain'     => null,
             'chunkSize' => 256,
             'classes'   => [
                 'scheme'  => 'Lead\Net\Scheme',
@@ -60,32 +59,16 @@ class Message
         $this->_classes = $config['classes'];
 
         $this->chunkSize($config['chunkSize']);
-
-        if ($config['plain'] !== null) {
-            $this->plain($config['plain']);
-        } else {
-            $this->body($config['body']);
-        }
+        $this->body($config['body']);
     }
 
     /**
-     * Aliases for `plain()`.
+     * Gets/sets the plain body message.
      *
      * @param  string      $value.
      * @return string|self
      */
     public function body($value = null)
-    {
-        return func_num_args() ? $this->plain($value) : $this->plain();
-    }
-
-    /**
-     * Gets/sets the plain body message (string way).
-     *
-     * @param  string      $value.
-     * @return string|self
-     */
-    public function plain($value = null)
     {
         if (func_num_args() === 1) {
             $this->stream($value);
