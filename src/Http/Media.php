@@ -1,6 +1,8 @@
 <?php
 namespace Lead\Net\Http;
 
+use Lead\Net\NetException;
+
 /**
  * The `Media` class sets encoding/decoding handlers for formats.
  */
@@ -135,7 +137,7 @@ class Media
 
     /**
      * Alias for `encode()` included for interface compatibility with `Lead\Collection\Collection::to()`,
-     * which allows a collection object to be exported to any format supported by a `Format` handler.
+     * which allows a collection object to be exported to any format supported by a `Media` handler.
      *
      * @param  mixed $format  Format into which data will be converted, i.e. `'json'`.
      * @param  mixed $data    Either an array or object (usually an instance of `Collection`) which will
@@ -199,19 +201,14 @@ class Media
     }
 
     /**
-     * Resets the `Format` class to its default state.
+     * Resets the `Media` class.
      */
     public static function reset()
     {
         static::$_formats = [];
 
         static::set('html', ['text/html', 'application/xhtml+xml']);
-        static::set('rss',  ['application/rss+xml']);
-        static::set('atom', ['application/atom+xml']);
-        static::set('css',  ['text/css']);
-        static::set('js',   ['application/javascript', 'text/javascript']);
         static::set('text', ['text/plain']);
-        static::set('xml',  ['application/xml', 'application/soap+xml', 'text/xml']);
 
         static::set('json', ['application/json'], [
             'encode' => 'json_encode',
