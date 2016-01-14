@@ -30,7 +30,7 @@ $request = new Request([
     'query'    => ['foo' => 'bar'],
     'fragment' => '#quz',
     'type'     => 'application/json',
-    'body'     => '['foo' => 'bar']'
+    'data'     => '['foo' => 'bar']'
 ]);
 
 // Getters
@@ -48,8 +48,8 @@ $request->fragment(); // '#quz'
 $request->url();      // http://www.domain.com:8080/index.php
 $request->type();     // application/json
 $request->encoding(); // <none>
-$request->body();     // ['foo' => 'bar']
-$request->plain();    // '{"foo":"bar"}'
+$request->get();      // ['foo' => 'bar']
+$request->body();     // '{"foo":"bar"}'
 $request->stream();   // the plain body stream instance
 $request->mode();     // origin
 $request->line();     // POST /index.php HTTP/1.1
@@ -66,8 +66,8 @@ $request->port('80');
 $request->query(['foo' => 'baz']);
 $request->fragment(#qaz);
 $request->type('application/json');
-$request->body(['foo' => 'baz']);
-$request->plain('{"foo":"baz"}');
+$request->set(['foo' => 'baz']);
+$request->body('{"foo":"baz"}');
 $request->mode('absolute');
 
 $request->username('username');
@@ -116,8 +116,8 @@ $response->protocol(); // HTTP/1.1
 $response->type();     // text/html
 $response->encoding(); // utf-8
 $response->digest();   // Looks at the WWW-Authenticate headers and returns an array of key/values.
+$response->get();      // '<html></html>'
 $response->body();     // '<html></html>'
-$response->plain();    // '<html></html>'
 $response->stream();   // a Stream instance of the plain body
 $response->line();     // HTTP/1.1 200 OK
 $response->data();     // exports the response as an array
@@ -129,8 +129,8 @@ $response->status(404);
 $response->status([404, 'Not Found']);
 $response->version('1.0');
 $response->type('text/plain');
+$response->set('Not Found');
 $response->body('Not Found');
-$response->plain('Not Found');
 $response->cache(false);      // Disable cache
 $response->cache('+2 weeks'); // 2 weeks cache
 //
@@ -205,7 +205,6 @@ $request = Request::ingoing();
 ### Acknowledgements
 
 - [Li3](https://github.com/UnionOfRAD/lithium)
-- [Guzzle](https://github.com/guzzle/guzzle)
 - [zend-diactoros](https://github.com/zendframework/zend-diactoros)
-- [curl-easy](https://github.com/stil/curl-easy)
 - [Requests](https://github.com/rmccue/Requests)
+- [Guzzle](https://github.com/guzzle/guzzle)
