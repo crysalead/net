@@ -261,6 +261,61 @@ EOD;
 
     });
 
+    describe("->__toString()", function() {
+
+        it("echoes the response and populates headers", function() {
+
+            $headers = [];
+
+            Monkey::patch('header', function() use (&$headers) {
+                $headers[] = func_get_args();
+            });
+
+            $closure = function() {
+                $response = new Response([
+                    'format' => 'json',
+                    'data'   => ['hello' => 'world']
+                ]);
+                (string) $response;
+            };
+
+            expect($closure)->toEcho('{"hello":"world"}');
+            expect($headers)->toEqual([
+                ["HTTP/1.1 200 OK"],
+                ["Content-Type: application/json"],
+                ["Content-Length: 17"]
+            ]);
+
+        });
+
+        it("echoes the response, populates headers and process the echoing as chunk", function() {
+
+            $headers = [];
+
+            Monkey::patch('header', function() use (&$headers) {
+                $headers[] = func_get_args();
+            });
+
+            $closure = function() {
+                $response = new Response([
+                    'format' => 'json',
+                    'data'   => ['hello' => 'world']
+                ]);
+                $response->headers['Transfer-Encoding'] = 'chunked';
+                (string) $response;
+            };
+
+            expect($closure)->toEcho("11\r\n{\"hello\":\"world\"}\r\n0\r\n");
+            expect($headers)->toEqual([
+                ["HTTP/1.1 200 OK"],
+                ["Content-Type: application/json"],
+                ["Transfer-Encoding: chunked"]
+            ]);
+
+        });
+
+    });
+
     describe("->__clone", function() {
 
         it("clones the headers but not the stream ressource", function() {
