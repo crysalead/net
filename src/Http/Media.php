@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Http;
 
+use InvalidArgumentException;
 use Lead\Net\NetException;
 
 /**
@@ -170,7 +171,7 @@ class Media
         }
 
         $cast = function($data) {
-            return method_exists($data, 'to') ? $data->to('array') : get_object_vars($data);
+            return method_exists($data, 'data') ? $data->data() : get_object_vars($data);
         };
 
         if (!empty($definition['cast'])) {
@@ -211,9 +212,31 @@ class Media
         static::set('text', ['text/plain']);
 
         static::set('json', ['application/json'], [
-            'encode' => 'json_encode',
-            'decode' => function($data) {
-                return json_decode($data, true);
+            'encode' => function($data, $options = []) {
+                $defaults = [
+                    'depth' => 512,
+                    'flag'  => 0
+                ];
+                $options += $defaults;
+                $result = json_encode($data, $options['flag'], $options['depth']);
+                if ( json_last_error() !== JSON_ERROR_NONE ) {
+                    throw new InvalidArgumentException(json_last_error_msg());
+                }
+                return $result;
+            },
+            'decode' => function($data, $options = []) {
+                $defaults = [
+                    'array' => true,
+                    'depth' => 512,
+                    'flag'  => 0
+                ];
+                $options += $defaults;
+                $result = json_decode($data, $options['array'], $options['depth'], $options['flag']);
+
+                if ( json_last_error() !== JSON_ERROR_NONE ) {
+                    throw new InvalidArgumentException(json_last_error_msg());
+                }
+                return $result;
             }
         ]);
 
