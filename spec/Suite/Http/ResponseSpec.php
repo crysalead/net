@@ -14,7 +14,7 @@ describe("Response", function() {
         it("sets defaults values", function() {
 
             $response = new Response();
-            expect($response->data())->toBe([
+            expect($response->export())->toBe([
                 'status'  => [200, 'OK'],
                 'version' => '1.1',
                 'headers' => $response->headers,

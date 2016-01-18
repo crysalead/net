@@ -46,7 +46,7 @@ describe("Request", function() {
         it("parses absolute url", function() {
 
             $request = Request::parseUrl('https://username:password@www.domain.com:8000/foo?bar=baz#quz');
-            expect($request->data())->toEqual([
+            expect($request->export())->toEqual([
                 'method'   => 'GET',
                 'scheme'   => 'https',
                 'version'  => '1.1',
@@ -496,13 +496,13 @@ EOD;
 
     });
 
-    describe("->to('array')", function() {
+    describe("->export()", function() {
 
         it("exports default values", function() {
 
             $request = new Request();
 
-            expect($request->to('array'))->toEqual([
+            expect($request->export())->toEqual([
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
@@ -530,7 +530,7 @@ EOD;
                 'path'     => 'index.php'
             ]);
 
-            expect($request->to('array'))->toEqual([
+            expect($request->export())->toEqual([
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',

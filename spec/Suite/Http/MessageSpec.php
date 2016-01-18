@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http;
 
+use InvalidArgumentException;
 use Lead\Net\NetException;
 use Lead\Net\Http\Message;
 use Lead\Net\Http\Headers;
@@ -210,6 +211,29 @@ EOD;
             $message = new Message(['body' => 'Body Message']);
 
             expect($message->line())->toBe('');
+
+        });
+
+    });
+
+    describe("->to()", function() {
+
+        it("exports in JSON", function() {
+
+            $message = new Message();
+            expect($message->body('{"name":"value"}'))->toBe($message);
+            expect($message->to('json'))->toBe(['name' => 'value']);
+
+        });
+
+        it("throws an exception with unsupported format", function() {
+
+            $closure = function() {
+                $message = new Message();
+                $message->to('xml');
+            };
+
+            expect($closure)->toThrow(new InvalidArgumentException("Unsupported format `xml`."));
 
         });
 

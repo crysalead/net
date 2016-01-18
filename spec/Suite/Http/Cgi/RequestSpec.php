@@ -54,7 +54,7 @@ describe("Request", function() {
 
             $request = new Request();
 
-            expect($request->data())->toEqual([
+            expect($request->export())->toEqual([
                 'basePath' => '',
                 'locale'   => null,
                 'data'     => [],
@@ -419,7 +419,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->data())->toEqual([
+            expect($request->export())->toEqual([
                 'basePath' => '/base/path/webroot',
                 'locale'   => null,
                 'data'     => $_FILES + $_POST,
@@ -451,7 +451,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->data())->toEqual([
+            expect($request->export())->toEqual([
                 'basePath' => '/base/path',
                 'locale'   => null,
                 'data'     => $_FILES + $_POST,
@@ -507,7 +507,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->data)->toEqual([
+            expect($request->data())->toEqual([
                 'files' => [
                     [
                         'name' => 'file 2.jpg',
@@ -559,7 +559,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->data)->toEqual([
+            expect($request->data())->toEqual([
                 'Image' => [
                     'file' => [
                         'name' => 'file 5.jpg',
@@ -617,7 +617,7 @@ EOD;
 
             $request = Request::ingoing();
 
-            expect($request->data)->toEqual([
+            expect($request->data())->toEqual([
                 'Photo' => [
                     'files' => [
                         [

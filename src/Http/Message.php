@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Http;
 
+use InvalidArgumentException;
 use Lead\Set\Set;
 use Lead\Net\NetException;
 
@@ -9,17 +10,6 @@ use Lead\Net\NetException;
  */
 class Message extends \Lead\Net\Message
 {
-    /**
-     * Contains all exportable formats and their handler
-     *
-     * @var array
-     */
-    protected static $_formats = [
-        'array'   => 'Lead\Net\Message::toArray',
-        'string'  => 'Lead\Net\Http\Message::toString',
-        'message' => 'Lead\Net\Http\Message::toMessage'
-    ];
-
     /**
      * The headers instance.
      *
@@ -233,13 +223,36 @@ class Message extends \Lead\Net\Message
     }
 
     /**
+     * Exports a `Message` body to specific format.
+     *
+     * The supported values of `$format` depend on the `Media` class example:
+     *
+     * ```php
+     * $message->to('xml'); // exports the message body into XML
+     * ```
+     *
+     * @param  string $format  By default the only supported value is `'array'`. However, additional
+     *                         format handlers can be registered using the `formats()` method.
+     * @param  array  $options Options for converting the collection.
+     * @return mixed           The converted collection.
+     */
+    public function to($format, $options = [])
+    {
+        $media = $this->_classes['media'];
+        if (!$media::get($format)) {
+            throw new InvalidArgumentException("Unsupported format `{$format}`.");
+        }
+        return $media::decode($format, $this->body(), $options);
+    }
+
+    /**
      * Magic method to convert the instance into an HTTP message string.
      *
      * @return string
      */
     public function toMessage()
     {
-        static::_setContentLength($this);
+        $this->_setContentLength();
         return $this->line() . "\r\n" . (string) $this->headers . $this->toString();
     }
 
@@ -259,6 +272,22 @@ class Message extends \Lead\Net\Message
     }
 
     /**
+     * Auto adds a Content-Length header if necessary.
+     */
+    protected function _setContentLength()
+    {
+        if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
+            return;
+        }
+        $length = $this->stream()->length();
+        if ($length === null) {
+            throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
+        }
+
+        $this->headers['Content-Length'] = $this->stream()->length();
+    }
+
+    /**
      * Returns the request/status line of the message.
      *
      * @return string
@@ -274,23 +303,5 @@ class Message extends \Lead\Net\Message
     public function __clone()
     {
         $this->headers = clone $this->headers;
-    }
-
-    /**
-     * Auto adds a Content-Length header if necessary.
-     *
-     * @param object $request
-     */
-    protected static function _setContentLength($request)
-    {
-        if ($request->headers['Transfer-Encoding']->value() === 'chunked') {
-            return;
-        }
-        $length = $request->stream()->length();
-        if ($length === null) {
-            throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
-        }
-
-        $request->headers['Content-Length'] = $request->stream()->length();
     }
 }

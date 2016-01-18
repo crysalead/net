@@ -16,15 +16,6 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     use Psr7\MessageTrait, Psr7\RequestTrait;
 
     /**
-     * Contains all exportable formats and their handler
-     *
-     * @var array
-     */
-    protected static $_formats = [
-        'array' => 'Lead\Net\Http\Request::toArray'
-    ];
-
-    /**
      * The request's mode.
      *
      * @var string
@@ -474,6 +465,46 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     }
 
     /**
+     * Auto adds a Content-Length header if necessary.
+     *
+     * @param object $request
+     */
+    public function _setContentLength()
+    {
+        if (in_array($this->method(), ['GET', 'HEAD', 'DELETE'], true)) {
+            return;
+        }
+        parent::_setContentLength();
+    }
+
+    /**
+     * Exports a `Request` instance to an array.
+     *
+     * @param  mixed $request A `Request` instance.
+     * @param  array $options Options.
+     * @return array          The export array.
+     */
+    public function export($options = [])
+    {
+        $this->_setContentLength();
+
+        return [
+            'method'   => $this->method(),
+            'scheme'   => $this->scheme(),
+            'version'  => $this->version(),
+            'host'     => $this->host(),
+            'port'     => $this->port(),
+            'path'     => $this->path(),
+            'query'    => $this->query() ? '?' . http_build_query($this->query()) : '',
+            'fragment' => $this->fragment(),
+            'username' => $this->username(),
+            'password' => $this->password(),
+            'url'      => $this->url(),
+            'stream'   => $this->stream()
+        ];
+    }
+
+    /**
      * Creates a request instance using an absolute URL.
      *
      * @param  string $url    An absolute URL.
@@ -490,45 +521,5 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             $defaults['password'] = isset($defaults['pass']) ? $defaults['pass'] : null;
         }
         return new static($config + $defaults);
-    }
-
-    /**
-     * Auto adds a Content-Length header if necessary.
-     *
-     * @param object $request
-     */
-    public static function _setContentLength($request)
-    {
-        if (in_array($request->method(), ['GET', 'HEAD', 'DELETE'], true)) {
-            return;
-        }
-        parent::_setContentLength($request);
-    }
-
-    /**
-     * Exports a `Request` instance to an array.
-     *
-     * @param  mixed $request A `Request` instance.
-     * @param  array $options Options.
-     * @return array          The export array.
-     */
-    public static function toArray($request, $options = [])
-    {
-        static::_setContentLength($request);
-
-        return [
-            'method'   => $request->method(),
-            'scheme'   => $request->scheme(),
-            'version'  => $request->version(),
-            'host'     => $request->host(),
-            'port'     => $request->port(),
-            'path'     => $request->path(),
-            'query'    => $request->query() ? '?' . http_build_query($request->query()) : '',
-            'fragment' => $request->fragment(),
-            'username' => $request->username(),
-            'password' => $request->password(),
-            'url'      => $request->url(),
-            'stream'   => $request->stream()
-        ];
     }
 }

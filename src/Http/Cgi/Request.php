@@ -27,14 +27,14 @@ class Request extends \Lead\Net\Http\Request
      *
      * @var array
      */
-    public $params = [];
+    protected $_params = [];
 
     /**
      * Data found in the HTTP request body.
      *
      * @var array
      */
-    public $data = [];
+    protected $_data = [];
 
     /**
      * Temporaty base path.
@@ -125,8 +125,8 @@ class Request extends \Lead\Net\Http\Request
         $config += $this->_defaults($config);
 
         $this->env = $config['env'];
-        $this->data = $config['data'];
-        $this->params = $config['params'];
+        $this->_data = $config['data'];
+        $this->_params = $config['params'];
 
         unset($config['data']);
         parent::__construct($config);
@@ -137,10 +137,10 @@ class Request extends \Lead\Net\Http\Request
         $this->basePath($config['basePath']);
         $this->locale($config['locale']);
 
-        if (isset($this->data['_method'])) {
-            $this->env['REQUEST_METHOD'] = strtoupper($this->data['_method']);
+        if (isset($this->_data['_method'])) {
+            $this->env['REQUEST_METHOD'] = strtoupper($this->_data['_method']);
             $this->method($this->env['REQUEST_METHOD']);
-            unset($this->data['_method']);
+            unset($this->_data['_method']);
         }
     }
 
@@ -236,6 +236,20 @@ class Request extends \Lead\Net\Http\Request
             'path'     => $path,
             'basePath' => $basePath
         ];
+    }
+
+    /**
+     * Gets/sets the request params.
+     *
+     * @param  array $params The params to set or none to get the setted one.
+     * @return array
+     */
+    public function params($params = null)
+    {
+        if (!func_num_args()) {
+            return $this->_params;
+        }
+        $this->_params = $params;
     }
 
     /**
@@ -411,9 +425,42 @@ class Request extends \Lead\Net\Http\Request
         if ($this->_locale) {
             return $this->_locale;
         }
-        if (isset($this->params['locale'])) {
-            return $this->params['locale'];
+        if (isset($this->_params['locale'])) {
+            return $this->_params['locale'];
         }
+    }
+
+    /**
+     * Gets/sets the request data.
+     *
+     * @param  array $data The data to set or none to get the setted one.
+     * @return array
+     */
+    public function data($data = null)
+    {
+        if (func_num_args() === 1) {
+            $this->_data = $data;
+            return $this;
+        }
+        return $this->_data;
+    }
+
+    /**
+     * Exports a `Request` instance to an array.
+     *
+     * @param  array $options Options.
+     * @return array          The export array.
+     */
+    public function export($options = [])
+    {
+        $this->_setContentLength();
+        return [
+            'basePath' => $this->basePath(),
+            'locale'   => $this->locale(),
+            'data'     => $this->data(),
+            'params'   => $this->params(),
+            'env'      => $this->env
+        ] + parent::export($options);
     }
 
     /**
@@ -484,24 +531,5 @@ class Request extends \Lead\Net\Http\Request
         }
 
         return new static($config + $defaults);
-    }
-
-    /**
-     * Exports a `Request` instance to an array.
-     *
-     * @param  mixed $request A `Request` instance.
-     * @param  array $options Options.
-     * @return array          The export array.
-     */
-    public static function toArray($request, $options = [])
-    {
-        static::_setContentLength($request);
-        return [
-            'basePath' => $request->basePath(),
-            'locale'   => $request->locale(),
-            'data'     => $request->data,
-            'params'   => $request->params,
-            'env'      => $request->env
-        ] + parent::toArray($request);
     }
 }

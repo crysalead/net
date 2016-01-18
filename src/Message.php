@@ -1,20 +1,10 @@
 <?php
 namespace Lead\Net;
 
-use InvalidArgumentException;
 use Lead\Set\Set;
 
 class Message
 {
-    /**
-     * Contains all exportable formats and their handler
-     *
-     * @var array
-     */
-    protected static $_formats = [
-        'array' => 'Lead\Net\Message::toArray'
-    ];
-
     /**
      * Class dependencies.
      *
@@ -136,87 +126,6 @@ class Message
     }
 
     /**
-     * Accessor method for adding format handlers to `Message` instances.
-     *
-     * The values assigned are used by `Message::to()` to convert `Message` instances into
-     * different formats, i.e. array.
-     *
-     * This can be accomplished in two ways. First, format handlers may be registered on a
-     * case-by-case basis, as in the following:
-     *
-     * ```php
-     * Message::formats('array', function($message, $options) {
-     * ...
-     * });
-     *
-     * // You can also implement the above as a static class method, and register it as follows:
-     * Message::formats('array', 'my\custom\Formatter::toArray');
-     * ```
-     *
-     * @see    Lead\Net\Message::to()
-     * @param  string $format  A string representing the name of the format that a `Message`
-     *                         can be converted to. If `false`, reset the `$_formats` attribute.
-     *                         If `null` return the content of the `$_formats` attribute.
-     * @param  mixed  $handler The function that handles the conversion, either an anonymous function,
-     *                         a fully namespaced class method or `false` to remove the `$format` handler.
-     * @return mixed
-     */
-    public static function formats($format = null, $handler = null)
-    {
-        if ($format === null) {
-            return static::$_formats;
-        }
-        if ($format === false) {
-            return static::$_formats = ['array' => 'Lead\Net\Message::toArray'];
-        }
-        if ($handler === false) {
-            unset(static::$_formats[$format]);
-            return;
-        }
-        return static::$_formats[$format] = $handler;
-    }
-
-    /**
-     * Exports a `Message` object into an array of datas.
-     *
-     * @return array
-     */
-    public function data()
-    {
-        return $this->to('array');
-    }
-
-    /**
-     * Exports a `Message` object to another format.
-     *
-     * The supported values of `$format` depend on the registered handlers.
-     *
-     * Once the appropriate handlers are registered, a `Collection` instance can be converted into
-     * any handler-supported format, i.e.:
-     *
-     * ```php
-     * $message->to('array'); // returns a Array string
-     * ```
-     *
-     * @see    Lead\Net\Message::formats()
-     * @param  string $format  By default the only supported value is `'array'`. However, additional
-     *                         format handlers can be registered using the `formats()` method.
-     * @param  array  $options Options for converting the collection.
-     * @return mixed           The converted collection.
-     */
-    public function to($format, $options = [])
-    {
-        if (!is_string($format) || !isset(static::$_formats[$format])) {
-            if (is_callable($format)) {
-                return $format($this, $options);
-            }
-            throw new InvalidArgumentException("Unsupported format `{$format}`.");
-        }
-        $handler = static::$_formats[$format];
-        return is_string($handler) ? call_user_func($handler, $this, $options) : $handler($this, $options);
-    }
-
-    /**
      * Magic method to convert object to string.
      *
      * @return string
@@ -239,14 +148,13 @@ class Message
     /**
      * Exports a `Message` instance to an array.
      *
-     * @param  mixed $message A `Message` instance.
      * @param  array $options Options used to export `$message`.
      * @return array          The export array.
      */
-    public static function toArray($message, $options = [])
+    public function export($options = [])
     {
         return [
-            'body' => $message->stream()
+            'body' => $this->stream()
         ];
     }
 }

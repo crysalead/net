@@ -12,15 +12,6 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     use Psr7\MessageTrait, Psr7\ResponseTrait;
 
     /**
-     * Contains all exportable formats and their handler
-     *
-     * @var array
-     */
-    protected static $_formats = [
-        'array' => 'Lead\Net\Http\Response::toArray'
-    ];
-
-    /**
      * HTTP Status.
      *
      * @var array
@@ -222,7 +213,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function render()
     {
-        static::_setContentLength($this);
+        $this->_setContentLength();
         header($this->line());
         foreach ($this->headers as $header) {
             header($header->to('header'));
@@ -303,18 +294,17 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     /**
      * Exports a `Response` instance to an array.
      *
-     * @param  mixed $response A `Request` instance.
      * @param  array $options  Options.
      * @return array           The export array.
      */
-    public static function toArray($response, $options = [])
+    public function export($options = [])
     {
-        static::_setContentLength($response);
+        $this->_setContentLength();
         return [
-            'status'  => $response->status(),
-            'version' => $response->version(),
-            'headers' => $response->headers,
-            'body'    => $response->stream()
+            'status'  => $this->status(),
+            'version' => $this->version(),
+            'headers' => $this->headers,
+            'body'    => $this->stream()
         ];
     }
 }
