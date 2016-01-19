@@ -192,9 +192,9 @@ EOD;
 
     });
 
-    describe("->negociate()", function() {
+    describe("->negotiate()", function() {
 
-        it("negociates a format from a request", function() {
+        it("negotiates a format from a request", function() {
 
             $request = new Request();
             $response = new Response();
@@ -206,6 +206,20 @@ EOD;
             $request->headers['Accept'] = "text/html,application/json;q=0.2,application/xml;q=0.9,*/*;q=0.8";
             $response->negotiate($request);
             expect($response->format())->toBe('html');
+
+        });
+
+        it("throws an exception if the response format can't be negotiated", function() {
+
+            $closure = function() {
+                $request = new Request();
+                $response = new Response();
+
+                $request->headers['Accept'] = "application/vnd.api+json";
+                $response->negotiate($request);
+            };
+
+            expect($closure)->toThrow(new NetException('Unsupported Media Type: ["application/vnd.api+json"].', 415));
 
         });
 

@@ -120,7 +120,8 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
                 return;
             }
         }
-        $this->format($formatter::suitable($request) ?: 'html');
+        $types = join('", "', array_keys($request->accepts()));
+        throw new NetException("Unsupported Media Type: [\"{$types}\"].", 415);
     }
 
     /**
