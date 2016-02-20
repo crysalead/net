@@ -647,14 +647,39 @@ EOD;
 
         });
 
-        it("supports rewrite", function() {
+        it("supports URL rewrite", function() {
 
-            $_SERVER['REQUEST_URI'] = '/base/path/webroot/app?get=value';
+            $_SERVER['REQUEST_URI'] = '/base/path/webroot/controller/action';
             $_SERVER['SCRIPT_NAME'] = '/base/path/webroot/index.php';
 
             $request = Request::ingoing();
 
             expect($request->basePath())->toBe('/base/path/webroot');
+            expect($request->path())->toBe('/controller/action');
+
+        });
+
+        it("supports URL rewrite with common prefix", function() {
+
+            $_SERVER['REQUEST_URI'] = '/base/path/webroot/index/view/1';
+            $_SERVER['SCRIPT_NAME'] = '/base/path/webroot/index.php';
+
+            $request = Request::ingoing();
+
+            expect($request->basePath())->toBe('/base/path/webroot');
+            expect($request->path())->toBe('/index/view/1');
+
+        });
+
+        it("supports URL rewrite using the index.php notation", function() {
+
+            $_SERVER['REQUEST_URI'] = '/base/path/webroot/index.php/image/edit/1';
+            $_SERVER['SCRIPT_NAME'] = '/base/path/webroot/index.php';
+
+            $request = Request::ingoing();
+
+            expect($request->basePath())->toBe('/base/path/webroot');
+            expect($request->path())->toBe('/image/edit/1');
 
         });
 

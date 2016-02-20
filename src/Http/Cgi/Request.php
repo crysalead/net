@@ -223,15 +223,17 @@ class Request extends \Lead\Net\Http\Request
             $path = '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/');
             $basePath = '/' . ltrim(dirname($env['SCRIPT_NAME']), '/');
         } else {
-            $i = 0;
+            $cut = $i = 0;
             $len = min(strlen($path), strlen($basePath));
             while ($i < $len && $path[$i] === $basePath[$i]) {
+                if ($basePath[$i] === '/') {
+                    $cut = $i;
+                }
                 $i++;
             }
-            $basePath = substr($path, 0, $i);
-            $path = '/' . (trim(substr($path, $i), '/') ?: '/');
+            $basePath = substr($path, 0, $cut);
+            $path = '/' . (trim(substr($path, $cut), '/') ?: '/');
         }
-
         return $defaults += [
             'path'     => $path,
             'basePath' => $basePath
