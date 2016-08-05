@@ -155,9 +155,6 @@ class Request extends \Lead\Net\Http\Request
      */
     public function _defaults($config)
     {
-        if (!isset($config['body'])) {
-            $config['body'] = fopen('php://input', 'r');
-        }
         $env = $config['env'];
 
         $env->set($env->data() + [
@@ -531,6 +528,10 @@ class Request extends \Lead\Net\Http\Request
             'cookies' => $_COOKIE,
             'env'     => $env
         ];
+
+        if (!isset($config['body'])) {
+            $defaults['body'] = fopen('php://input', 'r');
+        }
 
         if (!isset($env['REQUEST_URI'])) {
             throw new NetException("Missing `'REQUEST_URI'` environment variable, unable to create the main request.");

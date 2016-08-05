@@ -1,9 +1,12 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http\Cgi;
 
+use Lead\Dir\Dir;
 use Lead\Set\Set;
 use Lead\Net\NetException;
 use Lead\Net\Http\Cgi\Request;
+
+use Kahlan\Plugin\Monkey;
 
 function defineGlobals($config = []) {
     $defaults = [
@@ -84,6 +87,7 @@ Content-Type: text/html; charset=utf-8\r
 EOD;
 
             expect((string) $request->headers)->toBe($expected);
+            expect((string) $request->stream())->toBe('');
 
         });
 
@@ -470,6 +474,30 @@ EOD;
                 'url'      => 'http://localhost/app?get=value',
                 'stream'   => $request->stream()
             ]);
+
+        });
+
+        it("uses php://input as body message by default", function() {
+
+            $temp = Dir::tempnam(sys_get_temp_dir(), 'spec');
+            $filename = tempnam($temp, 'foo');
+
+            $handler = fopen($filename, 'w');
+            fwrite($handler, 'Hello World');
+            fclose($handler);
+
+            Monkey::patch('fopen', function($name, $mode,  $use_include_path = false) use ($filename) {
+                if ($name === 'php://input') {
+                    $name = $filename;
+                }
+                return fopen($name, $mode,  $use_include_path);
+            });
+
+            $request = Request::ingoing();
+            expect($request->body())->toBe('Hello World');
+
+
+            Dir::remove($temp, ['recursive' => true]);
 
         });
 
