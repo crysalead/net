@@ -77,22 +77,25 @@ class Request extends \Lead\Net\Http\Request
      *
      * @param array $config The available configuration options are the following. Further
      *                      options are inherited from the parent classes.
-     *                      - `'basePath'` _string_  : (defaults to `null`).
-     *                      - `'url'`      _string_  : (defaults to `null`).
-     *                      - `'data'`     _array_   : Additional data to use when initializing
-     *                                                 the request. Defaults to `[]`.
-     *                      - `'stream'`   _resource_: Stream to read from in order to get the message
-     *                                                 body when method is POST, PUT or PATCH and data is empty.
-     *                                                 When not provided `php://input` will be used for reading.
-     *                      - `'env'`      _array_   : Only for populating headers
+     *                      - `'ignorePath'` _string_  : Part of the base path to ignore.
+     *                      - `'basePath'`   _string_  : The base path.
+     *                      - `'path'`       _string_  : The url path.
+     *                      - `'body'`       _resource_: Body stream of message (defaults: php://input).
+     *                      - `'data'`       _array_   : Form data (defaults: `[]`).
+     *                      - `'params'`     _array_   : Custom routing params (defaults: `[]`).
+     *                      - `'env'`        _array_   : Environment variables (defaults: `[]`).
+     *                      - `'locale'`     _string_  : An optional locale string (defaults: `''`).
+     *                      - `'classes'`    _array_   : Classes dependencies.
+     *                      - `'detectors'`  _array_   : Request detector definition.
      */
     public function __construct($config = [])
     {
         $defaults = [
-            'locale'    => null,
+            'body'      => '',
             'data'      => [],
             'params'    => [],
             'env'       => [],
+            'locale'    => null,
             'classes'   => [
                 'environment' => 'Lead\Env\Env',
                 'auth'        => 'Lead\Net\Http\Auth'
@@ -400,7 +403,7 @@ class Request extends \Lead\Net\Http\Request
      * Gets/sets the ignore pattern for the base path.
      *
      * @param  string|array $ignorePath The ignore pattern to set or none to get the setted one.
-     * @return mixed
+     * @return string|self
      */
     public function ignorePath($ignorePath = null)
     {
@@ -468,7 +471,7 @@ class Request extends \Lead\Net\Http\Request
     /**
      * Normalizes the data from `$_FILES`.
      *
-     * @return array       Normalized data.
+     * @return array Normalized files.
      */
     public static function files()
     {
@@ -511,6 +514,11 @@ class Request extends \Lead\Net\Http\Request
      * Creates a request extracted from CGI globals.
      *
      * @param  array $config The config array.
+     *                       - `'body'`    _array_: Form data (defaults: normalized `$_FILES + $_POST`).
+     *                       - `'data'`    _array_: Form data (defaults: normalized `$_FILES + $_POST`).
+     *                       - `'query'`   _array_: Query string (defaults: `$_GET`).
+     *                       - `'cookies'` _array_: Cookies (defaults: `$_COOKIE`).
+     *                       - `'env'`     _array_: Environment variable (defaults: `$_SERVER`).
      * @return self
      */
     public static function ingoing($config = [])
