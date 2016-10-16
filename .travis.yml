@@ -5,17 +5,15 @@ php:
   - 5.5
   - 5.6
   - 7.0
+  - 7.1
   - hhvm
 
-matrix:
-  allow_failures:
-    - php: 7.0
-  fast_finish: true
-
 before_script:
-  - composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH
-  - composer install
+  - if [[ $TRAVIS_SECURE_ENV_VARS = "true" ]]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
+  - composer install --no-interaction
   - if [[ $TRAVIS_PHP_VERSION =~ ^hhvm ]]; then echo 'xdebug.enable = On' >> /etc/hhvm/php.ini; fi
+  - if [[ $TRAVIS_PHP_VERSION =~ ^hhvm ]]; then echo 'hhvm.php7.all = 1' >> /etc/hhvm/php.ini; fi
+  - if [[ $TRAVIS_PHP_VERSION =~ ^7 ]]; then git clone git://github.com/xdebug/xdebug.git && cd xdebug && phpize && ./configure --enable-xdebug  && make && make install && echo "zend_extension = xdebug.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini && cd ..; fi
 
 script: bin/kahlan --coverage=3 --clover=clover.xml
 
@@ -25,4 +23,4 @@ after_success:
 
 env:
   global:
-    secure: MgDiOLOg+oubbtqxljo7h+1BRitEecy2fBdeIPtOE5cUumEjLPijyKKRL1Dp4Hr2fcp0Q6OOdsBz8Csl3jL5AfVDCq0acg2U35s1FSafkAUNJ3LP79FM8CAOqarBOTcMu96Klpt2hqYAFbE4Qiy/Tmy6EgKs/Up8V5SD03t/K17ugj1g9fC3192/vm9nIXwQrJIf0Y4MjN87iSgY8QiH9b661Bs3PHj19w6R08cdPIotIoa5udGg3T/afENIFYoZ3EXp6KLOOyQnFYV2lu/lAV3c45yn3G0aO0QmzTjdLTq+Dza5GB3w3wN06MGhWigy1Ekrf4Xktld1DSzIz8XpYsuJUL0uaZMZOHOM7bdjj2s5Ny+F3R22NBoSHLXzWd3XkNNneR6WMmp4nMSXZQ90ESwA0xlaCay60MJiAZEbrCN2szSZomjq7D5gXbyza/g0sTaiuLeVZ0nNbBo+OJ1kxjc6tUCKXqtaagbggkjoEYL4LwFzy8tgtZtFlu3+yoNdYxHu18si1l/Xd/EAQLKMvtBiWqGxYbqA5Y2R+1qdZJaHUC8VjjVqFofBLpvflwcHWGiEK98duFHfJPlHOGrva8uRs0SPj5zxaHBwsnEtfkWaoUce4aop6Bcl7GoIPuGifSAJOpYxAZIUQuea6VVg2hNG3eNHyomUnHo3pzGhV08=
+    - secure: MgDiOLOg+oubbtqxljo7h+1BRitEecy2fBdeIPtOE5cUumEjLPijyKKRL1Dp4Hr2fcp0Q6OOdsBz8Csl3jL5AfVDCq0acg2U35s1FSafkAUNJ3LP79FM8CAOqarBOTcMu96Klpt2hqYAFbE4Qiy/Tmy6EgKs/Up8V5SD03t/K17ugj1g9fC3192/vm9nIXwQrJIf0Y4MjN87iSgY8QiH9b661Bs3PHj19w6R08cdPIotIoa5udGg3T/afENIFYoZ3EXp6KLOOyQnFYV2lu/lAV3c45yn3G0aO0QmzTjdLTq+Dza5GB3w3wN06MGhWigy1Ekrf4Xktld1DSzIz8XpYsuJUL0uaZMZOHOM7bdjj2s5Ny+F3R22NBoSHLXzWd3XkNNneR6WMmp4nMSXZQ90ESwA0xlaCay60MJiAZEbrCN2szSZomjq7D5gXbyza/g0sTaiuLeVZ0nNbBo+OJ1kxjc6tUCKXqtaagbggkjoEYL4LwFzy8tgtZtFlu3+yoNdYxHu18si1l/Xd/EAQLKMvtBiWqGxYbqA5Y2R+1qdZJaHUC8VjjVqFofBLpvflwcHWGiEK98duFHfJPlHOGrva8uRs0SPj5zxaHBwsnEtfkWaoUce4aop6Bcl7GoIPuGifSAJOpYxAZIUQuea6VVg2hNG3eNHyomUnHo3pzGhV08=

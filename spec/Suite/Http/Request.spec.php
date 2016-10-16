@@ -3,7 +3,7 @@ namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
 use Lead\Net\Http\Request;
-use Kahlan\Plugin\Stub;
+use Kahlan\Plugin\Double;
 
 describe("Request", function() {
 
@@ -478,8 +478,8 @@ EOD;
         it("throws an exception when Content-Length is required but not be determined", function() {
 
             $closure = function() {
-                $stream = Stub::create(['extends' => 'Lead\Storage\Stream\Stream']);
-                Stub::on($stream)->method('length')->andReturn(null);
+                $stream = Double::instance(['extends' => 'Lead\Storage\Stream\Stream']);
+                allow($stream)->toReceive('length')->andReturn(null);
 
                 $request = new Request([
                     'method' => 'POST',

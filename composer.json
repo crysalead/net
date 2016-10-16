@@ -3,6 +3,11 @@
     "description": "Net - Network Message implementation",
     "keywords": ["http", "psr-7"],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "CrysaLEAD"
+        }
+    ],
     "require": {
         "php": ">=5.5",
         "crysalead/collection": "~2.0",
@@ -13,7 +18,7 @@
         "psr/http-message": "~1.0"
     },
     "require-dev": {
-        "crysalead/kahlan": "~2.0",
+        "kahlan/kahlan": "~3.0",
         "crysalead/dir": "^2.0"
     },
     "autoload": {
@@ -28,6 +33,5 @@
     },
     "config": {
         "bin-dir": "bin"
-    },
-    "minimum-stability": "dev"
+    }
 }

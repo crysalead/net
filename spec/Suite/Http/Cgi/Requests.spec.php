@@ -36,7 +36,7 @@ function defineGlobals($config = []) {
 
 describe("Request", function() {
 
-    before(function() {
+    beforeAll(function() {
         $this->globalNames =['_GET', '_POST', '_SERVER'];
         $this->oldEnv = [];
         foreach ($this->globalNames as $varname) {
