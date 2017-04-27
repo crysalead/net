@@ -218,6 +218,18 @@ class Media
                     'flag'  => 0
                 ];
                 $options += $defaults;
+
+                if (!empty($options['errors'])) {
+                    $error = reset($options['errors']);
+                    $data = [
+                        'error' => [
+                            'code' => $error->getCode(),
+                            'title' => $error->getMessage(),
+                            'trace' => explode("\n", $error->getTraceAsString())
+                        ]
+                    ];
+                }
+
                 $result = json_encode($data, $options['flag'], $options['depth']);
                 if ( json_last_error() !== JSON_ERROR_NONE ) {
                     throw new InvalidArgumentException(json_last_error_msg());
