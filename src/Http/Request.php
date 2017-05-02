@@ -163,6 +163,18 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     }
 
     /**
+     * Performs a format negotiation from a `Request` object, by iterating over the accepted
+     * content types in sequence, from most preferred to least.
+     *
+     * @param  object $request A request instance .
+     */
+    public function negotiate()
+    {
+        $media = $this->_classes['media'];
+        $this->_format = $media::suitable($this);
+    }
+
+    /**
      * Gets/sets the format of the request.
      *
      * @param  string      $format A format name.
@@ -171,8 +183,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     public function format($format = null)
     {
         if (!$this->_format) {
-            $media = $this->_classes['media'];
-            $this->_format = $media::suitable($this);
+            $this->negotiate();
         }
         return parent::format($format);
     }
@@ -181,7 +192,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      * Returns information about the type of content that the client is requesting.
      *
      * @param  boolean $all If `true` lists all accepted content types
-     * @return mixed        Returns the negociated type or the accepted content types sorted by
+     * @return mixed        Returns the negotiated type or the accepted content types sorted by
      *                      client preference if `$all` is set to `true`.
      */
     public function accepts()
