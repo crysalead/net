@@ -3,10 +3,9 @@ namespace Lead\Net\Spec\Suite\Http\Psr7;
 
 use InvalidArgumentException;
 use Lead\Net\Http\Psr7\Uri;
-use Lead\Net\Http\Response
-;
+use Lead\Net\Http\Response;
 
-describe("responseTrait", function() {
+describe("ResponseTrait", function() {
 
     describe("->getStatusCode()", function() {
 
