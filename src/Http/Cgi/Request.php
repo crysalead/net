@@ -3,9 +3,12 @@ namespace Lead\Net\Http\Cgi;
 
 use Lead\Net\NetException;
 use Lead\Set\Set;
+use Lead\Net\Http\Psr7\ServerRequestTrait;
 
-class Request extends \Lead\Net\Http\Request
+class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\ServerRequestInterface
 {
+    use ServerRequestTrait;
+
     /**
      * Contains all exportable formats and their handler
      *
