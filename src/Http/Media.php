@@ -231,7 +231,7 @@ class Media
                 }
 
                 $result = json_encode($data, $options['flag'], $options['depth']);
-                if ( json_last_error() !== JSON_ERROR_NONE ) {
+                if (json_last_error() !== JSON_ERROR_NONE) {
                     throw new InvalidArgumentException(json_last_error_msg());
                 }
                 return $result;
@@ -245,7 +245,7 @@ class Media
                 $options += $defaults;
                 $result = json_decode($data, $options['array'], $options['depth'], $options['flag']);
 
-                if ( json_last_error() !== JSON_ERROR_NONE ) {
+                if (json_last_error() !== JSON_ERROR_NONE) {
                     throw new InvalidArgumentException(json_last_error_msg());
                 }
                 return $result;

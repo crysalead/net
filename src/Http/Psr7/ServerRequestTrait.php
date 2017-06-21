@@ -56,9 +56,10 @@ trait ServerRequestTrait
      */
     public function withCookieParams(array $cookies)
     {
+        $request = clone $this;
         $class = $this->_classes['cookies'];
-        $this->headers->cookies = new $class(['data' => $cookies]);
-        return $this;
+        $request->headers->cookies = new $class(['data' => $cookies]);
+        return $request;
     }
 
     /**
@@ -102,8 +103,9 @@ trait ServerRequestTrait
      */
     public function withQueryParams(array $query)
     {
-        $this->query($query);
-        return $this;
+        $request = clone $this;
+        $request->query($query);
+        return $request;
     }
 
     /**
@@ -196,8 +198,9 @@ trait ServerRequestTrait
      */
     public function withParsedBody($data)
     {
-        $this->set($data);
-        return $this;
+        $request = clone $this;
+        $request->set($data);
+        return $request;
     }
 
     /**
@@ -254,10 +257,11 @@ trait ServerRequestTrait
      */
     public function withAttribute($name, $value)
     {
-        $params = $this->params();
+        $request = clone $this;
+        $params = $request->params();
         $params[$name] = $value;
-        $this->params($params);
-        return $this;
+        $request->params($params);
+        return $request;
     }
 
     /**
@@ -276,9 +280,10 @@ trait ServerRequestTrait
      */
     public function withoutAttribute($name)
     {
-        $params = $this->params();
+        $request = clone $this;
+        $params = $request->params();
         unset($params[$name]);
-        $this->params($params);
-        return $this;
+        $request->params($params);
+        return $request;
     }
 }

@@ -60,7 +60,7 @@ describe("ServerRequestTrait", function() {
 
             $request = new Request();
 
-            $request->withCookieParams([
+            $request = $request->withCookieParams([
                 'foo' => 'bar',
                 'bar' => 'foo'
             ]);
@@ -80,7 +80,7 @@ describe("ServerRequestTrait", function() {
 
             $expected = "?param=value&param1=value1";
             $request = new Request();
-            expect($request->withQueryParams(['param' => 'value', 'param1' => 'value1']))->toBe($request);
+            expect($request = $request->withQueryParams(['param' => 'value', 'param1' => 'value1']))->toBe($request);
             expect($request->getQueryParams())->toBe(['param' => 'value', 'param1' => 'value1']);
 
             expect($request->requestTarget())->toBe('/?param=value&param1=value1');
@@ -109,7 +109,7 @@ describe("ServerRequestTrait", function() {
         it("gets/sets a param", function() {
 
             $request = new Request();
-            expect($request->withAttribute('param', 'value'))->toBe($request);
+            expect($request = $request->withAttribute('param', 'value'))->toBe($request);
             expect($request->getAttribute('param'))->toBe('value');
 
         });
@@ -125,7 +125,7 @@ describe("ServerRequestTrait", function() {
                     'param' => 'value', 'param1' => 'value1'
                 ]
             ]);
-            $request->withoutAttribute('param');
+            $request = $request->withoutAttribute('param');
             expect($request->getAttributes())->toBe(['param1' => 'value1']);
 
         });
@@ -139,10 +139,10 @@ describe("ServerRequestTrait", function() {
             $message = new Request();
             $message->format("json");
 
-            expect($message->withParsedBody(""))->toBe($message);
+            expect($message = $message->withParsedBody(""))->toBe($message);
             expect($message->getParsedBody())->toBe("");
 
-            expect($message->withParsedBody(['name' => 'value']))->toBe($message);
+            expect($message = $message->withParsedBody(['name' => 'value']))->toBe($message);
             expect($message->getParsedBody())->toBe(['name' => 'value']);
 
         });
