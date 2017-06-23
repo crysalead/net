@@ -58,10 +58,6 @@ class Cookie extends \Lead\Collection\Collection
             if ($value instanceof static) {
                 $value = $value->value();
             }
-            $value = (string) $value;
-            if (!$value && $value !== '0') {
-                throw new Exception("Invalid cookie value `'{$value}'`.");
-            }
             $this->_data[$i++] = (string) $value;
         }
         return reset($this->_data);
