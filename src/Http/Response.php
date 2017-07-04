@@ -237,6 +237,16 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     }
 
     /**
+     * Magic method to convert object to string.
+     *
+     * @return string
+     */
+    public function toString()
+    {
+        return (string) $this->_body;
+    }
+
+    /**
      * Renders a response instance to a string.
      * This doesn't actually return a string, but does a direct render and returns an empty string.
      *
