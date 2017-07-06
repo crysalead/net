@@ -226,7 +226,7 @@ class SetCookies extends \Lead\Collection\Collection
      * @param  string $url   The URL of the response.
      * @return array         The Set-Cookie data array.
      */
-    public static function parse($value, $url = null)
+    public static function parse($value, $url = '')
     {
         $config = [];
 

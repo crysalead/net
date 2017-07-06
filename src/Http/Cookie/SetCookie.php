@@ -217,12 +217,11 @@ class SetCookie
      */
     protected function _matchDomain($domain)
     {
-        $hostDomain = strtolower($domain);
-        $cookieDomain = strtolower($this->_data['domain']);
-
-        if (!$cookieDomain) {
+        if (!$this->_data['domain']) {
             return false;
         }
+        $hostDomain = strtolower($domain);
+        $cookieDomain = strtolower($this->_data['domain']);
 
         if ($cookieDomain[0] === '.') {
             $cookieDomain = substr($cookieDomain, 1);
