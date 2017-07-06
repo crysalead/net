@@ -20,13 +20,6 @@ class Message
     protected $_body = null;
 
     /**
-     * The string body.
-     *
-     * @var object
-     */
-    protected $_toString = null;
-
-    /**
      * Default chunk size
      *
      * @var array
@@ -71,7 +64,7 @@ class Message
             $this->stream($value);
             return $this;
         }
-        return $this->toString();
+        return (string) $this->_body;
     }
 
     /**
@@ -86,7 +79,6 @@ class Message
         if (func_num_args() === 0) {
             return $this->_body;
         }
-        $this->_toString = null;
         if (is_object($value)) {
             $this->_body = $value;
         } else {
@@ -140,10 +132,7 @@ class Message
      */
     public function toString()
     {
-        if ($this->_toString !== null) {
-            return $this->_toString;
-        }
-        return $this->_toString = (string) $this->_body;
+        return (string) $this->_body;
     }
 
     /**

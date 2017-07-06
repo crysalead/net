@@ -200,7 +200,7 @@ class Message extends \Lead\Net\Message
     {
         $media = $this->_classes['media'];
         $format = $this->format();
-        return $format ? $media::decode($format, parent::toString()) : parent::toString();
+        return $format ? $media::decode($format, (string) $this->_body) : (string) $this->_body;
     }
 
     /**
@@ -268,7 +268,7 @@ class Message extends \Lead\Net\Message
             $this->toChunks(function($chunk) use (&$body) { $body .= $chunk; });
             return $body;
         }
-        return parent::toString();
+        return (string) $this->_body;
     }
 
     /**
