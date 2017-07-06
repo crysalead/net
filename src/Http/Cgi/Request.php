@@ -3,6 +3,7 @@ namespace Lead\Net\Http\Cgi;
 
 use Lead\Net\NetException;
 use Lead\Set\Set;
+use Lead\Net\PhpInputStream;
 use Lead\Net\Http\Psr7\ServerRequestTrait;
 
 class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\ServerRequestInterface
@@ -514,36 +515,26 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
      * Creates a request extracted from CGI globals.
      *
      * @param  array $config The config array.
-     *                       - `'body'`    _array_: Form data (defaults: normalized `$_FILES + $_POST`).
-     *                       - `'data'`    _array_: Form data (defaults: normalized `$_FILES + $_POST`).
-     *                       - `'query'`   _array_: Query string (defaults: `$_GET`).
-     *                       - `'cookies'` _array_: Cookies (defaults: `$_COOKIE`).
      *                       - `'env'`     _array_: Environment variable (defaults: `$_SERVER`).
      * @return self
      */
     public static function ingoing($config = [])
     {
-        $env = isset($config['env']) ? $config['env'] : $_SERVER;
+        $config['env'] = isset($config['env']) ? $config['env'] : $_SERVER;
 
-        $defaults = [
-            'data'    => static::files() + (isset($_POST) ? $_POST : []),
-            'query'   => isset($_GET) ? $_GET : [],
-            'cookies' => $_COOKIE,
-            'env'     => $env
-        ];
-
-        if (!isset($config['body'])) {
-            $defaults['body'] = fopen('php://input', 'r');
-        }
-
-        if (!isset($env['REQUEST_URI'])) {
+        if (!isset($config['env']['REQUEST_URI'])) {
             throw new NetException("Missing `'REQUEST_URI'` environment variable, unable to create the main request.");
         }
 
-        if (!isset($env['SCRIPT_NAME'])) {
+        if (!isset($config['env']['SCRIPT_NAME'])) {
             throw new NetException("Missing `'SCRIPT_NAME'` environment variable, unable to create the main request.");
         }
 
-        return new static($config + $defaults);
+        return new static([
+            'data'    => static::files() + (isset($_POST) ? $_POST : []),
+            'body'    => new PhpInputStream(),
+            'query'   => isset($_GET) ? $_GET : [],
+            'cookies' => $_COOKIE
+        ] + $config);
     }
 }
