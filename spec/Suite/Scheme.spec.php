@@ -16,15 +16,16 @@ describe("Scheme", function() {
         it("returns default registered schemes", function() {
 
             expect(Scheme::registered())->toBe([
+                'dict'   => 2628,
                 'ftp'    => 21,
-                'ssh'    => 22,
-                'telnet' => 23,
-                'smtp'   => 25,
                 'http'   => 80,
-                'sftp'   => 115,
-                'imap'   => 143,
                 'https'  => 443,
-                'smtps'  => 587
+                'imap'   => 143,
+                'sftp'   => 115,
+                'smtp'   => 25,
+                'smtps'  => 587,
+                'ssh'    => 22,
+                'telnet' => 23
             ]);
 
         });
@@ -67,13 +68,9 @@ describe("Scheme", function() {
 
     describe("::port()", function() {
 
-        it("throws an exception for unregistered scheme", function() {
+        it("returns protocols default port number", function() {
 
-            $closure = function() {
-                Scheme::port('time');
-            };
-
-            expect($closure)->toThrow(new NetException('Unregistered scheme `time`.'));
+            expect(Scheme::port('https'))->toBe(443);
 
         });
 

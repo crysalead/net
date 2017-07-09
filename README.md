@@ -91,7 +91,7 @@ Example of creating a request from an absolute URL:
 ```php
 use Lead\Net\Http\Request;
 
-$request = Request::parseUrl('http://username:password@www.domain.com:8080/index.php', [
+$request = Request::create('http://username:password@www.domain.com:8080/index.php', [
     /* additionnal options */
 ]);
 

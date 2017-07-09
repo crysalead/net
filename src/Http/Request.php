@@ -522,7 +522,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      * @param  array  $config The config array.
      * @return self
      */
-    public static function parseUrl($url = null, $config = [])
+    public static function create($url = null, $config = [])
     {
         if (func_num_args()) {
             if(!preg_match('~^(?:[a-z]+:)?//~i', $url) || !$defaults = parse_url($url)) {

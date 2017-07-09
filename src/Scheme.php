@@ -4,15 +4,16 @@ namespace Lead\Net;
 class Scheme
 {
     protected static $_schemes = [
+        'dict'   => 2628,
         'ftp'    => 21,
-        'ssh'    => 22,
-        'telnet' => 23,
-        'smtp'   => 25,
         'http'   => 80,
-        'sftp'   => 115,
-        'imap'   => 143,
         'https'  => 443,
-        'smtps'  => 587
+        'imap'   => 143,
+        'sftp'   => 115,
+        'smtp'   => 25,
+        'smtps'  => 587,
+        'ssh'    => 22,
+        'telnet' => 23
     ];
 
     /**
@@ -60,7 +61,7 @@ class Scheme
     public static function port($name)
     {
         if (!isset(static::$_schemes[$name])) {
-            throw new NetException("Unregistered scheme `{$name}`.");
+            return;
         }
         return static::$_schemes[$name];
     }
