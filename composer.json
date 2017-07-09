@@ -10,7 +10,7 @@
     ],
     "require": {
         "php": ">=5.5",
-        "crysalead/collection": "~2.0",
+        "crysalead/collection": "~3.0",
         "crysalead/env": "~1.0",
         "crysalead/set": "~2.0",
         "crysalead/storage-stream": "~1.0",
