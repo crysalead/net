@@ -319,7 +319,7 @@ EOD;
                 $response->dump();
             };
 
-            expect($closure)->toEcho("11\r\n{\"hello\":\"world\"}\r\n0\r\n");
+            expect($closure)->toEcho("11\r\n{\"hello\":\"world\"}\r\n0\r\n\r\n");
             expect($headers)->toEqual([
                 ["HTTP/1.1 200 OK"],
                 ["Content-Type: application/json"],
@@ -435,7 +435,7 @@ EOD;
             $body .= "Fri, 25 Dec 2015 00:00:00 GMT\r\n";
             $body .= "13\r\n";
             $body .= ".</p></body></html>\r\n";
-            $body .= "0\r\n";
+            $body .= "0\r\n\r\n";
 
             $response = Response::parse($headers . $body);
 

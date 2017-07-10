@@ -119,7 +119,7 @@ class Message
                 break;
             }
         }
-        $closure("0\r\n", 0);
+        $closure("0\r\n\r\n", 0);
         if ($stream->isSeekable()) {
             $stream->rewind();
         }

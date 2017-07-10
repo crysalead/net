@@ -230,11 +230,11 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             header($header->to('header'));
         }
         if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
-            $this->toChunks(function($chunk) use (&$body) {
+            $this->toChunks(function($chunk) {
                 echo $chunk;
                 return connection_status() === CONNECTION_NORMAL;
             });
-            return '';
+            return;
         }
         $parts = str_split((string) $this->_body, $this->chunkSize());
 
