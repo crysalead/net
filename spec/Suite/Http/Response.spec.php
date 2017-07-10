@@ -290,7 +290,7 @@ EOD;
                     'format' => 'json',
                     'data'   => ['hello' => 'world']
                 ]);
-                $response->render();
+                $response->dump();
             };
 
             expect($closure)->toEcho('{"hello":"world"}');
@@ -316,7 +316,7 @@ EOD;
                     'data'   => ['hello' => 'world']
                 ]);
                 $response->headers['Transfer-Encoding'] = 'chunked';
-                $response->render();
+                $response->dump();
             };
 
             expect($closure)->toEcho("11\r\n{\"hello\":\"world\"}\r\n0\r\n");

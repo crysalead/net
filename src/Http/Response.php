@@ -222,7 +222,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      *
      * @see https://bugs.php.net/bug.php?id=18029
      */
-    public function render()
+    public function dump()
     {
         $this->_setContentLength();
         header($this->line());
