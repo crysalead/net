@@ -182,10 +182,13 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      */
     public function format($format = null)
     {
-        if (!$this->_format) {
+        if (func_num_args()) {
+            return parent::format($format);
+        }
+        if ($this->_format === null) {
             $this->negotiate();
         }
-        return parent::format($format);
+        return $this->_format;
     }
 
     /**
@@ -503,15 +506,14 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             'method'   => $this->method(),
             'scheme'   => $this->scheme(),
             'version'  => $this->version(),
-            'host'     => $this->host(),
+            'hostname' => $this->hostname(),
             'port'     => $this->port(),
             'path'     => $this->path(),
             'query'    => $this->query() ? '?' . http_build_query($this->query()) : '',
             'fragment' => $this->fragment(),
             'username' => $this->username(),
             'password' => $this->password(),
-            'url'      => $this->url(),
-            'stream'   => $this->stream()
+            'url'      => $this->url()
         ];
     }
 

@@ -221,11 +221,16 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         $uri = $env['REQUEST_URI'];
         list($path) = explode('?', $uri, 2);
 
-        $basePath = '/' . ltrim($env['SCRIPT_NAME'], '/');
+        $basePath = '/' . trim($env['SCRIPT_NAME'], '/');
 
-        if (strncmp($basePath, $path, strlen($basePath)) === 0){
-            $path = '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/');
-            $basePath = '/' . ltrim(dirname($env['SCRIPT_NAME']), '/');
+        if (strncmp($basePath, $path, strlen($basePath)) === 0) {
+            $basename = basename($basePath);
+            if (preg_match('~^.*\.php$~', $basename)) {
+                $path = '/' . trim(substr($path, strlen($basePath)), '/');
+                $basePath = '/' . trim(dirname($basePath), '/');
+            } else {
+                $basePath = '';
+            }
         } else {
             $cut = $i = 0;
             $len = min(strlen($path), strlen($basePath));
@@ -464,8 +469,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
             'basePath' => $this->basePath(),
             'locale'   => $this->locale(),
             'data'     => $this->data(),
-            'params'   => $this->params(),
-            'env'      => $this->env
+            'params'   => $this->params()
         ] + parent::export($options);
     }
 

@@ -85,7 +85,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         $defaults = [
             'status'   => 200,
             'location' => null,
-            'format'   => 'html',
+            'format'   => null,
             'cookies'  => [],
             'classes' => [
                 'cookies' => 'Lead\Net\Http\Cookie\SetCookies'
@@ -164,6 +164,16 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     }
 
     /**
+     * Gets the status code of the response.
+     *
+     * @return integer     The HTTP status code.
+     */
+    public function statusCode()
+    {
+        return $this->_status[0];
+    }
+
+    /**
      * Looks at the WWW-Authenticate. Will return array of key/values if digest.
      *
      * @param  string $header value of WWW-Authenticate
@@ -237,15 +247,30 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     }
 
     /**
-     * Renders a response instance to a string.
-     * This doesn't actually return a string, but does a direct render and returns an empty string.
+     * Magic method convert the instance body into a string.
      *
-     * @return string An empty string.
+     * @return string
      */
-    public function __toString()
+    public function toString()
     {
-        $this->render();
-        return '';
+        return (string) $this->_body;
+    }
+
+    /**
+     * Exports a `Response` instance to an array.
+     *
+     * @param  array $options  Options.
+     * @return array           The export array.
+     */
+    public function export($options = [])
+    {
+        $this->_setContentLength();
+        return [
+            'status'  => $this->status(),
+            'version' => $this->version(),
+            'headers' => $this->headers,
+            'body'    => $this->stream()
+        ];
     }
 
     /**
@@ -290,22 +315,5 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
 
         $response->body($body);
         return $response;
-    }
-
-    /**
-     * Exports a `Response` instance to an array.
-     *
-     * @param  array $options  Options.
-     * @return array           The export array.
-     */
-    public function export($options = [])
-    {
-        $this->_setContentLength();
-        return [
-            'status'  => $this->status(),
-            'version' => $this->version(),
-            'headers' => $this->headers,
-            'body'    => $this->stream()
-        ];
     }
 }

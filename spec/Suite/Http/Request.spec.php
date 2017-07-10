@@ -50,15 +50,14 @@ describe("Request", function() {
                 'method'   => 'GET',
                 'scheme'   => 'https',
                 'version'  => '1.1',
-                'host'     => 'www.domain.com:8000',
+                'hostname' => 'www.domain.com',
                 'port'     => 8000,
                 'path'     => '/foo',
                 'query'    => '?bar=baz',
                 'fragment' => 'quz',
                 'username' => 'username',
                 'password' => 'password',
-                'url'      => 'https://www.domain.com:8000/foo?bar=baz#quz',
-                'stream'   => $request->stream()
+                'url'      => 'https://www.domain.com:8000/foo?bar=baz#quz'
             ]);
 
         });
@@ -506,15 +505,14 @@ EOD;
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
-                'host'     => 'localhost',
+                'hostname' => 'localhost',
                 'port'     => 80,
                 'path'     => '/',
                 'query'    => '',
                 'fragment' => '',
                 'username' => null,
                 'password' => null,
-                'url'      => 'http://localhost/',
-                'stream'   => $request->stream()
+                'url'      => 'http://localhost/'
             ]);
 
         });
@@ -534,15 +532,14 @@ EOD;
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
-                'host'     => 'www.domain.com',
+                'hostname' => 'www.domain.com',
                 'port'     => 80,
                 'path'     => '/index.php',
                 'query'    => '',
                 'fragment' => '',
                 'username' => 'username',
                 'password' => 'password',
-                'url'      => 'http://www.domain.com/index.php',
-                'stream'   => $request->stream()
+                'url'      => 'http://www.domain.com/index.php'
             ]);
 
         });

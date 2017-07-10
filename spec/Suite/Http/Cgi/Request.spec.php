@@ -12,7 +12,7 @@ describe("Request", function() {
         $this->globalNames =['_GET', '_POST', '_SERVER'];
         $this->oldEnv = [];
         foreach ($this->globalNames as $varname) {
-            $this->oldEnv[$varname] = $GLOBALS[$varname];
+            $this->oldEnv[$varname] = isset($GLOBALS[$varname]) ? $GLOBALS[$varname] : null;
             unset($GLOBALS[$varname]);
         }
     });
@@ -34,19 +34,17 @@ describe("Request", function() {
                 'locale'   => null,
                 'data'     => [],
                 'params'   => [],
-                'env'      => $request->env,
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
-                'host'     => 'localhost',
+                'hostname' => 'localhost',
                 'port'     => 80,
                 'path'     => '/',
                 'query'    => '',
                 'fragment' => '',
                 'username' => null,
                 'password' => null,
-                'url'      => 'http://localhost/',
-                'stream'   => $request->stream()
+                'url'      => 'http://localhost/'
             ]);
 
             $expected = <<<EOD
@@ -398,19 +396,17 @@ EOD;
                 'locale'   => null,
                 'data'     => $_FILES + $_POST,
                 'params'   => [],
-                'env'      => $request->env,
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
-                'host'     => 'localhost',
+                'hostname' => 'localhost',
                 'port'     => 80,
                 'path'     => '/app',
                 'query'    => '?get=value',
                 'fragment' => '',
                 'username' => null,
                 'password' => null,
-                'url'      => 'http://localhost/app?get=value',
-                'stream'   => $request->stream()
+                'url'      => 'http://localhost/app?get=value'
             ]);
 
         });
@@ -430,19 +426,17 @@ EOD;
                 'locale'   => null,
                 'data'     => $_FILES + $_POST,
                 'params'   => [],
-                'env'      => $request->env,
                 'method'   => 'GET',
                 'scheme'   => 'http',
                 'version'  => '1.1',
-                'host'     => 'localhost',
+                'hostname' => 'localhost',
                 'port'     => 80,
                 'path'     => '/app',
                 'query'    => '?get=value',
                 'fragment' => '',
                 'username' => null,
                 'password' => null,
-                'url'      => 'http://localhost/app?get=value',
-                'stream'   => $request->stream()
+                'url'      => 'http://localhost/app?get=value'
             ]);
 
         });
@@ -678,6 +672,18 @@ EOD;
 
             expect($request->basePath())->toBe('/base/path/webroot');
             expect($request->path())->toBe('/image/edit/1');
+
+        });
+
+        it("supports PHP build-in server SCRIPT_NAME", function() {
+
+            $_SERVER['REQUEST_URI'] = '/controller/action';
+            $_SERVER['SCRIPT_NAME'] = '/controller/action';
+
+            $request = Request::ingoing();
+
+            expect($request->basePath())->toBe('');
+            expect($request->path())->toBe('/controller/action');
 
         });
 

@@ -32,6 +32,7 @@ describe("Message", function() {
             ]]);
 
             $expected =<<<EOD
+Content-Type: text/html\r
 User-Agent: Mozilla/5.0\r
 Cache-Control: no-cache\r
 \r
@@ -145,6 +146,7 @@ EOD;
 
         beforeEach(function() {
             $this->headers = <<<EOD
+Content-Type: text/html\r
 Custom-Header: Custom Value\r
 \r
 

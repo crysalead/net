@@ -130,6 +130,7 @@ class Message extends \Lead\Net\Message
         }
 
         if ($type === false) {
+            unset($this->_format);
             unset($this->headers['Content-Type']);
             return $this;
         }
@@ -151,13 +152,20 @@ class Message extends \Lead\Net\Message
      */
     public function format($format = null)
     {
-        if (!$format) {
+        $media = $this->_classes['media'];
+
+        if (!func_num_args()) {
+            if ($this->_format === null) {
+                $this->_format = $media::suitable($this);
+            }
             return $this->_format;
         }
+        if ($format === null) {
+            return $this;
+        }
 
-        $media = $this->_classes['media'];
         if (!$type = $media::type($format)){
-            throw new NetException("The `'$format'` format is undefined or has no valid Content-Type defined check the `Media` class.");
+            throw new NetException("The `'{$format}'` format is undefined or has no valid Content-Type defined check the `Media` class.");
         }
         $this->_format = $format;
         $this->type($type);
@@ -218,6 +226,7 @@ class Message extends \Lead\Net\Message
         if (!$format && !is_string($value)) {
             throw new NetException("The data must be a string when no format is defined.");
         }
+
         $this->stream($format ? $media::encode($format, $value, $options) : $value);
         return $this;
     }

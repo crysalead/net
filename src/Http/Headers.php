@@ -31,7 +31,8 @@ class Headers extends \Lead\Collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'Lead\Collection\Collection::toArray',
+        'array'  => 'Lead\Net\Http\Headers::toArray',
+        'list'   => 'Lead\Net\Http\Headers::toList',
         'header' => 'Lead\Net\Http\Headers::toHeader'
     ];
 
@@ -289,6 +290,20 @@ class Headers extends \Lead\Collection\Collection
     }
 
     /**
+     * Gets the headers as an array.
+     *
+     * @return array Returns the headers.
+     */
+    public static function toList($collection, $options = [])
+    {
+        $data = [];
+        foreach ($collection as $name => $header) {
+            $data[] = $name . ': ' . $header->value();
+        }
+        return $data;
+    }
+
+    /**
      * Returns the headers as a string.
      *
      * @return string
@@ -298,6 +313,9 @@ class Headers extends \Lead\Collection\Collection
         $data = [];
         foreach ($headers as $key => $header) {
             $data[] = $header->to('header');
+        }
+        if (!isset($headers['Content-Type'])) {
+            array_unshift($data, 'Content-Type: text/html');
         }
         if ($headers->cookies && $result = $headers->cookies->to('header')) {
             $data[] = $result;

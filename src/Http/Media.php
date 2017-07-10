@@ -3,6 +3,7 @@ namespace Lead\Net\Http;
 
 use InvalidArgumentException;
 use Lead\Net\NetException;
+use Lead\Net\Http\Cgi\Request;
 
 /**
  * The `Media` class sets encoding/decoding handlers for formats.
@@ -104,32 +105,34 @@ class Media
     /**
      * Iterates through all existing formats to match a compatible one for the provided request.
      *
-     * @param  object  $request An instance of request.
+     * @param  object  $message An instance of message.
      * @param  string  $type    An overriding content type.
      * @return boolean          Returns a compatible format name or `null` if none matched.
      */
-    public static function suitable($request, $type = null)
+    public static function suitable($message, $type = null)
     {
         $formats = static::$_formats;
 
         if (func_num_args() === 1) {
-            $type = $request->type();
+            $type = $message->type();
         }
 
         foreach ($formats as $format => $definition) {
             if (!in_array($type, $definition['type'], true)) {
                 continue;
             }
-            foreach ($definition['conditions'] as $key => $value) {
-                switch (true) {
-                    case strpos($key, ':'):
-                        if ($request->attr($key) !== $value) {
+            if ($message instanceof Request) {
+                foreach ($definition['conditions'] as $key => $value) {
+                    switch (true) {
+                        case strpos($key, ':'):
+                            if ($message->attr($key) !== $value) {
+                                continue 2;
+                            }
+                        break;
+                        case ($message->is($key) !== $value):
                             continue 2;
-                        }
-                    break;
-                    case ($request->is($key) !== $value):
-                        continue 2;
-                    break;
+                        break;
+                    }
                 }
             }
             return $format;
