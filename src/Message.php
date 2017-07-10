@@ -24,7 +24,7 @@ class Message
      *
      * @var array
      */
-    protected $_chunkSize = 4096;
+    protected $_chunkSize = 256;
 
     /**
      * Constructor.

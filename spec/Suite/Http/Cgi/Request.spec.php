@@ -32,7 +32,7 @@ describe("Request", function() {
             expect($request->export())->toEqual([
                 'basePath' => '',
                 'locale'   => null,
-                'data'     => [],
+                'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',
                 'scheme'   => 'http',
@@ -104,9 +104,9 @@ EOD;
 
         });
 
-        it("allows `data['_method']` to override `'REQUEST_METHOD'`", function() {
+        it("allows `form['_method']` to override `'REQUEST_METHOD'`", function() {
 
-            $request = new Request(['data' => ['_method' => 'PATCH']]);
+            $request = new Request(['form' => ['_method' => 'PATCH']]);
 
             expect($request->method())->toBe('PATCH');
             expect($request->env['REQUEST_METHOD'])->toBe('PATCH');
@@ -394,9 +394,50 @@ EOD;
             expect($request->export())->toEqual([
                 'basePath' => '/base/path/webroot',
                 'locale'   => null,
-                'data'     => $_FILES + $_POST,
+                'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',
+                'scheme'   => 'http',
+                'version'  => '1.1',
+                'hostname' => 'localhost',
+                'port'     => 80,
+                'path'     => '/app',
+                'query'    => '?get=value',
+                'fragment' => '',
+                'username' => null,
+                'password' => null,
+                'url'      => 'http://localhost/app?get=value'
+            ]);
+
+        });
+
+        it("creates application/x-www-form-urlencoded request from globals", function() {
+
+            defineGlobals([
+                'SERVER' => [
+                    'REQUEST_METHOD' => 'POST',
+                    'CONTENT_TYPE'   => 'application/x-www-form-urlencoded'
+                ]
+            ]);
+
+            allow('fopen')->toBeCalled()->andRun(function($filename, $mode) {
+                if ($filename === 'php://input') {
+                    $stream = fopen('php://temp', 'r+');
+                    fwrite($stream, 'post=value');
+                    rewind($stream);
+                    return $stream;
+                }
+                return fopen($filename, $mode);
+            });
+
+            $request = Request::ingoing();
+
+            expect($request->export())->toEqual([
+                'basePath' => '/base/path/webroot',
+                'locale'   => null,
+                'form'     => $_POST,
+                'params'   => [],
+                'method'   => 'POST',
                 'scheme'   => 'http',
                 'version'  => '1.1',
                 'hostname' => 'localhost',
@@ -424,7 +465,7 @@ EOD;
             expect($request->export())->toEqual([
                 'basePath' => '/base/path',
                 'locale'   => null,
-                'data'     => $_FILES + $_POST,
+                'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',
                 'scheme'   => 'http',
@@ -462,180 +503,6 @@ EOD;
 
 
             Dir::remove($temp, ['recursive' => true]);
-
-        });
-
-        it("normalizes deep `\$_FILES` structure", function() {
-
-            $_FILES = [
-                'files' => [
-                    'name' => [
-                        'file 2.jpg',
-                        'file 3.jpg',
-                        'file 4.jpg'
-                    ],
-                    'type' => [
-                        'image/jpeg',
-                        'image/jpeg',
-                        'image/jpeg'
-                    ],
-                    'tmp_name' => [
-                        '/private/var/tmp/phpF5vsky',
-                        '/private/var/tmp/phphRJ2zW',
-                        '/private/var/tmp/phprI92L1'
-                    ],
-                    'error' => [
-                        0,
-                        0,
-                        0
-                    ],
-                    'size' => [
-                         418,
-                         418,
-                         418
-                    ]
-                ]
-            ];
-
-            $request = Request::ingoing();
-
-            expect($request->data())->toEqual([
-                'files' => [
-                    [
-                        'name' => 'file 2.jpg',
-                        'type' => 'image/jpeg',
-                        'tmp_name' => '/private/var/tmp/phpF5vsky',
-                        'error' => 0,
-                        'size' => 418
-                    ],
-                    [
-                        'name' => 'file 3.jpg',
-                        'type' => 'image/jpeg',
-                        'tmp_name' => '/private/var/tmp/phphRJ2zW',
-                        'error' => 0,
-                        'size' => 418
-                    ],
-                    [
-                        'name' => 'file 4.jpg',
-                        'type' => 'image/jpeg',
-                        'tmp_name' => '/private/var/tmp/phprI92L1',
-                        'error' => 0,
-                        'size' => 418
-                    ]
-                ]
-            ] + $_POST);
-
-        });
-
-        it("normalizes nested `\$_FILES` structure", function() {
-
-            $_FILES = [
-                'Image' =>[
-                    'name' => [
-                        'file' => 'file 5.jpg'
-                    ],
-                    'type' => [
-                        'file' => 'image/jpeg'
-                    ],
-                    'tmp_name' => [
-                        'file' => '/private/var/tmp/phpAmSDL4'
-                    ],
-                    'error' => [
-                        'file' => 0
-                    ],
-                    'size' => [
-                        'file' => 418
-                    ]
-                ]
-            ];
-
-            $request = Request::ingoing();
-
-            expect($request->data())->toEqual([
-                'Image' => [
-                    'file' => [
-                        'name' => 'file 5.jpg',
-                        'type' => 'image/jpeg',
-                        'tmp_name' => '/private/var/tmp/phpAmSDL4',
-                        'error' => 0,
-                        'size' => 418
-                    ]
-                ]
-            ] + $_POST);
-
-        });
-
-        it("normalizes deeply nested `\$_FILES` structure", function() {
-
-            $_FILES = [
-                'Photo' => [
-                    'name' => [
-                        'files' => [
-                            0 => 'file 6.jpg',
-                            1 => 'file 7.jpg',
-                            2 => 'file 8.jpg'
-                        ]
-                    ],
-                    'type' => [
-                        'files' => [
-                            0 => 'image/jpeg',
-                            1 => 'image/jpeg',
-                            2 => 'image/jpeg'
-                        ]
-                    ],
-                    'tmp_name' => [
-                        'files' => [
-                            0 => '/private/var/tmp/php2eViak',
-                            1 => '/private/var/tmp/phpMsC5Pp',
-                            2 => '/private/var/tmp/phpm2nm98'
-                        ]
-                    ],
-                    'error' => [
-                        'files' => [
-                            0 => 0,
-                            1 => 0,
-                            2 => 0
-                        ]
-                    ],
-                    'size' => [
-                        'files' => [
-                            0 => 418,
-                            1 => 418,
-                            2 => 418
-                        ]
-                    ]
-                ]
-            ];
-
-            $request = Request::ingoing();
-
-            expect($request->data())->toEqual([
-                'Photo' => [
-                    'files' => [
-                        [
-                            'name' => 'file 6.jpg',
-                            'type' => 'image/jpeg',
-                            'tmp_name' => '/private/var/tmp/php2eViak',
-                            'error' => 0,
-                            'size' => 418
-                        ],
-                        [
-                            'name' => 'file 7.jpg',
-                            'type' => 'image/jpeg',
-                            'tmp_name' => '/private/var/tmp/phpMsC5Pp',
-                            'error' => 0,
-                            'size' => 418
-                        ],
-                        [
-                            'name' => 'file 8.jpg',
-                            'type' => 'image/jpeg',
-                            'tmp_name' => '/private/var/tmp/phpm2nm98',
-                            'error' => 0,
-                            'size' => 418
-                        ]
-                    ]
-                ]
-            ] + $_POST);
 
         });
 
@@ -706,6 +573,178 @@ EOD;
             };
 
             expect($closure)->toThrow(new NetException("Missing `'SCRIPT_NAME'` environment variable, unable to create the main request."));
+
+        });
+
+    });
+
+    describe("::files()", function() {
+
+        it("normalizes deep `\$_FILES` structure", function() {
+
+            $_FILES = [
+                'files' => [
+                    'name' => [
+                        'file 2.jpg',
+                        'file 3.jpg',
+                        'file 4.jpg'
+                    ],
+                    'type' => [
+                        'image/jpeg',
+                        'image/jpeg',
+                        'image/jpeg'
+                    ],
+                    'tmp_name' => [
+                        '/private/var/tmp/phpF5vsky',
+                        '/private/var/tmp/phphRJ2zW',
+                        '/private/var/tmp/phprI92L1'
+                    ],
+                    'error' => [
+                        0,
+                        0,
+                        0
+                    ],
+                    'size' => [
+                         418,
+                         418,
+                         418
+                    ]
+                ]
+            ];
+
+            expect(Request::files())->toEqual([
+                'files' => [
+                    [
+                        'name' => 'file 2.jpg',
+                        'type' => 'image/jpeg',
+                        'tmp_name' => '/private/var/tmp/phpF5vsky',
+                        'error' => 0,
+                        'size' => 418
+                    ],
+                    [
+                        'name' => 'file 3.jpg',
+                        'type' => 'image/jpeg',
+                        'tmp_name' => '/private/var/tmp/phphRJ2zW',
+                        'error' => 0,
+                        'size' => 418
+                    ],
+                    [
+                        'name' => 'file 4.jpg',
+                        'type' => 'image/jpeg',
+                        'tmp_name' => '/private/var/tmp/phprI92L1',
+                        'error' => 0,
+                        'size' => 418
+                    ]
+                ]
+            ]);
+
+        });
+
+        it("normalizes nested `\$_FILES` structure", function() {
+
+            $_FILES = [
+                'Image' =>[
+                    'name' => [
+                        'file' => 'file 5.jpg'
+                    ],
+                    'type' => [
+                        'file' => 'image/jpeg'
+                    ],
+                    'tmp_name' => [
+                        'file' => '/private/var/tmp/phpAmSDL4'
+                    ],
+                    'error' => [
+                        'file' => 0
+                    ],
+                    'size' => [
+                        'file' => 418
+                    ]
+                ]
+            ];
+
+            expect(Request::files())->toEqual([
+                'Image' => [
+                    'file' => [
+                        'name' => 'file 5.jpg',
+                        'type' => 'image/jpeg',
+                        'tmp_name' => '/private/var/tmp/phpAmSDL4',
+                        'error' => 0,
+                        'size' => 418
+                    ]
+                ]
+            ]);
+
+        });
+
+        it("normalizes deeply nested `\$_FILES` structure", function() {
+
+            $_FILES = [
+                'Photo' => [
+                    'name' => [
+                        'files' => [
+                            0 => 'file 6.jpg',
+                            1 => 'file 7.jpg',
+                            2 => 'file 8.jpg'
+                        ]
+                    ],
+                    'type' => [
+                        'files' => [
+                            0 => 'image/jpeg',
+                            1 => 'image/jpeg',
+                            2 => 'image/jpeg'
+                        ]
+                    ],
+                    'tmp_name' => [
+                        'files' => [
+                            0 => '/private/var/tmp/php2eViak',
+                            1 => '/private/var/tmp/phpMsC5Pp',
+                            2 => '/private/var/tmp/phpm2nm98'
+                        ]
+                    ],
+                    'error' => [
+                        'files' => [
+                            0 => 0,
+                            1 => 0,
+                            2 => 0
+                        ]
+                    ],
+                    'size' => [
+                        'files' => [
+                            0 => 418,
+                            1 => 418,
+                            2 => 418
+                        ]
+                    ]
+                ]
+            ];
+
+            expect(Request::files())->toEqual([
+                'Photo' => [
+                    'files' => [
+                        [
+                            'name' => 'file 6.jpg',
+                            'type' => 'image/jpeg',
+                            'tmp_name' => '/private/var/tmp/php2eViak',
+                            'error' => 0,
+                            'size' => 418
+                        ],
+                        [
+                            'name' => 'file 7.jpg',
+                            'type' => 'image/jpeg',
+                            'tmp_name' => '/private/var/tmp/phpMsC5Pp',
+                            'error' => 0,
+                            'size' => 418
+                        ],
+                        [
+                            'name' => 'file 8.jpg',
+                            'type' => 'image/jpeg',
+                            'tmp_name' => '/private/var/tmp/phpm2nm98',
+                            'error' => 0,
+                            'size' => 418
+                        ]
+                    ]
+                ]
+            ]);
 
         });
 

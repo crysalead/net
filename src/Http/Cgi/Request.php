@@ -38,7 +38,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
      *
      * @var array
      */
-    protected $_data = [];
+    protected $_form = [];
 
     /**
      * Temporaty base path.
@@ -85,7 +85,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
      *                      - `'basePath'`   _string_  : The base path.
      *                      - `'path'`       _string_  : The url path.
      *                      - `'body'`       _resource_: Body stream of message (defaults: php://input).
-     *                      - `'data'`       _array_   : Form data (defaults: `[]`).
+     *                      - `'form'`       _array_   : Form data (defaults: `[]`).
      *                      - `'params'`     _array_   : Custom routing params (defaults: `[]`).
      *                      - `'env'`        _array_   : Environment variables (defaults: `[]`).
      *                      - `'locale'`     _string_  : An optional locale string (defaults: `''`).
@@ -96,7 +96,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     {
         $defaults = [
             'body'      => '',
-            'data'      => [],
+            'form'      => [],
             'params'    => [],
             'env'       => [],
             'locale'    => null,
@@ -132,10 +132,9 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         $config += $this->_defaults($config);
 
         $this->env = $config['env'];
-        $this->_data = $config['data'];
+        $this->_form = $config['form'];
         $this->_params = $config['params'];
 
-        unset($config['data']);
         parent::__construct($config);
 
         $this->_detectors = $config['detectors'];
@@ -144,10 +143,19 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         $this->basePath($config['basePath']);
         $this->locale($config['locale']);
 
-        if (isset($this->_data['_method'])) {
-            $this->env['REQUEST_METHOD'] = strtoupper($this->_data['_method']);
+        if (isset($this->_form['_method'])) {
+            $this->env['REQUEST_METHOD'] = strtoupper($this->_form['_method']);
             $this->method($this->env['REQUEST_METHOD']);
-            unset($this->_data['_method']);
+            unset($this->_form['_method']);
+        }
+
+        if ($this->format() !== 'form') {
+            return;
+        }
+        if ($this->_form) {
+            $this->set($this->_form);
+        } else {
+            $this->_form = $this->get();
         }
     }
 
@@ -442,18 +450,18 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     }
 
     /**
-     * Gets/sets the request data.
+     * Gets/sets the form data.
      *
-     * @param  array $data The data to set or none to get the setted one.
+     * @param  array $form The data to set or none to get the setted one.
      * @return array
      */
-    public function data($data = null)
+    public function form($form = null)
     {
         if (func_num_args() === 1) {
-            $this->_data = $data;
+            $this->_form = $data;
             return $this;
         }
-        return $this->_data;
+        return $this->_form;
     }
 
     /**
@@ -468,7 +476,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         return [
             'basePath' => $this->basePath(),
             'locale'   => $this->locale(),
-            'data'     => $this->data(),
+            'form'     => $this->form(),
             'params'   => $this->params()
         ] + parent::export($options);
     }
@@ -534,11 +542,10 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
             throw new NetException("Missing `'SCRIPT_NAME'` environment variable, unable to create the main request.");
         }
 
-        return new static([
-            'data'    => static::files() + (isset($_POST) ? $_POST : []),
+        return new static($config + [
             'body'    => new PhpInputStream(),
             'query'   => isset($_GET) ? $_GET : [],
             'cookies' => $_COOKIE
-        ] + $config);
+        ]);
     }
 }
