@@ -255,7 +255,7 @@ class Media
             }
         ]);
 
-        static::set('form', ['application/x-www-form-urlencoded', 'multipart/form-data'], [
+        static::set('form', ['application/x-www-form-urlencoded'], [
             'encode' => 'http_build_query',
             'decode' => function($data) {
                 $decoded = array();

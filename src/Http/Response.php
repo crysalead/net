@@ -3,6 +3,7 @@ namespace Lead\Net\Http;
 
 use Lead\Net\NetException;
 use Lead\Set\Set;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Parses and stores the status, headers and body of an HTTP response.
@@ -164,13 +165,33 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     }
 
     /**
-     * Gets the status code of the response.
+     * Get the status code of the response.
      *
-     * @return integer     The HTTP status code.
+     * @return integer The HTTP status code.
      */
     public function statusCode()
     {
         return $this->_status[0];
+    }
+
+    /**
+     * Get the status message of the response.
+     *
+     * @return string The HTTP status message.
+     */
+    public function statusMessage()
+    {
+        return $this->_status[1];
+    }
+
+    /**
+     * Get the success status of the message.
+     *
+     * @return boolean
+     */
+    public function success()
+    {
+        return $this->_status[0] >= 200 && $this->_status[0] < 300;
     }
 
     /**
@@ -230,20 +251,80 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             header($header->to('header'));
         }
         if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
-            $this->toChunks(function($chunk) {
-                echo $chunk;
-                return connection_status() === CONNECTION_NORMAL;
-            });
             return;
         }
-        $parts = str_split((string) $this->_body, $this->chunkSize());
 
-        foreach($parts as $chunk) {
-            echo $chunk;
+        while (!$this->_body->eof()) {
+            echo $this->_body->read();
             if (connection_status() !== CONNECTION_NORMAL) {
                 break;
             }
         }
+    }
+
+    /**
+     * Push additionnal data to a chunked response.
+     *
+     * @param mixed   $data   The formated data. If the passed data is a stream it'll be closed.
+     * @param boolean $atomic Indicates if the $data can be chunked or must be send as a whole chunk.
+     */
+    public function push($data, $atomic = true, $options = [])
+    {
+        if ($this->headers['Transfer-Encoding']->value() !== 'chunked') {
+            throw new NetException("Pushing is only supported in chunked transfer.");
+        }
+
+        $defaults = [
+            'cast'   => true,
+            'atomic' => true,
+            'stream' => [],
+            'encode' => []
+        ];
+
+        $options += $defaults;
+
+        if ($data instanceof StreamInterface) {
+            $stream = $data;
+        } else {
+            if ($options['cast']) {
+                $media = $this->_classes['media'];
+                $format = $this->format();
+
+                if (!$format && !is_string($data)) {
+                    throw new NetException("The data must be a string when no format is defined.");
+                }
+
+                $class = $this->_classes['stream'];
+                $data = $media::encode($format, $data, $options['encode']);
+            }
+            $stream = new $class(['data' => $data] + $options['stream']);
+        }
+
+        $length = $options['atomic'] && $stream->isSeekable() ? $stream->length() : $this->chunkSize();
+
+        while (!$stream->eof()) {
+            $chunk = $stream->read($length);
+            $readed = strlen($chunk);
+            if (!$readed) {
+                break;
+            }
+            echo dechex($readed) . "\r\n" . $chunk . "\r\n";
+            if (connection_status() !== CONNECTION_NORMAL) {
+                break;
+            }
+        }
+        $stream->close();
+    }
+
+    /**
+     * Terminate a chunked transfer.
+     */
+    public function end()
+    {
+        if ($this->headers['Transfer-Encoding']->value() !== 'chunked') {
+            return;
+        }
+        echo  "0\r\n\r\n";
     }
 
     /**

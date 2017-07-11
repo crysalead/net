@@ -524,7 +524,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      * @param  array  $config The config array.
      * @return self
      */
-    public static function create($url = null, $config = [])
+    public static function create($method = 'GET', $url = null, $config = [])
     {
         if (func_num_args()) {
             if(!preg_match('~^(?:[a-z]+:)?//~i', $url) || !$defaults = parse_url($url)) {
@@ -533,6 +533,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             $defaults['username'] = isset($defaults['user']) ? $defaults['user'] : null;
             $defaults['password'] = isset($defaults['pass']) ? $defaults['pass'] : null;
         }
+        $config['method'] = strtoupper($method);
         return new static($config + $defaults);
     }
 }

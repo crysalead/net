@@ -45,7 +45,7 @@ describe("Request", function() {
 
         it("parses absolute url", function() {
 
-            $request = Request::create('https://username:password@www.domain.com:8000/foo?bar=baz#quz');
+            $request = Request::create('GET', 'https://username:password@www.domain.com:8000/foo?bar=baz#quz');
             expect($request->export())->toEqual([
                 'method'   => 'GET',
                 'scheme'   => 'https',
@@ -65,7 +65,7 @@ describe("Request", function() {
         it("throw an exception when the passed url is invalid", function() {
 
             $closure = function() {
-                Request::create('/relative/url');
+                Request::create('GET', '/relative/url');
             };
 
             expect($closure)->toThrow(new NetException("Invalid url: `'/relative/url'`."));

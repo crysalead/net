@@ -312,11 +312,12 @@ EOD;
 
             $closure = function() {
                 $response = new Response([
-                    'format' => 'json',
-                    'data'   => ['hello' => 'world']
+                    'format' => 'json'
                 ]);
                 $response->headers['Transfer-Encoding'] = 'chunked';
                 $response->dump();
+                $response->push(['hello' => 'world']);
+                $response->end();
             };
 
             expect($closure)->toEcho("11\r\n{\"hello\":\"world\"}\r\n0\r\n\r\n");

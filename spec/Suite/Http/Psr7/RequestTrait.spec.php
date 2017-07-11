@@ -98,7 +98,7 @@ describe("RequestTrait", function() {
 
         it("returns the request URI", function() {
 
-            $request = Request::create('https://username:password@www.domain.com:8000/foo?bar=baz#quz');
+            $request = Request::create('GET', 'https://username:password@www.domain.com:8000/foo?bar=baz#quz');
             $uri = $request->getUri();
             expect($uri)->toBeAnInstanceOf('Psr\Http\Message\UriInterface');
             expect((string) $uri)->toBe('https://username:password@www.domain.com:8000/foo?bar=baz#quz');

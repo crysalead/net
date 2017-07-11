@@ -32,6 +32,13 @@ class Message extends \Lead\Net\Message
     protected $_format = null;
 
     /**
+     * Default chunk size
+     *
+     * @var array
+     */
+    protected $_chunkSize = 256;
+
+    /**
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options. Possible values are:
@@ -43,13 +50,14 @@ class Message extends \Lead\Net\Message
     public function __construct($config = [])
     {
         $defaults = [
-            'version'  => '1.1',
-            'type'     => null,
-            'encoding' => null,
-            'format'   => null,
-            'data'     => null,
-            'headers'  => [],
-            'classes'  => [
+            'version'   => '1.1',
+            'type'      => null,
+            'encoding'  => null,
+            'format'    => null,
+            'data'      => null,
+            'chunkSize' => 256,
+            'headers'   => [],
+            'classes'   => [
                 'auth'    => 'Lead\Net\Http\Auth',
                 'media'   => 'Lead\Net\Http\Media',
                 'stream'  => 'Lead\Storage\Stream\Stream',
@@ -77,6 +85,8 @@ class Message extends \Lead\Net\Message
         if ($config['encoding']) {
             $this->encoding($config['encoding']);
         }
+
+        $this->chunkSize($config['chunkSize']);
 
         $this->format($config['format']);
 
@@ -199,6 +209,21 @@ class Message extends \Lead\Net\Message
     }
 
     /**
+     * Gets/sets the chunk size.
+     *
+     * @param  integer     $chunkSize The chunk size.
+     * @return string|self
+     */
+    public function chunkSize($chunkSize = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_chunkSize;
+        }
+        $this->_chunkSize = $chunkSize;
+        return $this;
+    }
+
+    /**
      * Gets the body of this message.
      *
      * @param  array $options The decoding options.
@@ -208,7 +233,7 @@ class Message extends \Lead\Net\Message
     {
         $media = $this->_classes['media'];
         $format = $this->format();
-        return $format ? $media::decode($format, (string) $this->_body) : (string) $this->_body;
+        return $format ? $media::decode($format, (string) $this->_body, $options) : (string) $this->_body;
     }
 
     /**
@@ -273,11 +298,34 @@ class Message extends \Lead\Net\Message
     public function toString()
     {
         if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
-            $body = '';
-            $this->toChunks(function($chunk) use (&$body) { $body .= $chunk; });
-            return $body;
+            return $this->toChunks();
         }
         return (string) $this->_body;
+    }
+
+    /**
+     * Flush the content of a Message chunk by chunk.
+     *
+     * @param Closure $size The size of the chunks to process.
+     */
+    public function toChunks($size = null)
+    {
+        $body = '';
+        $size = $size > 0 ? $size : $this->chunkSize();
+        $stream = $this->stream();
+        while($chunk = $stream->read($size)) {
+            $readed = strlen($chunk);
+            if (!$readed) {
+                break;
+            }
+            $body .= dechex($readed) . "\r\n" . $chunk . "\r\n";
+        }
+        $body .= "0\r\n\r\n";
+
+        if ($stream->isSeekable()) {
+            $stream->rewind();
+        }
+        return $body;
     }
 
     /**

@@ -2,6 +2,7 @@
 namespace Lead\Net;
 
 use Lead\Set\Set;
+use Psr\Http\Message\StreamInterface;
 
 class Message
 {
@@ -20,13 +21,6 @@ class Message
     protected $_body = null;
 
     /**
-     * Default chunk size
-     *
-     * @var array
-     */
-    protected $_chunkSize = 256;
-
-    /**
      * Constructor.
      *
      * @param array $config Available configuration options are:
@@ -38,7 +32,6 @@ class Message
     {
         $defaults = [
             'body'      => '',
-            'chunkSize' => 256,
             'classes'   => [
                 'scheme'  => 'Lead\Net\Scheme',
                 'stream'  => 'Lead\Storage\Stream\Stream'
@@ -48,7 +41,6 @@ class Message
 
         $this->_classes = $config['classes'];
 
-        $this->chunkSize($config['chunkSize']);
         $this->body($config['body']);
     }
 
@@ -79,50 +71,14 @@ class Message
         if (func_num_args() === 0) {
             return $this->_body;
         }
-        if (is_object($value)) {
+
+        if ($value instanceof StreamInterface) {
             $this->_body = $value;
         } else {
-            $stream = $this->_classes['stream'];
-            $this->_body = new $stream(['data' => $value] + $options);
+            $class = $this->_classes['stream'];
+            $this->_body = new $class(['data' => $value] + $options);
         }
         return $this;
-    }
-
-    /**
-     * Gets/sets the chunk size.
-     *
-     * @param  integer     $chunkSize The chunk size.
-     * @return string|self
-     */
-    public function chunkSize($chunkSize = null)
-    {
-        if (func_num_args() === 0) {
-            return $this->_chunkSize;
-        }
-        $this->_chunkSize = $chunkSize;
-        return $this;
-    }
-
-    /**
-     * Flushes the content of a Message chunk by chunk.
-     *
-     * @param Closure $closure The process closure.
-     * @param Closure $size    The size of the chunks to process.
-     */
-    public function toChunks($closure, $size = null)
-    {
-        $size = $size > 0 ? $size : $this->chunkSize();
-        $stream = $this->stream();
-        while($chunk = $stream->read($size)) {
-            $readed = strlen($chunk);
-            if ($closure(dechex($readed) . "\r\n" . $chunk . "\r\n", $readed) === false) {
-                break;
-            }
-        }
-        $closure("0\r\n\r\n", 0);
-        if ($stream->isSeekable()) {
-            $stream->rewind();
-        }
     }
 
     /**
