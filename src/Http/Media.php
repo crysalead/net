@@ -212,6 +212,7 @@ class Media
         static::$_formats = [];
 
         static::set('html', ['text/html', 'application/xhtml+xml']);
+        static::set('xml', ['text/xml', 'application/xml']);
         static::set('text', ['text/plain']);
 
         static::set('json', ['application/json'], [
