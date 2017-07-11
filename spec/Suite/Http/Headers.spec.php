@@ -5,11 +5,14 @@ use Exception;
 use Lead\Net\NetException;
 use Lead\Net\Http\Header;
 use Lead\Net\Http\Headers;
+use Lead\Net\Http\Cookie\Cookies;
 
 describe("Headers", function() {
 
     beforeEach(function() {
-        $this->headers = new Headers();
+        $this->headers = new Headers([
+            'cookies' => new Cookies()
+        ]);
     });
 
     describe("->offsetGet()/->offsetSet()", function() {
@@ -122,18 +125,66 @@ describe("Headers", function() {
 
     describe("->data()", function() {
 
-        it("exports headers", function() {
+        it("exports headers as a key/value array", function() {
 
             $this->headers['Content-Type'] = 'text/plain';
             $this->headers['X-Custom-ABC'] = 'abc';
             $this->headers['Accept'] = 'text/html;q=1.0';
             $this->headers['Accept'][] = '*/*;q=0.1';
+            $this->headers->cookies['sessionid'] = '123';
 
             expect($this->headers->data())->toBe([
                 'Content-Type' => 'text/plain',
                 'X-Custom-ABC' => 'abc',
-                'Accept'       => 'text/html;q=1.0, */*;q=0.1'
+                'Accept'       => 'text/html;q=1.0, */*;q=0.1',
+                'Cookie'       => 'sessionid=123'
             ]);
+
+        });
+
+    });
+
+    describe("::toList()", function() {
+
+        it("exports headers as a list", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            $this->headers['X-Custom-ABC'] = 'abc';
+            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = '*/*;q=0.1';
+            $this->headers->cookies['sessionid'] = '123';
+
+            expect(Headers::toList($this->headers))->toBe([
+                'Content-Type: text/plain',
+                'X-Custom-ABC: abc',
+                'Accept: text/html;q=1.0, */*;q=0.1',
+                'Cookie: sessionid=123'
+            ]);
+
+        });
+
+    });
+
+    describe("::toHeader()", function() {
+
+        it("exports headers as a string", function() {
+
+            $this->headers['Content-Type'] = 'text/plain';
+            $this->headers['X-Custom-ABC'] = 'abc';
+            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = '*/*;q=0.1';
+            $this->headers->cookies['sessionid'] = '123';
+
+            $expected = <<<EOD
+Content-Type: text/plain\r
+X-Custom-ABC: abc\r
+Accept: text/html;q=1.0, */*;q=0.1\r
+Cookie: sessionid=123\r
+\r
+
+EOD;
+
+            expect(Headers::toHeader($this->headers))->toBe($expected);
 
         });
 

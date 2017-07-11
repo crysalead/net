@@ -147,24 +147,6 @@ describe("Cookies", function() {
 
     });
 
-    describe("->data()", function() {
-
-        it('exports cookies', function() {
-
-            $this->cookies['foo1'] = 'bar1';
-            $this->cookies['foo2'] = 'bar2';
-            $this->cookies['foo3'] = 'bar3';
-
-            expect($this->cookies->data())->toBe([
-                'foo1' => 'bar1',
-                'foo2' => 'bar2',
-                'foo3' => 'bar3'
-            ]);
-
-        });
-
-    });
-
     describe("::parseCookie()", function() {
 
         it("create a cookie from an HTTP header", function() {
@@ -185,6 +167,39 @@ describe("Cookies", function() {
                     ]
                 ]
             ]);
+
+        });
+
+    });
+
+    describe("->data()", function() {
+
+        it('exports cookies', function() {
+
+            $this->cookies['foo1'] = 'bar1';
+            $this->cookies['foo2'] = 'bar2';
+            $this->cookies['foo3'] = 'bar3';
+
+            expect($this->cookies->data())->toBe([
+                'foo1' => 'bar1',
+                'foo2' => 'bar2',
+                'foo3' => 'bar3'
+            ]);
+
+        });
+
+    });
+
+    describe("::toValue()", function() {
+
+        it('generates HTTP Cookie value', function() {
+
+            $cookies = new Cookies();
+            $cookies['foo1'] = 'bar1';
+            $cookies['foo2'] = 'bar2';
+            $cookies['foo3'] = 'bar3';
+
+            expect(Cookies::toValue($cookies))->toBe("foo1=bar1; foo2=bar2; foo3=bar3");
 
         });
 

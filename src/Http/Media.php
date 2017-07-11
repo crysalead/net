@@ -3,7 +3,7 @@ namespace Lead\Net\Http;
 
 use InvalidArgumentException;
 use Lead\Net\NetException;
-use Lead\Net\Http\Cgi\Request;
+use Lead\Net\Http\Cgi;
 
 /**
  * The `Media` class sets encoding/decoding handlers for formats.
@@ -121,7 +121,8 @@ class Media
             if (!in_array($type, $definition['type'], true)) {
                 continue;
             }
-            if ($message instanceof Request) {
+
+            if ($message instanceof Cgi\Request) {
                 foreach ($definition['conditions'] as $key => $value) {
                     switch (true) {
                         case strpos($key, ':'):

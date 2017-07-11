@@ -25,6 +25,7 @@ class Cookies extends \Lead\Collection\Collection
      * @var array
      */
     protected static $_formats = [
+        'value' => 'Lead\Net\Http\cookie\Cookies::toValue',
         'array'  => 'Lead\Net\Http\cookie\Cookies::toArray',
         'header' => 'Lead\Net\Http\cookie\Cookies::toHeader'
     ];
@@ -123,40 +124,6 @@ class Cookies extends \Lead\Collection\Collection
     }
 
     /**
-     * Builds a complete Cookie header from a cookies collection.
-     *
-     * @param  object $cookies A `Cookies` collection.
-     * @return string
-     */
-    public static function toHeader($cookies)
-    {
-        $parts = [];
-        foreach ($cookies as $name => $cookie) {
-            $parts[] = static::_cookieValue($name, $cookie);
-        }
-        return $parts ? static::NAME . ': ' . join('; ', $parts) : '';
-    }
-
-    /**
-     * Builds a Cookie header value.
-     *
-     * @param  string $name   The cookie name.
-     * @param  object $cookie The cookie instance.
-     * @return string
-     */
-    protected static function _cookieValue($name, $cookie)
-    {
-        if (!Cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
-        }
-        $result = [];
-        foreach ($cookie->data() as $value) {
-            $result[] = $name . '=' . urlencode($value);
-        }
-        return join('; ', $result);
-    }
-
-    /**
      * Exports cookies.
      *
      * @param  Traversable $cookies The cookies.
@@ -170,5 +137,43 @@ class Cookies extends \Lead\Collection\Collection
            $data[$name] = $cookie->value();
         }
         return $data;
+    }
+
+    /**
+     * Builds a complete Cookie header from a cookies collection.
+     *
+     * @param  object $cookies A `Cookies` collection.
+     * @return string
+     */
+    public static function toHeader($cookies)
+    {
+        if ($value = static::toValue($cookies)) {
+            return static::NAME . ': ' . $value;
+        }
+    }
+
+    /**
+     * Builds a Cookie header value.
+     *
+     * @param  object $cookies A `Cookies` collection.
+     * @return string
+     */
+    public static function toValue($cookies)
+    {
+        $result = [];
+        foreach ($cookies as $name => $cookie) {
+            if (!Cookie::isValidName($name)) {
+                throw new Exception("Invalid cookie name `'{$name}'`.");
+            }
+            $parts = [];
+            foreach ($cookie->data() as $value) {
+                $parts[] = $name . '=' . urlencode($value);
+            }
+            $result[] = join('; ', $parts);
+        }
+        if (!$result) {
+            return;
+        }
+        return join('; ', $result);
     }
 }

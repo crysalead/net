@@ -245,10 +245,10 @@ EOD;
 
             $closure = function() {
                 $message = new Message();
-                $message->to('xml');
+                $message->to('abc');
             };
 
-            expect($closure)->toThrow(new InvalidArgumentException("Unsupported format `xml`."));
+            expect($closure)->toThrow(new InvalidArgumentException("Unsupported format `abc`."));
 
         });
 

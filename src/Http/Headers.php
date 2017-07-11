@@ -280,11 +280,15 @@ class Headers extends \Lead\Collection\Collection
      *
      * @return array Returns the headers.
      */
-    public static function toArray($collection, $options = [])
+    public static function toArray($headers, $options = [])
     {
         $data = [];
-        foreach ($collection as $name => $header) {
+        foreach ($headers as $name => $header) {
             $data[$name] = $header->value();
+        }
+        if ($headers->cookies && $result = $headers->cookies->to('value')) {
+            $cookies = $headers->cookies;
+            $data[$cookies::NAME] = $result;
         }
         return $data;
     }
@@ -294,11 +298,14 @@ class Headers extends \Lead\Collection\Collection
      *
      * @return array Returns the headers.
      */
-    public static function toList($collection, $options = [])
+    public static function toList($headers, $options = [])
     {
         $data = [];
-        foreach ($collection as $name => $header) {
+        foreach ($headers as $name => $header) {
             $data[] = $name . ': ' . $header->value();
+        }
+        if ($headers->cookies && $result = $headers->cookies->to('header')) {
+            $data[] = $result;
         }
         return $data;
     }

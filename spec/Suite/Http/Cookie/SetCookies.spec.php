@@ -254,6 +254,21 @@ describe("SetCookies", function() {
 
     });
 
+    describe("::toValue()", function() {
+
+        it('generates HTTP Cookie value', function() {
+
+            $cookies = new SetCookies();
+            $cookies['foo1'] = 'bar1';
+            $cookies['foo2'] = 'bar2';
+            $cookies['foo3'] = 'bar3';
+
+            expect(SetCookies::toValue($cookies))->toBe("foo1=bar1; Path=/\r\nSet-Cookie: foo2=bar2; Path=/\r\nSet-Cookie: foo3=bar3; Path=/");
+
+        });
+
+    });
+
     describe("::toHeader()", function() {
 
         it('generates a Set-Cookie HTTP headers', function() {

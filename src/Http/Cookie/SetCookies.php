@@ -38,6 +38,7 @@ class SetCookies extends \Lead\Collection\Collection
      * @var array
      */
     protected static $_formats = [
+        'value' => 'Lead\Net\Http\cookie\Cookies::toValue',
         'array'  => 'Lead\Net\Http\Cookie\SetCookies::toArray',
         'header' => 'Lead\Net\Http\Cookie\SetCookies::toHeader'
     ];
@@ -274,51 +275,9 @@ class SetCookies extends \Lead\Collection\Collection
      */
     public static function toHeader($setCookies)
     {
-        $parts = [];
-        foreach ($setCookies as $name => $cookie) {
-            if (!$cookie->expired()) {
-                $parts[] = static::_setCookieValue($name, $cookie);
-            }
+        if ($value = static::toValue($setCookies)) {
+            return static::NAME . ': ' . $value;
         }
-        return $parts ? static::NAME . ': ' . join("\r\nSet-Cookie: ", $parts) : '';
-    }
-
-    /**
-     * Builds a Set-Cookie header value.
-     *
-     * @param  string $name   The cookie name.
-     * @param  object $cookie The cookie instance.
-     * @return string
-     */
-    protected static function _setCookieValue($name, $cookie)
-    {
-        if (!Cookie::isValidName($name)) {
-            throw new Exception("Invalid Set-Cookie name `'{$name}'`.");
-        }
-
-        $data = $cookie->data();
-
-        $parts = [];
-        $parts[] = $name . '=' . rawurlencode($data['value']);
-
-        if (isset($data['max-age'])) {
-            $parts[] = 'Max-Age=' . (string) $data['max-age'];
-        } elseif (isset($data['expires'])) {
-            $parts[] = 'Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $data['expires']);
-        }
-        if ($data['path']) {
-            $parts[] = 'Path=' . $data['path'];
-        }
-        if ($data['domain']) {
-            $parts[] = 'Domain=' . $data['domain'];
-        }
-        if ($data['secure']) {
-            $parts[] = 'Secure';
-        }
-        if ($data['httponly']) {
-            $parts[] = 'HttpOnly';
-        }
-        return join('; ', $parts);
     }
 
     /**
@@ -335,5 +294,54 @@ class SetCookies extends \Lead\Collection\Collection
             $data[$name][] = $cookie->data();
         }
         return $data;
+    }
+
+    /**
+     * Builds a Set-Cookie header value.
+     *
+     * @param  string $name   The cookie name.
+     * @param  object $cookie The cookie instance.
+     * @return string
+     */
+    public static function toValue($setCookies)
+    {
+        $result = [];
+        foreach ($setCookies as $name => $cookie) {
+            if ($cookie->expired()) {
+                continue;
+            }
+
+            if (!Cookie::isValidName($name)) {
+                throw new Exception("Invalid Set-Cookie name `'{$name}'`.");
+            }
+
+            $data = $cookie->data();
+
+            $parts = [];
+            $parts[] = $name . '=' . rawurlencode($data['value']);
+
+            if (isset($data['max-age'])) {
+                $parts[] = 'Max-Age=' . (string) $data['max-age'];
+            } elseif (isset($data['expires'])) {
+                $parts[] = 'Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $data['expires']);
+            }
+            if ($data['path']) {
+                $parts[] = 'Path=' . $data['path'];
+            }
+            if ($data['domain']) {
+                $parts[] = 'Domain=' . $data['domain'];
+            }
+            if ($data['secure']) {
+                $parts[] = 'Secure';
+            }
+            if ($data['httponly']) {
+                $parts[] = 'HttpOnly';
+            }
+            $result[] = join('; ', $parts);
+        }
+        if (!$result) {
+            return;
+        }
+        return join("\r\nSet-Cookie: ",  $result);
     }
 }
