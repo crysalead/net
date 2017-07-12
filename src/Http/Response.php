@@ -253,7 +253,9 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
             return;
         }
-
+        if ($this->_body->isSeekable()) {
+            $this->_body->rewind();
+        }
         while (!$this->_body->eof()) {
             echo $this->_body->read();
             if (connection_status() !== CONNECTION_NORMAL) {
@@ -301,6 +303,10 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         }
 
         $length = $options['atomic'] && $stream->isSeekable() ? $stream->length() : $this->chunkSize();
+
+        if ($stream->isSeekable()) {
+            $stream->rewind();
+        }
 
         while (!$stream->eof()) {
             $chunk = $stream->read($length);
