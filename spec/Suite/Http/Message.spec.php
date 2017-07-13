@@ -6,8 +6,6 @@ use Lead\Net\NetException;
 use Lead\Net\Http\Message;
 use Lead\Net\Http\Headers;
 
-use Kahlan\Plugin\Stub;
-
 describe("Message", function() {
 
     describe("->__construct()", function() {
@@ -15,8 +13,8 @@ describe("Message", function() {
         it("sets default values", function() {
 
             $message = new Message([
-                'type'     => 'text/plain',
-                'encoding' => 'UTF-8'
+                'mime'    => 'text/plain',
+                'charset' => 'UTF-8'
             ]);
 
             expect($message->headers)->toBeAnInstanceOf(Headers::class);
@@ -32,7 +30,6 @@ describe("Message", function() {
             ]]);
 
             $expected =<<<EOD
-Content-Type: text/html\r
 User-Agent: Mozilla/5.0\r
 Cache-Control: no-cache\r
 \r
@@ -73,16 +70,16 @@ EOD;
         });
     });
 
-    describe("->type()", function() {
+    describe("->mime()", function() {
 
         it("gets/sets the content type ", function() {
 
             $message = new Message();
-            expect($message->type('application/json'))->toBe($message);
-            expect($message->type())->toBe('application/json');
+            expect($message->mime('application/json'))->toBe($message);
+            expect($message->mime())->toBe('application/json');
 
-            expect($message->type('application/csv'))->toBe($message);
-            expect($message->type())->toBe('application/csv');
+            expect($message->mime('application/csv'))->toBe($message);
+            expect($message->mime())->toBe('application/csv');
 
         });
 
@@ -91,7 +88,7 @@ EOD;
             $message = new Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
-            expect($message->type())->toBe('application/json');
+            expect($message->mime())->toBe('application/json');
             expect($message->headers['Content-Type']->value())->toBe('application/json; charset=UTF-8');
 
         });
@@ -99,57 +96,33 @@ EOD;
         it("removes the content type ", function() {
 
             $message = new Message();
-            expect($message->type('application/json'))->toBe($message);
-            expect($message->type())->toBe('application/json');
+            expect($message->mime('application/json'))->toBe($message);
+            expect($message->mime())->toBe('application/json');
 
-            expect($message->type(false))->toBe($message);
-            expect($message->type())->toBe(null);
+            expect($message->mime(false))->toBe($message);
+            expect($message->mime())->toBe(null);
 
         });
 
     });
 
-    describe("->encoding()", function() {
+    describe("->charset()", function() {
 
-        it("gets/sets the content type charset encoding", function() {
+        it("gets/sets the content type charset", function() {
 
             $message = new Message(['headers' => [
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
-            expect($message->encoding())->toBe('UTF-8');
-            expect($message->encoding('utf-16'))->toBe($message);
-            expect($message->encoding())->toBe('UTF-16');
+            expect($message->charset())->toBe('UTF-8');
+            expect($message->charset('utf-16'))->toBe($message);
+            expect($message->charset())->toBe('UTF-16');
 
         });
 
-        it("returns `null` when no encoding has been defined", function() {
+        it("returns `null` when no charset has been defined", function() {
 
             $message = new Message();
-            expect($message->encoding())->toBe(null);
-
-        });
-
-        it("throws an exception when no Content-Type has been defined", function() {
-
-            $closure = function() {
-                $message = new Message();
-                $message->encoding('UTF-8');
-            };
-
-            expect($closure)->toThrow(new NetException("Can't set a charset with no valid Content-Type defined."));
-
-        });
-
-    });
-
-    describe("->chunkSize()", function() {
-
-        it("gets/sets the chunk size", function() {
-
-            $message = new Message();
-            expect($message->chunkSize())->toBe(256);
-            expect($message->chunkSize(512))->toBe($message);
-            expect($message->chunkSize())->toBe(512);
+            expect($message->charset())->toBe(null);
 
         });
 
@@ -159,8 +132,8 @@ EOD;
 
         beforeEach(function() {
             $this->headers = <<<EOD
-Content-Type: text/html\r
 Custom-Header: Custom Value\r
+Content-Type: text/html\r
 \r
 
 EOD;

@@ -412,8 +412,8 @@ Host: localhost\r
 Connection: Close\r
 User-Agent: Mozilla/5.0\r
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
-Content-Type: text/html; charset=UTF-8\r
 Vary: Accept-Encoding, Cookie, User-Agent\r
+Content-Type: text/html; charset=UTF-8\r
 \r
 Body Message
 EOD;
@@ -426,7 +426,7 @@ EOD;
 
             $request = new Request([
                 'method'  => 'POST',
-                'type'    => 'application/x-www-form-urlencoded',
+                'mime'    => 'application/x-www-form-urlencoded',
                 'data'    => ['name1' => 'value1', 'name2' => 'value2']
             ]);
 
@@ -452,7 +452,7 @@ EOD;
                 'headers' => [
                     'Transfer-Encoding: chunked'
                 ],
-                'type'    => 'application/x-www-form-urlencoded',
+                'mime'    => 'application/x-www-form-urlencoded',
                 'data'    => ['name1' => 'value1', 'name2' => 'value2']
             ]);
 
@@ -483,7 +483,7 @@ EOD;
 
                 $request = new Request([
                     'method' => 'POST',
-                    'type'   => 'application/x-www-form-urlencoded',
+                    'mime'   => 'application/x-www-form-urlencoded',
                     'body'   => $stream
                 ]);
                 $request->toMessage();
@@ -570,12 +570,12 @@ EOD;
 
     describe("->__clone", function() {
 
-        it("clones the headers but not the stream ressource", function() {
+        it("clones the headers and the stream resource", function() {
 
             $request = new Request(['data' => 'Body Message']);
             $new = clone $request;
             expect($request->headers)->not->toBe($new->headers);
-            expect($request->stream())->toBe($new->stream());
+            expect($request->stream())->not->toBe($new->stream());
 
         });
 

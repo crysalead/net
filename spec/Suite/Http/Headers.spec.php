@@ -1,5 +1,5 @@
 <?php
-namespace Lead\Net\Spec\Suite\Http;
+namespace Lead\Net\Spec\Suite;
 
 use Exception;
 use Lead\Net\NetException;
@@ -290,7 +290,7 @@ EOD;
                 $this->headers->push('HTTP/1.1 200 OK');
             };
 
-            expect($closure)->toThrow(new NetException("Invalid HTTP header: `'HTTP/1.1 200 OK'`."));
+            expect($closure)->toThrow(new NetException("Invalid header: `'HTTP/1.1 200 OK'`."));
 
         });
 

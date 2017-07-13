@@ -3,7 +3,7 @@ namespace Lead\Net\Http\Cgi;
 
 use Lead\Net\NetException;
 use Lead\Set\Set;
-use Lead\Net\PhpInputStream;
+use Lead\Storage\Stream\Stream;
 use Lead\Net\Http\Psr7\ServerRequestTrait;
 
 class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\ServerRequestInterface
@@ -458,7 +458,9 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     public function form($form = null)
     {
         if (func_num_args() === 1) {
-            $this->_form = $data;
+            $form = $form ?: [];
+            $this->_form = $form;
+            $this->set(http_build_query($form));
             return $this;
         }
         return $this->_form;
@@ -543,7 +545,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         }
 
         return new static($config + [
-            'body'    => new PhpInputStream(),
+            'body'    => new Stream(['filename' => 'php://input', 'mode' => 'r']),
             'query'   => isset($_GET) ? $_GET : [],
             'cookies' => $_COOKIE
         ]);

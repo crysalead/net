@@ -21,16 +21,26 @@ class Message
     protected $_body = null;
 
     /**
+     * Default chunk size
+     *
+     * @var array
+     */
+    protected $_chunkSize = 256;
+
+    /**
      * Constructor.
      *
      * @param array $config Available configuration options are:
-     *                      - `'body'`       _mixed_  : The body string, resource or `storage\stream\Stream` instance
-     *                                                  of the message (defaults `''`).
+     *                      - `'chunkSize'` _integer_ : The chunck size (defaults `256`).
+     *                      - `'body'`      _mixed_   : The body string, resource or `storage\stream\Stream` instance
+     *                                                   of the message (defaults `''`).
+     *                      - `'classes'`  _array_  : class dependencies.
      *
      */
     public function __construct($config = [])
     {
         $defaults = [
+            'chunkSize' => 256,
             'body'      => '',
             'classes'   => [
                 'scheme'  => 'Lead\Net\Scheme',
@@ -41,11 +51,27 @@ class Message
 
         $this->_classes = $config['classes'];
 
+        $this->chunkSize($config['chunkSize']);
         $this->body($config['body']);
     }
 
     /**
-     * Gets/sets the plain body message.
+     * Get/set the chunk size.
+     *
+     * @param  integer     $chunkSize The chunk size.
+     * @return string|self
+     */
+    public function chunkSize($chunkSize = null)
+    {
+        if (func_num_args() === 0) {
+            return $this->_chunkSize;
+        }
+        $this->_chunkSize = (int) $chunkSize;
+        return $this;
+    }
+
+    /**
+     * Get/set the plain body message.
      *
      * @param  string      $value.
      * @return string|self
@@ -60,7 +86,7 @@ class Message
     }
 
     /**
-     * Gets/sets the body of the message body (stream way).
+     * Get/set the body of the message body (stream way).
      *
      * @param  mixed       $value   A stream object or stream resource.
      * @param  array       $options The stream options.
@@ -70,6 +96,11 @@ class Message
     {
         if (func_num_args() === 0) {
             return $this->_body;
+        }
+
+        if ($this->_body) {
+            $this->_body->close();
+            $this->_body = null;
         }
 
         if ($value instanceof StreamInterface) {
@@ -102,7 +133,7 @@ class Message
     }
 
     /**
-     * Exports a `Message` instance to an array.
+     * Export a `Message` instance to an array.
      *
      * @param  array $options Options used to export `$message`.
      * @return array          The export array.
@@ -112,5 +143,13 @@ class Message
         return [
             'body' => $this->stream()
         ];
+    }
+
+    /**
+     * Clone the message.
+     */
+    public function __clone()
+    {
+        $this->_body = clone $this->_body;
     }
 }

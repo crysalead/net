@@ -4,18 +4,14 @@ namespace Lead\Net\Http;
 use InvalidArgumentException;
 use Lead\Set\Set;
 use Lead\Net\NetException;
+use Lead\Net\Behavior\ContentTypeTrait;
 
 /**
  * HTTP Message class
  */
 class Message extends \Lead\Net\Message
 {
-    /**
-     * The headers instance.
-     *
-     * @var object
-     */
-    public $headers = null;
+    use ContentTypeTrait;
 
     /**
      * HTTP protocol version number
@@ -25,6 +21,13 @@ class Message extends \Lead\Net\Message
     protected $_version = '1.1';
 
     /**
+     * The headers instance.
+     *
+     * @var object
+     */
+    public $headers = null;
+
+    /**
      * The message format.
      *
      * @var string
@@ -32,30 +35,23 @@ class Message extends \Lead\Net\Message
     protected $_format = null;
 
     /**
-     * Default chunk size
-     *
-     * @var array
-     */
-    protected $_chunkSize = 256;
-
-    /**
      * Adds config values to the public properties when a new object is created.
      *
      * @param array $config Configuration options. Possible values are:
      *                      - `'version'`  _string_ : (defaults `'1.1'`).
      *                      - `'scheme'`   _string_ : (defaults `'http'`).
-     *                      - `'type'`     _string_ : (defaults `null`).
+     *                      - `'mime'`     _string_ : (defaults `null`).
      *                      - `'headers'`  _mixed_  : (defaults `[]`).
+     *                      - `'classes'`  _array_  : class dependencies.
      */
     public function __construct($config = [])
     {
         $defaults = [
             'version'   => '1.1',
-            'type'      => null,
-            'encoding'  => null,
+            'mime'      => null,
+            'charset'   => null,
             'format'    => null,
             'data'      => null,
-            'chunkSize' => 256,
             'headers'   => [],
             'classes'   => [
                 'auth'    => 'Lead\Net\Http\Auth',
@@ -67,26 +63,14 @@ class Message extends \Lead\Net\Message
         $config = Set::merge($defaults, $config);
 
         $this->_classes = $config['classes'];
+        $class = $this->_classes['headers'];
+
+        $headers = $config['headers'];
+        $this->headers = is_object($headers) ? $headers : new $class(['data' => $headers]);
 
         $this->version($config['version']);
 
-        if (is_object($config['headers'])) {
-            $this->headers = $config['headers'];
-        } else {
-            $headers = $this->_classes['headers'];
-            $this->headers = new $headers(['data' => $config['headers']]);
-        }
-
-        if ($config['type']) {
-            $this->type($config['type']);
-        } elseif (isset($this->headers['Content-Type'])) {
-            $this->type($this->headers['Content-Type']->value());
-        }
-        if ($config['encoding']) {
-            $this->encoding($config['encoding']);
-        }
-
-        $this->chunkSize($config['chunkSize']);
+        $this->_initContentType($config['mime'], $config['charset']);
 
         $this->format($config['format']);
 
@@ -123,38 +107,6 @@ class Message extends \Lead\Net\Message
     }
 
     /**
-     * Gets/sets the Content-Type.
-     *
-     * @param  string      $type A full Content-Type i.e. `'application/json'`.
-     * @return string|self
-     */
-    public function type($type = null)
-    {
-        if (!func_num_args()) {
-            if (!isset($this->headers['Content-Type'])) {
-                return;
-            }
-            list($type) = explode(';', $this->headers['Content-Type']->value(), 2);
-
-            return $type;
-        }
-
-        if ($type === false) {
-            unset($this->_format);
-            unset($this->headers['Content-Type']);
-            return $this;
-        }
-
-        if (isset($this->headers['Content-Type'])) {
-            list($old, $encoding) = explode(';', $this->headers['Content-Type']->value(), 2) + [null, null];
-        }
-
-        list($type) = explode(';', $type, 2);
-        $this->headers['Content-Type'] = $type . (isset($encoding) ? ';' . $encoding : '');
-        return $this;
-    }
-
-    /**
      * Gets/sets the format of the request.
      *
      * @param  string      $format A format name.
@@ -174,52 +126,12 @@ class Message extends \Lead\Net\Message
             return $this;
         }
 
-        if (!$type = $media::type($format)){
+        if (!$mime = $media::mime($format)){
             throw new NetException("The `'{$format}'` format is undefined or has no valid Content-Type defined check the `Media` class.");
         }
         $this->_format = $format;
-        $this->type($type);
+        $this->mime($mime);
 
-        return $this;
-    }
-
-    /**
-     * Gets/sets the Content-Type charset encoding.
-     *
-     * @param  string      $charset A charset i.e. `'UTF-8'`.
-     * @return string|self
-     */
-    public function encoding($charset = null)
-    {
-        if (!isset($this->headers['Content-Type'])) {
-            if (func_num_args() !== 0) {
-                throw new NetException("Can't set a charset with no valid Content-Type defined.");
-            }
-            return;
-        }
-        $value = $this->headers['Content-Type']->value();
-
-        preg_match('/([-\w\/\.+]+)(;\s*?charset=(.+))?/i', $value, $matches);
-
-        if (func_num_args() === 0) {
-            return isset($matches[3]) ? strtoupper(trim($matches[3])) : null;
-        }
-        $this->headers['Content-Type'] = $matches[1] . ($charset ? "; charset=" . strtoupper($charset) : "");
-        return $this;
-    }
-
-    /**
-     * Gets/sets the chunk size.
-     *
-     * @param  integer     $chunkSize The chunk size.
-     * @return string|self
-     */
-    public function chunkSize($chunkSize = null)
-    {
-        if (func_num_args() === 0) {
-            return $this->_chunkSize;
-        }
-        $this->_chunkSize = $chunkSize;
         return $this;
     }
 
@@ -355,10 +267,11 @@ class Message extends \Lead\Net\Message
     }
 
     /**
-     * Clones the message.
+     * Clone the message.
      */
     public function __clone()
     {
+        parent::__clone();
         $this->headers = clone $this->headers;
     }
 }

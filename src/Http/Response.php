@@ -1,9 +1,9 @@
 <?php
 namespace Lead\Net\Http;
 
+use Psr\Http\Message\StreamInterface;
 use Lead\Net\NetException;
 use Lead\Set\Set;
-use Psr\Http\Message\StreamInterface;
 
 /**
  * Parses and stores the status, headers and body of an HTTP response.
@@ -115,14 +115,14 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     public function negotiate($request)
     {
         $media = $this->_classes['media'];
-        foreach ($request->accepts() as $type => $value) {
-            if ($format = $media::suitable($request, $type)) {
+        foreach ($request->accepts() as $mime => $value) {
+            if ($format = $media::suitable($request, $mime)) {
                 $this->format($format);
                 return;
             }
         }
-        $types = join('", "', array_keys($request->accepts()));
-        throw new NetException("Unsupported Media Type: [\"{$types}\"].", 415);
+        $mimes = join('", "', array_keys($request->accepts()));
+        throw new NetException("Unsupported Media Type: [\"{$mimes}\"].", 415);
     }
 
     /**

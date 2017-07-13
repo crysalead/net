@@ -9,11 +9,13 @@
         }
     ],
     "require": {
-        "php": ">=5.5",
+        "php": ">=7",
+        "ext-iconv": "*",
+        "ext-intl": "*",
         "crysalead/collection": "~3.0",
         "crysalead/env": "~1.0",
         "crysalead/set": "~2.0",
-        "crysalead/storage-stream": "~1.0",
+        "crysalead/storage-stream": "dev-master",
         "crysalead/text": "~2.0",
         "psr/http-message": "~1.0"
     },
@@ -33,5 +35,6 @@
     },
     "config": {
         "bin-dir": "bin"
-    }
+    },
+    "minimum-stability": "dev"
 }

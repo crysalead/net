@@ -144,6 +144,22 @@ describe("ServerRequestTrait", function() {
 
             expect($message = $message->withParsedBody(['name' => 'value']))->toBe($message);
             expect($message->getParsedBody())->toBe(['name' => 'value']);
+            expect((string) $message->getBody())->toBe('{"name":"value"}');
+
+        });
+
+        it("decodes/endodes form", function() {
+
+            $message = new Request();
+            $message->format("form");
+
+            expect($message = $message->withParsedBody([]))->toBe($message);
+            expect($message->getParsedBody())->toBe([]);
+            expect((string) $message->getBody())->toBe('');
+
+            expect($message = $message->withParsedBody(['name' => 'value']))->toBe($message);
+            expect($message->getParsedBody())->toBe(['name' => 'value']);
+            expect((string) $message->getBody())->toBe('name=value');
 
         });
 

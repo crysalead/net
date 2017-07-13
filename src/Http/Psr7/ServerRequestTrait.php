@@ -161,8 +161,7 @@ trait ServerRequestTrait
     public function getParsedBody()
     {
         $contentType = isset($this->headers['Content-Type']) ? $this->headers['Content-Type']->value() : null;
-        $method = $this->method();
-        if ($method ==='POST' && ($contentType === 'application/x-www-form-urlencoded' || $contentType === 'multipart/form-data')) {
+        if ($contentType === 'application/x-www-form-urlencoded' || $contentType === 'multipart/form-data') {
             return $this->form();
         }
         return $this->get();
@@ -199,6 +198,10 @@ trait ServerRequestTrait
     public function withParsedBody($data)
     {
         $request = clone $this;
+        $contentType = isset($this->headers['Content-Type']) ? $this->headers['Content-Type']->value() : null;
+        if ($contentType === 'application/x-www-form-urlencoded' || $contentType === 'multipart/form-data') {
+            return $request->form($data);
+        }
         $request->set($data);
         return $request;
     }

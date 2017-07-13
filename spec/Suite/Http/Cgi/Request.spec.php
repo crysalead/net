@@ -51,7 +51,7 @@ describe("Request", function() {
 Host: localhost\r
 Connection: Close\r
 User-Agent: Mozilla/5.0\r
-Content-Type: text/html; charset=utf-8\r
+Content-Type: text/html; charset=UTF-8\r
 \r
 
 EOD;
@@ -88,13 +88,13 @@ EOD;
 
             $expected = <<<EOD
 Host: www.example.com\r
-Content-Type: text/html; charset=utf-8\r
 Accept: *.*\r
 Accept-Charset: iso-8859-1, *, utf-8\r
 Accept-Encoding: gzip\r
 Connection: Keep-Alive\r
 Referer: www.search-engine.com\r
 User-Agent: Mozilla/3.0\r
+Content-Type: text/html; charset=UTF-8\r
 \r
 
 EOD;

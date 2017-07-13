@@ -47,15 +47,15 @@ class Media
      * @param  string $format     The format to register.
      * @param  array  $definition The definition array.
      */
-    public static function set($format, $type, $definition = [])
+    public static function set($format, $mime, $definition = [])
     {
-        $type = $type ? (array) $type : ['text/html'];
+        $mime = $mime ? (array) $mime : ['text/html'];
 
         $definition += [
             'cast'       => true,
             'decode'     => null,
             'encode'     => null,
-            'type'       => $type,
+            'mime'       => $mime,
             'conditions' => []
         ];
 
@@ -93,12 +93,12 @@ class Media
      * @param  string      $format A format name.
      * @return string|null         A Content-Type or `null` if the format doesn't exists
      */
-    public static function type($format)
+    public static function mime($format)
     {
         $definition = static::get($format);
 
         if ($definition) {
-            return reset($definition['type']);
+            return reset($definition['mime']);
         }
     }
 
@@ -106,19 +106,19 @@ class Media
      * Iterates through all existing formats to match a compatible one for the provided request.
      *
      * @param  object  $message An instance of message.
-     * @param  string  $type    An overriding content type.
+     * @param  string  $mime    An overriding content type.
      * @return boolean          Returns a compatible format name or `null` if none matched.
      */
-    public static function suitable($message, $type = null)
+    public static function suitable($message, $mime = null)
     {
         $formats = static::$_formats;
 
         if (func_num_args() === 1) {
-            $type = $message->type();
+            $mime = $message->mime();
         }
 
         foreach ($formats as $format => $definition) {
-            if (!in_array($type, $definition['type'], true)) {
+            if (!in_array($mime, $definition['mime'], true)) {
                 continue;
             }
 

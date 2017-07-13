@@ -7,6 +7,19 @@ use Lead\Net\Headers;
 
 describe("Message", function() {
 
+    describe("->chunkSize()", function() {
+
+        it("gets/sets the chunk size", function() {
+
+            $message = new Message();
+            expect($message->chunkSize())->toBe(256);
+            expect($message->chunkSize(512))->toBe($message);
+            expect($message->chunkSize())->toBe(512);
+
+        });
+
+    });
+
     describe("->body()", function() {
 
         it("gets the body string", function() {
