@@ -1,8 +1,8 @@
 <?php
 namespace Lead\Net\Behavior;
 
-trait ContentTypeTrait {
-
+trait HasContentTypeTrait
+{
     /**
      * The mime info.
      *

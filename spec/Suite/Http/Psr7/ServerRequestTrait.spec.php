@@ -11,7 +11,7 @@ describe("ServerRequestTrait", function() {
         $this->globalNames =['_GET', '_POST', '_SERVER'];
         $this->oldEnv = [];
         foreach ($this->globalNames as $varname) {
-            $this->oldEnv[$varname] = $GLOBALS[$varname];
+            $this->oldEnv[$varname] = isset($GLOBALS[$varname]) ? $GLOBALS[$varname] : null;
             unset($GLOBALS[$varname]);
         }
     });

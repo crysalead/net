@@ -1,5 +1,5 @@
 <?php
-namespace Lead\Net\Http;
+namespace Lead\Net\Mime;
 
 use Exception;
 use Lead\Net\NetException;
@@ -15,28 +15,14 @@ class Headers extends \Lead\Collection\Collection
     use HasHeadersTrait;
 
     /**
-     * Contains cookies collection.
-     *
-     * @var object
-     */
-    public $cookies = null;
-
-    /**
-     * Class dependencies.
-     *
-     * @var array
-     */
-    protected $_classes = [];
-
-    /**
      * Contains all exportable formats and their handler.
      *
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'Lead\Net\Http\Headers::toArray',
-        'list'   => 'Lead\Net\Http\Headers::toList',
-        'header' => 'Lead\Net\Http\Headers::toHeader'
+        'array'  => 'Lead\Net\Mime\Headers::toArray',
+        'list'   => 'Lead\Net\Mime\Headers::toList',
+        'header' => 'Lead\Net\Mime\Headers::toHeader'
     ];
 
     /**
@@ -50,7 +36,7 @@ class Headers extends \Lead\Collection\Collection
             'data'    => [],
             'cookies' => null,
             'classes' => [
-                'header' => 'Lead\Net\Http\Header'
+                'header' => 'Lead\Net\Mime\Header'
             ]
         ];
         $config = Set::merge($defaults, $config);
@@ -100,9 +86,6 @@ class Headers extends \Lead\Collection\Collection
             if (!$name) {
                 throw new Exception("Error, invalid header name, can't be empty.");
             }
-            if ($this->_setCookie($name, $parsed)) {
-                continue;
-            }
             if ($prepend) {
                 $this->_data = [$name => $parsed] + $this->_data;
             } else {
@@ -113,35 +96,12 @@ class Headers extends \Lead\Collection\Collection
     }
 
     /**
-     * Adds a Cookie header.
-     *
-     * @param  string  $name    The header name.
-     * @param  string  $header  The header instance.
-     * @return boolean          Returns `true` if a cookie has been added, `false otherwise`.
-     */
-    protected function _setCookie($name, $header)
-    {
-        $cookies = $this->cookies;
-        if (!$cookies || $name !== strtolower($cookies::NAME)) {
-            return false;
-        }
-
-        foreach ($cookies::parse($header->plain()) as $cookie) {
-            $cookies[$cookie['name']] = $cookie;
-        }
-        return true;
-    }
-
-    /**
      * Clones the headers.
      */
     public function __clone()
     {
         foreach ($this->_data as $key => $value) {
             $this->_data[$key] = clone $value;
-        }
-        if ($this->cookies) {
-            $this->cookies = clone $this->cookies;
         }
     }
 
@@ -155,10 +115,6 @@ class Headers extends \Lead\Collection\Collection
         $data = [];
         foreach ($headers as $name => $header) {
             $data[$name] = $header->value();
-        }
-        if ($headers->cookies && $result = $headers->cookies->to('value')) {
-            $cookies = $headers->cookies;
-            $data[$cookies::NAME] = $result;
         }
         return $data;
     }
@@ -174,9 +130,6 @@ class Headers extends \Lead\Collection\Collection
         foreach ($headers as $name => $header) {
             $data[] = $name . ': ' . $header->value();
         }
-        if ($headers->cookies && $result = $headers->cookies->to('header')) {
-            $data[] = $result;
-        }
         return $data;
     }
 
@@ -191,10 +144,7 @@ class Headers extends \Lead\Collection\Collection
         foreach ($headers as $key => $header) {
             $data[] = $header->to('header');
         }
-        if ($headers->cookies && $result = $headers->cookies->to('header')) {
-            $data[] = $result;
-        }
-        return $data ? join("\r\n", $data) . "\r\n\r\n" : '';
+        return $data ? join(MIME::EOL, $data) . MIME::EOL . MIME::EOL : '';
     }
 
 }

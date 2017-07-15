@@ -44,6 +44,8 @@ class Field extends \Lead\Collection\Collection
             $name = '';
         }
         $value = is_array($value) ? join(',', $value) : $value;
+        $value = htmlspecialchars_decode(htmlspecialchars($value, ENT_NOQUOTES | ENT_IGNORE, 'UTF-8'), ENT_NOQUOTES);
+        $value = trim(str_replace(["\r", "\n"], '', $value));
 
         $this->_name = $name;
         $this->_plain = $value;

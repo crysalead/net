@@ -11,7 +11,7 @@ class Scheme
         'imap'   => 143,
         'sftp'   => 115,
         'smtp'   => 25,
-        'smtps'  => 587,
+        'smtps'  => 465,
         'ssh'    => 22,
         'telnet' => 23
     ];

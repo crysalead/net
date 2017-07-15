@@ -1,8 +1,8 @@
 <?php
 namespace Lead\Net\Behavior;
 
-trait HeadersTrait {
-
+trait HasHeadersTrait
+{
     /**
      * Class dependencies.
      *

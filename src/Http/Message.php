@@ -4,14 +4,15 @@ namespace Lead\Net\Http;
 use InvalidArgumentException;
 use Lead\Set\Set;
 use Lead\Net\NetException;
-use Lead\Net\Behavior\ContentTypeTrait;
+use Lead\Net\Behavior\HasBodyTrait;
+use Lead\Net\Behavior\HasContentTypeTrait;
 
 /**
  * HTTP Message class
  */
-class Message extends \Lead\Net\Message
+class Message
 {
-    use ContentTypeTrait;
+    use HasBodyTrait, HasContentTypeTrait;
 
     /**
      * HTTP protocol version number
@@ -52,11 +53,14 @@ class Message extends \Lead\Net\Message
             'charset'   => null,
             'format'    => null,
             'data'      => null,
+            'body'      => '',
+            'chunkSize' => 256,
             'headers'   => [],
             'classes'   => [
+                'scheme'  => 'Lead\Net\Scheme',
                 'auth'    => 'Lead\Net\Http\Auth',
                 'media'   => 'Lead\Net\Http\Media',
-                'stream'  => 'Lead\Storage\Stream\Stream',
+                'stream'  => 'Lead\Net\Mime\Stream\MimeStream',
                 'headers' => 'Lead\Net\Http\Headers'
             ]
         ];
@@ -74,7 +78,8 @@ class Message extends \Lead\Net\Message
 
         $this->format($config['format']);
 
-        parent::__construct($config);
+        $this->chunkSize($config['chunkSize']);
+        $this->body($config['body']);
 
         if ($config['data'] !== null) {
             $this->set($config['data']);
@@ -267,11 +272,24 @@ class Message extends \Lead\Net\Message
     }
 
     /**
+     * Export a `Message` instance to an array.
+     *
+     * @param  array $options Options used to export `$message`.
+     * @return array          The export array.
+     */
+    public function export($options = [])
+    {
+        return [
+            'body' => $this->stream()
+        ];
+    }
+
+    /**
      * Clone the message.
      */
     public function __clone()
     {
-        parent::__clone();
+        $this->_body = clone $this->_body;
         $this->headers = clone $this->headers;
     }
 }
