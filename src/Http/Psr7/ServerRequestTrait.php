@@ -34,7 +34,7 @@ trait ServerRequestTrait
      */
     public function getCookieParams()
     {
-        return Cookies::toArray($this->headers->cookies);
+        return Cookies::toArray($this->headers()->cookies);
     }
 
     /**
@@ -58,7 +58,7 @@ trait ServerRequestTrait
     {
         $request = clone $this;
         $class = $this->_classes['cookies'];
-        $request->headers->cookies = new $class(['data' => $cookies]);
+        $request->headers()->cookies = new $class(['data' => $cookies]);
         return $request;
     }
 
@@ -160,7 +160,8 @@ trait ServerRequestTrait
      */
     public function getParsedBody()
     {
-        $contentType = isset($this->headers['Content-Type']) ? $this->headers['Content-Type']->value() : null;
+        $headers = $this->headers();
+        $contentType = isset($headers['Content-Type']) ? $headers['Content-Type']->value() : null;
         if ($contentType === 'application/x-www-form-urlencoded' || $contentType === 'multipart/form-data') {
             return $this->form();
         }
@@ -198,7 +199,8 @@ trait ServerRequestTrait
     public function withParsedBody($data)
     {
         $request = clone $this;
-        $contentType = isset($this->headers['Content-Type']) ? $this->headers['Content-Type']->value() : null;
+        $headers = $request->headers();
+        $contentType = isset($headers['Content-Type']) ? $headers['Content-Type']->value() : null;
         if ($contentType === 'application/x-www-form-urlencoded' || $contentType === 'multipart/form-data') {
             return $request->form($data);
         }

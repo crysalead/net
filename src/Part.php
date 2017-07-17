@@ -1,11 +1,11 @@
 <?php
-namespace Lead\Net\Mime\Stream;
+namespace Lead\Net;
 
 use RuntimeException;
 use InvalidArgumentException;
 use Lead\Net\Mime\Mime;
 
-class PartStream extends \Lead\Storage\Stream\Stream
+class Part extends \Lead\Storage\Stream\Stream
 {
     /**
      * The encoding
@@ -23,7 +23,7 @@ class PartStream extends \Lead\Storage\Stream\Stream
     public function __construct($config = [])
     {
         $defaults = [
-            'encoding'   => false
+            'encoding' => null
         ];
         $config += $defaults;
         parent::__construct($config);
@@ -41,7 +41,7 @@ class PartStream extends \Lead\Storage\Stream\Stream
         if (!func_num_args()) {
             return $this->_encoding;
         }
-        $this->_encoding = $encoding;
+        $this->_encoding = $encoding ? strtolower($encoding) : null;
         return $this;
     }
 

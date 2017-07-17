@@ -139,11 +139,13 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
 
         parent::__construct($config);
 
-        if (!isset($this->headers['User-Agent'])) {
-            $this->headers->prepend('User-Agent', 'Mozilla/5.0');
+        $headers = $this->headers();
+
+        if (!isset($headers['User-Agent'])) {
+            $headers->prepend('User-Agent', 'Mozilla/5.0');
         }
-        if (!isset($this->headers['Connection'])) {
-            $this->headers->prepend('Connection', 'Close');
+        if (!isset($headers['Connection'])) {
+            $headers->prepend('Connection', 'Close');
         }
 
         $this->mode($config['mode']);
@@ -159,7 +161,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
         $this->auth($config['auth']);
 
         $cookies = $this->_classes['cookies'];
-        $this->headers->cookies = new $cookies(['data' => $config['cookies']]);
+        $headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**
@@ -386,7 +388,8 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             $this->port($port);
         }
         $this->_host = $host;
-        $this->headers->prepend('Host', $this->host());
+        $headers = $this->headers();
+        $headers->prepend('Host', $this->host());
         return $this;
     }
 
@@ -427,8 +430,9 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      */
     public function auth($auth = true)
     {
+        $headers = $this->headers();
         if ($auth === false) {
-            unset($this->headers['Authorization']);
+            unset($headers['Authorization']);
         }
         if (!$auth) {
             return;
@@ -441,7 +445,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
         }
         $auth = $this->_classes['auth'];
         $data = $auth::encode($this->username(), $this->password(), $data);
-        $this->headers['Authorization'] = $auth::header($data);
+        $headers['Authorization'] = $auth::header($data);
         return $this;
     }
 

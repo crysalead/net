@@ -10,34 +10,6 @@ use InvalidArgumentException;
 abstract class Mime
 {
     /**
-     * End of Line for fields.
-     *
-     * @var string
-     */
-    const EOL = "\r\n";
-
-    /**
-     * End of Line on folding.
-     *
-     * @var string
-     */
-    const FOLDING = "\r\n ";
-
-    /**
-     * Line length.
-     *
-     * @var integer
-     */
-    const LINE_LENGTH = 76;
-
-    /**
-     * Max line length.
-     *
-     * @var integer
-     */
-    const MAX_LINE_LENGTH = 998;
-
-    /**
      * Return the best suitable encoding.
      *
      * @param  string $body The body
@@ -55,6 +27,20 @@ abstract class Mime
     }
 
     /**
+     * Return the best suitable charset.
+     *
+     * @param  string $body The body
+     * @return string
+     */
+    public static function optimalCharset($body)
+    {
+        if (!preg_match('~[^\x00-\x7F]~', $body)) {
+            return 'US-ASCII';
+        }
+        return 'UTF-8';
+    }
+
+    /**
      * Encoding method.
      *
      * Note: Not relying on `stream_filter_append()` since not stable.
@@ -65,8 +51,9 @@ abstract class Mime
      * @param  string $le        The wrap width line ending.
      * @return string
      */
-    public static function encode($body, $encoding, $wrapWidth = 0, $le = self::EOL, $cut = false)
+    public static function encode($body, $encoding, $wrapWidth = 76, $le = "\r\n", $cut = false)
     {
+        $encoding = strtolower($encoding);
         switch ($encoding) {
             case 'quoted-printable':
                 $body = quoted_printable_encode($body);
@@ -114,10 +101,10 @@ abstract class Mime
      * @param  string $value The value to encode.
      * @return string        Returns the encoded value.
      */
-    public static function encodeValue($value, $wrapWidth = self::MAX_LINE_LENGTH)
+    public static function encodeValue($value, $wrapWidth = 998, $folding = "\r\n ")
     {
         $encoding = Mime::optimalEncoding($value);
-        $encodedName = Mime::encode($value, $encoding, $wrapWidth, Mime::FOLDING, true);
+        $encodedName = Mime::encode($value, $encoding, $wrapWidth, $folding, true);
 
         $value = trim(str_replace(["\r", "\n"], '', $value));
 

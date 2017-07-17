@@ -58,9 +58,8 @@ describe("MessageTrait", function() {
                 'Connection'   => ['Close'],
                 'User-Agent'   => ['Mozilla/5.0'],
                 'Date'         => ['Thu', '25 Dec 2014 00:00:00 GMT'],
-                'Content-Type' => ['text/html; charset=UTF-8'],
-                'Vary'         => ['Accept-Encoding', 'Cookie', 'User-Agent']
-
+                'Vary'         => ['Accept-Encoding', 'Cookie', 'User-Agent'],
+                'Content-Type' => ['text/html; charset=UTF-8']
             ]);
 
         });

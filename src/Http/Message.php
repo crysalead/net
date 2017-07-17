@@ -4,16 +4,12 @@ namespace Lead\Net\Http;
 use InvalidArgumentException;
 use Lead\Set\Set;
 use Lead\Net\NetException;
-use Lead\Net\Behavior\HasBodyTrait;
-use Lead\Net\Behavior\HasContentTypeTrait;
 
 /**
  * HTTP Message class
  */
 class Message
 {
-    use HasBodyTrait, HasContentTypeTrait;
-
     /**
      * HTTP protocol version number
      *
@@ -22,11 +18,18 @@ class Message
     protected $_version = '1.1';
 
     /**
-     * The headers instance.
+     * The stream body.
      *
      * @var object
      */
-    public $headers = null;
+    protected $_stream = null;
+
+    /**
+     * Default chunk size
+     *
+     * @var array
+     */
+    protected $_chunkSize = 4096;
 
     /**
      * The message format.
@@ -60,24 +63,20 @@ class Message
                 'scheme'  => 'Lead\Net\Scheme',
                 'auth'    => 'Lead\Net\Http\Auth',
                 'media'   => 'Lead\Net\Http\Media',
-                'stream'  => 'Lead\Net\Mime\Stream\MimeStream',
                 'headers' => 'Lead\Net\Http\Headers'
             ]
         ];
         $config = Set::merge($defaults, $config);
 
         $this->_classes = $config['classes'];
-        $class = $this->_classes['headers'];
-
-        $headers = $config['headers'];
-        $this->headers = is_object($headers) ? $headers : new $class(['data' => $headers]);
+        $this->_stream = new MixedPart([
+            'mime'    => $config['mime'],
+            'charset' => $config['charset'],
+            'headers' => $config['headers']
+        ]);
 
         $this->version($config['version']);
-
-        $this->_initContentType($config['mime'], $config['charset']);
-
         $this->format($config['format']);
-
         $this->chunkSize($config['chunkSize']);
         $this->body($config['body']);
 
@@ -112,6 +111,66 @@ class Message
     }
 
     /**
+     * Get/set the headers instance
+     *
+     * @param  string $headers The headers instance
+     * @return string
+     */
+    public function headers($headers = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->headers();
+        }
+        $this->_stream->headers($headers);
+        return $this;
+    }
+
+    /**
+     * Get/set the mime.
+     *
+     * @param  string $mime
+     * @return string           The mime.
+     */
+    public function mime($mime = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->mime();
+        }
+        $this->_stream->mime($mime);
+        return $this;
+    }
+
+    /**
+     * Get/set the charset.
+     *
+     * @param  string $charset
+     * @return string           The charset.
+     */
+    public function charset($charset = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->charset();
+        }
+        $this->_stream->charset($charset);
+        return $this;
+    }
+
+    /**
+     * Get/set the encoding.
+     *
+     * @param  string $encoding
+     * @return string           The encoding.
+     */
+    public function encoding($encoding = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->encoding();
+        }
+        $this->_stream->encoding($encoding);
+        return $this;
+    }
+
+    /**
      * Gets/sets the format of the request.
      *
      * @param  string      $format A format name.
@@ -141,39 +200,108 @@ class Message
     }
 
     /**
+     * Get/set the chunk size.
+     *
+     * @param  integer     $chunkSize The chunk size.
+     * @return string|self
+     */
+    public function chunkSize($chunkSize = null)
+    {
+        if (!func_num_args()) {
+            return $this->_chunkSize;
+        }
+        $this->_chunkSize = (int) $chunkSize;
+        return $this;
+    }
+
+    /**
+     * Get/set the plain body message.
+     *
+     * @param  string      $value.
+     * @param  array       $options The stream options.
+     * @return string|self
+     */
+    public function body($value = null, $options = [])
+    {
+        if (!func_num_args()) {
+            return $this->_stream->toString();
+        }
+        $stream = $this->stream();
+        $stream->close();
+        $stream->add($value, $options);
+        return $this;
+    }
+
+    /**
+     * Get message stream.
+     *
+     * @return object
+     */
+    public function stream()
+    {
+        return $this->_stream;
+    }
+
+    /**
      * Gets the body of this message.
      *
-     * @param  array $options The decoding options.
-     * @return mixed          The formatted body.
+     * @param  array $decodeOptions The decoding options.
+     * @return mixed                The formatted body.
      */
-    public function get($options = [])
+    public function get($decodeOptions = [])
     {
         $media = $this->_classes['media'];
         $format = $this->format();
-        return $format ? $media::decode($format, (string) $this->_body, $options) : (string) $this->_body;
+        return $format ? $media::decode($format, $this->_stream->toString(), $decodeOptions) : $this->_stream->toString();
     }
 
     /**
      * Gets/sets the body of this message.
      *
-     * @param  mixed      $value   The formatted body.
-     * @param  array      $options The encoding options.
+     * @param  mixed      $value         The formatted body.
+     * @param  array      $options       The stream options.
+     * @param  array      $encodeOptions The encoding options.
      * @return mixed|self
      */
-    public function set($value = null, $options = [])
+    public function set($value = null, $options = [], $encodeOptions = [])
     {
         $media = $this->_classes['media'];
         $format = $this->format();
 
         if (!$format && !is_string($value)) {
-            throw new NetException("The data must be a string when no format is defined.");
+            throw new NetException("The data must be a string when no format/mime is defined.");
         }
 
-        $this->stream($format ? $media::encode($format, $value, $options) : $value);
+        $stream = $this->stream();
+        $stream->close();
+        $stream->add($format ? $media::encode($format, $value, $encodeOptions) : $value, $options);
         return $this;
     }
 
     /**
+     * Returns the request/status line of the message.
+     *
+     * @return string
+     */
+    public function line()
+    {
+        return '';
+    }
+
+    /**
+     * Export a `Message` instance to an array.
+     *
+     * @param  array $options Options used to export `$message`.
+     * @return array          The export array.
+     */
+    public function export($options = [])
+    {
+        return [
+            'body' => $this->stream()
+        ];
+    }
+
+        /**
      * Exports a `Message` body to specific format.
      *
      * The supported values of `$format` depend on the `Media` class example:
@@ -204,7 +332,7 @@ class Message
     public function toMessage()
     {
         $this->_setContentLength();
-        return $this->line() . "\r\n" . (string) $this->headers . $this->toString();
+        return $this->line() . "\r\n" . $this->headers()->toString() . "\r\n" . $this->toString();
     }
 
     /**
@@ -214,10 +342,21 @@ class Message
      */
     public function toString()
     {
-        if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
+        $headers = $this->headers();
+        if ($headers['Transfer-Encoding']->value() === 'chunked') {
             return $this->toChunks();
         }
-        return (string) $this->_body;
+        return $this->_stream->toString();
+    }
+
+    /**
+     * Magic method to convert object to string.
+     *
+     * @return string
+     */
+    public function __toString()
+    {
+        return $this->toString();
     }
 
     /**
@@ -250,7 +389,8 @@ class Message
      */
     protected function _setContentLength()
     {
-        if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
+        $headers = $this->headers();
+        if ($headers['Transfer-Encoding']->value() === 'chunked') {
             return;
         }
         $length = $this->stream()->length();
@@ -258,30 +398,7 @@ class Message
             throw new NetException("A Content-Length header is required but the request stream has a `null` length.");
         }
 
-        $this->headers['Content-Length'] = $this->stream()->length();
-    }
-
-    /**
-     * Returns the request/status line of the message.
-     *
-     * @return string
-     */
-    public function line()
-    {
-        return '';
-    }
-
-    /**
-     * Export a `Message` instance to an array.
-     *
-     * @param  array $options Options used to export `$message`.
-     * @return array          The export array.
-     */
-    public function export($options = [])
-    {
-        return [
-            'body' => $this->stream()
-        ];
+        $headers['Content-Length'] = $this->stream()->length();
     }
 
     /**
@@ -289,7 +406,6 @@ class Message
      */
     public function __clone()
     {
-        $this->_body = clone $this->_body;
-        $this->headers = clone $this->headers;
+        $this->_stream = clone $this->_stream;
     }
 }

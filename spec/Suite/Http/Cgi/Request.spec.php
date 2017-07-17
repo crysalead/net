@@ -52,11 +52,10 @@ Host: localhost\r
 Connection: Close\r
 User-Agent: Mozilla/5.0\r
 Content-Type: text/html; charset=UTF-8\r
-\r
 
 EOD;
 
-            expect((string) $request->headers)->toBe($expected);
+            expect((string) $request->headers())->toBe($expected);
             expect((string) $request->stream())->toBe('');
 
         });
@@ -68,7 +67,8 @@ EOD;
                     'CONTENT_LENGTH' => 50
                 ]
             ]);
-            expect($request->headers['Content-Length']->value())->toEqual(50);
+            $headers = $request->headers();
+            expect($headers['Content-Length']->value())->toEqual(50);
 
         });
 
@@ -95,11 +95,10 @@ Connection: Keep-Alive\r
 Referer: www.search-engine.com\r
 User-Agent: Mozilla/3.0\r
 Content-Type: text/html; charset=UTF-8\r
-\r
 
 EOD;
 
-            expect((string) $request->headers)->toBe($expected);
+            expect((string) $request->headers())->toBe($expected);
             expect((string) $request->host())->toBe('www.example.com');
 
         });
@@ -121,7 +120,9 @@ EOD;
 
             expect($request->username())->toBe('willy');
             expect($request->password())->toBe('abcdef');
-            expect($request->headers['Authorization']->value())->toBe('Basic d2lsbHk6YWJjZGVm');
+
+            $headers = $request->headers();
+            expect($headers['Authorization']->value())->toBe('Basic d2lsbHk6YWJjZGVm');
 
         });
 
@@ -139,7 +140,9 @@ EOD;
 
             expect($request->username())->toBe('willy');
             expect($request->password())->toBe(null);
-            expect($request->headers['Authorization']->value())->toBe($digest);
+
+            $headers = $request->headers();
+            expect($headers['Authorization']->value())->toBe($digest);
 
         });
 
@@ -368,7 +371,9 @@ EOD;
         it("parses accept header", function() {
 
             $request = new Request();
-            $request->headers['Accept'] = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1,text/html;level=2;q=0.4, */*;q=0.5';
+
+            $headers = $request->headers();
+            $headers['Accept'] = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1,text/html;level=2;q=0.4, */*;q=0.5';
 
             expect($request->accepts())->toEqual([
                 "text/html;level=1" => 1,

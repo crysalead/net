@@ -4,9 +4,9 @@ namespace Lead\Net;
 use RuntimeException;
 
 /**
- * Generic colon based field, generally used as header field representation
+ * Generic colon based header.
  */
-class Field extends \Lead\Collection\Collection
+class Header extends \Lead\Collection\Collection
 {
     /**
      * Contains all exportable formats and their handler
@@ -14,7 +14,8 @@ class Field extends \Lead\Collection\Collection
      * @var array
      */
     protected static $_formats = [
-        'array'  => 'Lead\Collection\Collection::toArray'
+        'array'  => 'Lead\Collection\Collection::toArray',
+        'header' => 'Lead\Net\Header::toHeader'
     ];
 
     /**
@@ -148,8 +149,48 @@ class Field extends \Lead\Collection\Collection
      *
      * @return string
      */
-    public static function toHeader($collection)
+    public static function toHeader($collection, $options = [])
     {
-        return $collection->name() . ': ' . $collection->value();
+        $defaults = [
+            'length'    => 0,
+            'maxLength' => 0
+        ];
+        $options += $defaults;
+
+        $header = static::wrap($collection->name() . ': ' . $collection->value(), $options['length']);
+
+        $maxLength = $options['maxLength'];
+        if ($maxLength && preg_match('~^(.{' . $maxLength . ',})~m', $header)) {
+            throw new RuntimeException("A header line with more that {$maxLength} characters has been detected.");
+        }
+        return $header;
+    }
+
+    /**
+     * Fold a header entry
+     *
+     * @param string $header The header to fold.
+     */
+    public static function wrap($header, $width = 0)
+    {
+        if ($width <= 0) {
+            return $header;
+        }
+        $result = [];
+        $lineLength = 0;
+        $parts = preg_split('~\s+~', $header);
+
+        while ($current = current($parts))
+        {
+            $next = next($parts);
+            $lineLength += strlen($current);
+            if ($next && ($lineLength + strlen($next)) > ($width - 1)) {
+                $result[] = $current . Headers::EOL;
+                $lineLength = 0;
+            } else {
+                $result[] = $current;
+            }
+        }
+        return join(' ', $result);
     }
 }

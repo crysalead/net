@@ -251,7 +251,7 @@ class Media
                 $result = json_decode($data, $options['array'], $options['depth'], $options['flag']);
 
                 if (json_last_error() !== JSON_ERROR_NONE) {
-                    throw new InvalidArgumentException(json_last_error_msg());
+                    throw new InvalidArgumentException("Invalid JSON, can't decode `'{$data}'``: ". json_last_error_msg());
                 }
                 return $result;
             }

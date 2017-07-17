@@ -4,6 +4,7 @@ namespace Lead\Net\Http;
 use Psr\Http\Message\StreamInterface;
 use Lead\Net\NetException;
 use Lead\Set\Set;
+use Lead\Net\Part;
 
 /**
  * Parses and stores the status, headers and body of an HTTP response.
@@ -98,12 +99,14 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
 
         $this->status($config['status']);
 
+        $headers = $this->headers();
+
         if ($config['location']) {
-            $this->headers['Location'] = $config['location'];
+            $headers['Location'] = $config['location'];
         }
 
         $cookies = $this->_classes['cookies'];
-        $this->headers->cookies = new $cookies(['data' => $config['cookies']]);
+        $headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**
@@ -202,11 +205,12 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function digest()
     {
-        if (!isset($this->headers['WWW-Authenticate'])) {
+        $headers = $this->headers();
+        if (!isset($headers['WWW-Authenticate'])) {
             return [];
         }
         $auth = $this->_classes['auth'];
-        return $auth::decode($this->headers['WWW-Authenticate']);
+        return $auth::decode($headers['WWW-Authenticate']);
     }
 
     /**
@@ -220,21 +224,22 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     public function cache($expires)
     {
         if ($expires === false) {
-            $headers = [
+            $data = [
                 'Expires: Mon, 26 Jul 1997 05:00:00 GMT',
                 'Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0',
                 'Pragma: no-cache'
             ];
         } else {
             $expires = is_int($expires) ? $expires : strtotime($expires);
-            $headers = [
+            $data = [
                 'Expires: ' . gmdate('D, d M Y H:i:s', $expires) . ' GMT',
                 'Cache-Control: max-age=' . ($expires - time()),
                 'Pragma: no-cache'
             ];
         }
-        foreach ($headers as $header) {
-            $this->headers->push($header);
+        $headers = $this->headers();
+        foreach ($data as $header) {
+            $headers->push($header);
         }
     }
 
@@ -247,17 +252,18 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
     {
         $this->_setContentLength();
         header($this->line());
-        foreach ($this->headers as $header) {
+        $headers = $this->headers();
+        foreach ($headers as $header) {
             header($header->to('header'));
         }
-        if ($this->headers['Transfer-Encoding']->value() === 'chunked') {
+        if ($headers['Transfer-Encoding']->value() === 'chunked') {
             return;
         }
-        if ($this->_body->isSeekable()) {
-            $this->_body->rewind();
+        if ($this->_stream->isSeekable()) {
+            $this->_stream->rewind();
         }
-        while (!$this->_body->eof()) {
-            echo $this->_body->read();
+        while (!$this->_stream->eof()) {
+            echo $this->_stream->read();
             if (connection_status() !== CONNECTION_NORMAL) {
                 break;
             }
@@ -272,7 +278,8 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function push($data, $atomic = true, $options = [])
     {
-        if ($this->headers['Transfer-Encoding']->value() !== 'chunked') {
+        $headers = $this->headers();
+        if ($headers['Transfer-Encoding']->value() !== 'chunked') {
             throw new NetException("Pushing is only supported in chunked transfer.");
         }
 
@@ -295,11 +302,9 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
                 if (!$format && !is_string($data)) {
                     throw new NetException("The data must be a string when no format is defined.");
                 }
-
-                $class = $this->_classes['stream'];
                 $data = $media::encode($format, $data, $options['encode']);
             }
-            $stream = new $class(['data' => $data] + $options['stream']);
+            $stream = new Part(['data' => $data] + $options['stream']);
         }
 
         $length = $options['atomic'] && $stream->isSeekable() ? $stream->length() : $this->chunkSize();
@@ -327,20 +332,11 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function end()
     {
-        if ($this->headers['Transfer-Encoding']->value() !== 'chunked') {
+        $headers = $this->headers();
+        if ($headers['Transfer-Encoding']->value() !== 'chunked') {
             return;
         }
         echo  "0\r\n\r\n";
-    }
-
-    /**
-     * Magic method convert the instance body into a string.
-     *
-     * @return string
-     */
-    public function toString()
-    {
-        return (string) $this->_body;
     }
 
     /**
@@ -355,7 +351,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         return [
             'status'  => $this->status(),
             'version' => $this->version(),
-            'headers' => $this->headers,
+            'headers' => $this->headers(),
             'body'    => $this->stream()
         ];
     }
@@ -377,19 +373,20 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
 
         list($header, $body) = $parts;
 
-        $headers = str_replace("\r", '', explode("\n", $header));
-        $headers = array_filter($headers);
+        $data = str_replace("\r", '', explode("\n", $header));
+        $data = array_filter($data);
 
-        preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', array_shift($headers), $matches);
+        preg_match('/HTTP\/(\d+\.\d+)\s+(\d+)(?:\s+(.*))?/i', array_shift($data), $matches);
 
-        $response->headers->push($headers);
+        $headers = $response->headers();
+        $headers->push($data);
 
         if ($matches) {
             $response->version($matches[1]);
             $response->status([$matches[2], isset($matches[3]) ? $matches[3] : '']);
         }
 
-        if ($response->headers['Transfer-Encoding']->value() === 'chunked') {
+        if ($headers['Transfer-Encoding']->value() === 'chunked') {
             $decoded = '';
             while (!empty($body)) {
                 $pos = strpos($body, "\r\n");

@@ -17,7 +17,7 @@ describe("Response", function() {
             expect($response->export())->toBe([
                 'status'  => [200, 'OK'],
                 'version' => '1.1',
-                'headers' => $response->headers,
+                'headers' => $response->headers(),
                 'body'    => $response->stream()
             ]);
 
@@ -39,7 +39,7 @@ describe("Response", function() {
                 ]
             ]);
 
-            expect($response->headers->cookies->data())->toEqual([
+            expect($response->headers()->cookies->data())->toEqual([
                 'foo' => [
                     [
                         'value'    => 'bar',
@@ -107,11 +107,10 @@ describe("Response", function() {
 Expires: Mon, 26 Jul 1997 05:00:00 GMT\r
 Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0\r
 Pragma: no-cache\r
-\r
 
 EOD;
 
-            expect($response->headers->to('header'))->toBe($expected);
+            expect($response->headers()->to('header'))->toBe($expected);
 
         });
 
@@ -128,10 +127,9 @@ EOD;
 Expires: Fri, 25 Dec 2015 00:00:00 GMT\r
 Cache-Control: max-age=600\r
 Pragma: no-cache\r
-\r
 
 EOD;
-            expect($response->headers->to('header'))->toBe($expected);
+            expect($response->headers()->to('header'))->toBe($expected);
 
         });
 
@@ -170,20 +168,21 @@ EOD;
         it("sets Set-Cookie values", function() {
 
             $response = new Response();
-            $response->headers['Set-Cookie'] = 'foo1=bar1; Path=/';
-            $response->headers['Set-Cookie'] = 'foo2=bar2; Path=/';
-            $response->headers['Set-Cookie'] = 'foo3=bar3; Path=/';
+
+            $headers = $response->headers();
+            $headers['Set-Cookie'] = 'foo1=bar1; Path=/';
+            $headers['Set-Cookie'] = 'foo2=bar2; Path=/';
+            $headers['Set-Cookie'] = 'foo3=bar3; Path=/';
 
 
             $expected =<<<EOD
 Set-Cookie: foo1=bar1; Path=/\r
 Set-Cookie: foo2=bar2; Path=/\r
 Set-Cookie: foo3=bar3; Path=/\r
-\r
 
 EOD;
 
-            expect($response->headers->to('header'))->toBe($expected);
+            expect($headers->to('header'))->toBe($expected);
 
         });
 
@@ -196,11 +195,13 @@ EOD;
             $request = new Request();
             $response = new Response();
 
-            $request->headers['Accept'] = "text/html;q=0.2,application/json,application/xml;q=0.9,*/*;q=0.8";
+            $headers = $request->headers();
+
+            $headers['Accept'] = "text/html;q=0.2,application/json,application/xml;q=0.9,*/*;q=0.8";
             $response->negotiate($request);
             expect($response->format())->toBe('json');
 
-            $request->headers['Accept'] = "text/html,application/json;q=0.2,application/xml;q=0.9,*/*;q=0.8";
+            $headers['Accept'] = "text/html,application/json;q=0.2,application/xml;q=0.9,*/*;q=0.8";
             $response->negotiate($request);
             expect($response->format())->toBe('html');
 
@@ -212,7 +213,8 @@ EOD;
                 $request = new Request();
                 $response = new Response();
 
-                $request->headers['Accept'] = "application/vnd.api+json";
+                $headers = $request->headers();
+                $headers['Accept'] = "application/vnd.api+json";
                 $response->negotiate($request);
             };
 
@@ -230,7 +232,7 @@ EOD;
                 'format' => 'json',
                 'data'   => ['hello' => 'world']
             ]);
-            $cookies = $response->headers->cookies;
+            $cookies = $response->headers()->cookies;
 
             $cookies['foo'] = 'bar';
             $cookies['bin'] = 'baz';
@@ -260,7 +262,7 @@ EOD;
                 'format' => 'json',
                 'data'   => ['hello' => 'world']
             ]);
-            $cookies = $response->headers->cookies;
+            $cookies = $response->headers()->cookies;
 
             $cookies['foo'] = 'bar';
             $cookies['bin'] = 'baz';
@@ -311,7 +313,8 @@ EOD;
                 $response = new Response([
                     'format' => 'json'
                 ]);
-                $response->headers['Transfer-Encoding'] = 'chunked';
+                $responseHeaders = $response->headers();
+                $responseHeaders['Transfer-Encoding'] = 'chunked';
                 $response->dump();
                 $response->push(['hello' => 'world']);
                 $response->end();
@@ -334,7 +337,7 @@ EOD;
 
             $response = new Response(['body' => 'Body Message']);
             $new = clone $response;
-            expect($response->headers)->not->toBe($new->headers);
+            expect($response->headers())->not->toBe($new->headers());
             expect($response->stream())->not->toBe($new->stream());
 
         });
@@ -342,11 +345,11 @@ EOD;
         it("clones cookies", function() {
 
             $response = new Response(['body' => 'Body Message']);
-            $cookies = $response->headers->cookies;
+            $cookies = $response->headers()->cookies;
             $cookies['foo'] = 'bar';
 
             $newRequest = clone $response;
-            $new = $newRequest->headers->cookies;
+            $new = $newRequest->headers()->cookies;
             expect($cookies['foo'][0])->not->toBe($new['foo'][0]);
             expect($cookies['foo'][0]->value())->toBe($new['foo'][0]->value());
 
@@ -407,7 +410,7 @@ EOD;
                 ]
             ];
             $response = Response::parse($message);
-            expect($response->headers->cookies->data())->toBe($cookies);
+            expect($response->headers()->cookies->data())->toBe($cookies);
             expect($response->toMessage())->toBe($message);
 
         });

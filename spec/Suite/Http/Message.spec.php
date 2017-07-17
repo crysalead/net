@@ -4,7 +4,7 @@ namespace Lead\Net\Spec\Suite\Http;
 use InvalidArgumentException;
 use Lead\Net\NetException;
 use Lead\Net\Http\Message;
-use Lead\Net\Http\Headers;
+use Lead\Net\Headers;
 
 describe("Message", function() {
 
@@ -17,8 +17,9 @@ describe("Message", function() {
                 'charset' => 'UTF-8'
             ]);
 
-            expect($message->headers)->toBeAnInstanceOf(Headers::class);
-            expect((string) $message->headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
+            $headers = $message->headers();
+            expect($headers)->toBeAnInstanceOf(Headers::class);
+            expect((string) $headers['Content-Type'])->toBe('Content-Type: text/plain; charset=UTF-8');
 
         });
 
@@ -32,11 +33,10 @@ describe("Message", function() {
             $expected =<<<EOD
 User-Agent: Mozilla/5.0\r
 Cache-Control: no-cache\r
-\r
 
 EOD;
 
-            expect(Headers::toHeader($message->headers))->toBe($expected);
+            expect(Headers::toHeader($message->headers()))->toBe($expected);
 
         });
 
@@ -102,7 +102,9 @@ EOD;
                 'Content-Type: application/json; charset=UTF-8'
             ]]);
             expect($message->mime())->toBe('application/json');
-            expect($message->headers['Content-Type']->value())->toBe('application/json; charset=UTF-8');
+
+            $headers = $message->headers();
+            expect($headers['Content-Type']->value())->toBe('application/json; charset=UTF-8');
 
         });
 
@@ -147,7 +149,6 @@ EOD;
             $this->headers = <<<EOD
 Custom-Header: Custom Value\r
 Content-Type: text/html\r
-\r
 
 EOD;
         });
@@ -155,7 +156,9 @@ EOD;
         it("sets headers as a string", function() {
 
             $message = new Message(['headers' => $this->headers]);
-            expect($message->headers->to('header'))->toBe($this->headers);
+
+            $headers = $message->headers();
+            expect($headers->to('header'))->toBe($this->headers);
 
         });
 
@@ -165,7 +168,9 @@ EOD;
             $headers->push($this->headers);
 
             $message = new Message(['headers' => $headers]);
-            expect($message->headers->to('header'))->toBe($this->headers);
+
+            $headers = $message->headers();
+            expect($headers->to('header'))->toBe($this->headers);
 
         });
 
@@ -242,16 +247,6 @@ EOD;
         it("gets the body stream", function() {
 
             $message = new Message(['body' => 'Hello World!']);
-            $stream = $message->stream();
-            expect((string) $stream)->toBe('Hello World!');
-
-        });
-
-        it("sets the body using a stream", function() {
-
-            $message = new Message();
-            $message->stream('Hello World!');
-
             $stream = $message->stream();
             expect((string) $stream)->toBe('Hello World!');
 

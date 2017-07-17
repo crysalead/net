@@ -12,14 +12,16 @@ describe("Request", function() {
         it("sets default host header", function() {
 
             $request = new Request(['host' => 'www.domain.com', 'port'  => 80]);
-            expect((string) $request->headers['Host'])->toBe('Host: www.domain.com');
+            $headers = $request->headers();
+            expect((string) $headers['Host'])->toBe('Host: www.domain.com');
 
         });
 
         it("sets non default port number on host header", function() {
 
             $request = new Request(['host' => 'www.domain.com', 'port'  => 90]);
-            expect((string) $request->headers['Host'])->toBe('Host: www.domain.com:90');
+            $headers = $request->headers();
+            expect((string) $headers['Host'])->toBe('Host: www.domain.com:90');
 
         });
 
@@ -32,7 +34,7 @@ describe("Request", function() {
                 ]
             ]);
 
-            expect($request->headers->cookies->data())->toEqual([
+            expect($request->headers()->cookies->data())->toEqual([
                 'foo' => 'bar',
                 'bar' => 'foo'
             ]);
@@ -84,7 +86,9 @@ describe("Request", function() {
             expect($request->host())->toBe('www.example.com:8000');
             expect($request->hostname())->toBe('www.example.com');
             expect($request->port())->toBe('8000');
-            expect((string) $request->headers['Host'])->toBe('Host: www.example.com:8000');
+
+            $headers = $request->headers();
+            expect((string) $headers['Host'])->toBe('Host: www.example.com:8000');
 
         });
 
@@ -330,7 +334,9 @@ describe("Request", function() {
                 'password' => 'Boy',
                 'auth'     => 'Basic'
             ]);
-            expect((string) $request->headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
+
+            $headers = $request->headers();
+            expect((string) $headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
 
         });
 
@@ -347,7 +353,8 @@ describe("Request", function() {
                 ]
             ]);
 
-            expect((string) $request->headers['Authorization'])->toMatch('~^Authorization: Digest~');
+            $headers = $request->headers();
+            expect((string) $headers['Authorization'])->toMatch('~^Authorization: Digest~');
 
         });
 
@@ -358,10 +365,12 @@ describe("Request", function() {
                 'password' => 'Boy',
                 'auth'     => 'Basic'
             ]);
-            expect((string) $request->headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
+
+            $headers = $request->headers();
+            expect((string) $headers['Authorization'])->toBe('Authorization: Basic V2lsbHk6Qm95');
 
             $request->auth(false);
-            expect(isset($request->headers['Authorization']))->toBe(false);
+            expect(isset($headers['Authorization']))->toBe(false);
 
         });
 
@@ -371,7 +380,7 @@ describe("Request", function() {
 
         beforeEach(function() {
             $this->request = new Request();
-            $this->headers = $this->request->headers;
+            $this->headers = $this->request->headers();
         });
 
         it("sets Cookie value", function() {
@@ -574,7 +583,7 @@ EOD;
 
             $request = new Request(['data' => 'Body Message']);
             $new = clone $request;
-            expect($request->headers)->not->toBe($new->headers);
+            expect($request->headers())->not->toBe($new->headers());
             expect($request->stream())->not->toBe($new->stream());
 
         });
@@ -582,11 +591,11 @@ EOD;
         it("clones cookies", function() {
 
             $request = new Request(['data' => 'Body Message']);
-            $cookies = $request->headers->cookies;
+            $cookies = $request->headers()->cookies;
             $cookies['foo'] = 'bar';
 
             $newRequest = clone $request;
-            $new = $newRequest->headers->cookies;
+            $new = $newRequest->headers()->cookies;
             expect($cookies['foo'])->not->toBe($new['foo']);
             expect($cookies['foo']->value())->toBe($new['foo']->value());
 

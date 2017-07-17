@@ -3,8 +3,8 @@ namespace Lead\Net\Spec\Suite;
 
 use Exception;
 use Lead\Net\NetException;
-use Lead\Net\Http\Header;
-use Lead\Net\Http\Headers;
+use Lead\Net\Header;
+use Lead\Net\Headers;
 use Lead\Net\Http\Cookie\Cookies;
 
 describe("Headers", function() {
@@ -180,7 +180,6 @@ Content-Type: text/plain\r
 X-Custom-ABC: abc\r
 Accept: text/html;q=1.0, */*;q=0.1\r
 Cookie: sessionid=123\r
-\r
 
 EOD;
 
@@ -198,7 +197,6 @@ EOD;
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
 Content-Type: text/html; charset=UTF-8\r
 Vary: Accept-Encoding, Cookie, User-Agent\r
-\r
 
 EOD;
         });
@@ -302,7 +300,7 @@ EOD;
 
             $this->headers->push('Content-Type', 'text/plain');
             $this->headers->prepend('Host', 'localhost');
-            expect((string) $this->headers)->toBe("Host: localhost\r\nContent-Type: text/plain\r\n\r\n");
+            expect((string) $this->headers)->toBe("Host: localhost\r\nContent-Type: text/plain\r\n");
 
         });
 
@@ -329,7 +327,6 @@ EOD;
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
 Content-Type: text/html; charset=UTF-8\r
 Vary: Accept-Encoding, Cookie, User-Agent\r
-\r
 
 EOD;
 

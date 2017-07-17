@@ -1,19 +1,43 @@
 <?php
-namespace Lead\Net\Mime\Stream;
+namespace Lead\Net;
 
 use RuntimeException;
 use InvalidArgumentException;
-use Lead\Storage\Stream\Stream;
-use Lead\Storage\Stream\MultiStream;
+use Lead\Set\Set;
+use Lead\Net\Mime\Mime;
 
-class MimeStream extends MultiStream
+/**
+ * Support Multipart message with HTTP headers as well as single part message.
+ */
+class MixedPart extends \Lead\Storage\Stream\MultiStream
 {
+    /**
+     * Class dependencies.
+     *
+     * @var array
+     */
+    protected $_classes = [];
+
+    /**
+     * The headers instance.
+     *
+     * @var object
+     */
+    protected $_headers = null;
+
     /**
      * The multipart mime value
      *
      * @var string
      */
     protected $_mime = null;
+
+    /**
+     * The charset info.
+     *
+     * @var string
+     */
+    protected $_charset = null;
 
     /**
      * The multipart boundary value
@@ -32,13 +56,23 @@ class MimeStream extends MultiStream
     {
         $defaults = [
             'mime'     => null,
-            'boundary' => null
+            'charset'  => null,
+            'boundary' => null,
+            'headers'  => null,
+            'classes'  => [
+                'part'    => 'Lead\Net\Part'
+            ]
         ];
-        $config += $defaults;
+        $config = Set::merge($defaults, $config);
 
-        $this->mime($config['mime']);
-        $this->boundary(isset($config['boundary']) ? $config['boundary'] : sha1(uniqid('', true)));
+        $this->_classes = $config['classes'];
+        $config['headers'] = is_object($config['headers']) ?  $config['headers'] : new Headers(['data' => $config['headers']]);
+        $this->headers($config['headers']);
+
         parent::__construct($config);
+
+        $this->_initContentType($config['mime'], $config['charset']);
+        $this->boundary($config['boundary']);
     }
 
     /**
@@ -50,6 +84,12 @@ class MimeStream extends MultiStream
     public function boundary($boundary = null)
     {
         if (!func_num_args()) {
+            if (!$this->isMultipart()) {
+                return;
+            }
+            if ($this->_boundary === null) {
+                $this->_boundary = sha1(uniqid('', true));
+            }
             return $this->_boundary;
         }
         $this->_boundary = $boundary;
@@ -57,21 +97,108 @@ class MimeStream extends MultiStream
     }
 
     /**
-     * Get/set the stream mime.
+     * Get/set the headers instance
      *
-     * @param  mixed  $mime The mime string to set or `true` to autodetect the mime.
-     * @return string       The mime.
+     * @param  string $headers The headers instance
+     * @return string
+     */
+    public function headers($headers = null)
+    {
+        if (!func_num_args()) {
+            return $this->_headers;
+        }
+        $this->_headers = $headers;
+        return $this;
+    }
+
+    /**
+     * Gets/sets the Content-Type.
+     *
+     * @param  string      $mime A full Content-Type i.e. `'application/json'`.
+     * @return string|self
      */
     public function mime($mime = null)
     {
         if (!func_num_args()) {
-            if (!$this->_mime && $this->isMultipart()) {
-                return 'multipart/form-data';
+            if (!$this->isMultipart()) {
+                list($mime, $charset) = $this->_inspectContentType();
+                return $this->_mime = $mime;
             }
-            return $this->_mime;
+            return preg_match('~^multipart/~', $this->_mime) ? $this->_mime : 'multipart/form-data';
         }
-        $this->_mime = $mime;
+
+        unset($this->_headers['Content-Type']);
+        if ($this->_mime = $mime) {
+            $charset = $this->charset();
+            $this->_headers['Content-Type'] = $mime . ($charset ? '; charset=' . $charset : '');
+        } else {
+            $this->_mime = null;
+        }
         return $this;
+    }
+
+    /**
+     * Gets/sets the Content-Type charset.
+     *
+     * @param  string      $charset A charset i.e. `'UTF-8'`.
+     * @return string|self
+     */
+    public function charset($charset = null)
+    {
+        if (!func_num_args()) {
+            return $this->_charset;
+        }
+        $mime = $this->mime();
+        unset($this->_headers['Content-Type']);
+        if ($charset) {
+            $this->_charset = $charset ? strtoupper($charset) : null;
+            if ($mime) {
+                $this->_headers['Content-Type'] = $mime . ($this->_charset ? '; charset=' . $this->_charset : '');
+            }
+        } elseif ($mime) {
+            $this->_charset = null;
+            $this->_headers['Content-Type'] = $mime;
+        }
+        return $this;
+    }
+
+    /**
+     * Init default mime/charset values.
+     *
+     * @param  string      $mime    A mime or `null` to use the default one.
+     * @param  string      $charset A charset or `null` to use the default one.
+     */
+    protected function _initContentType($mime, $charset)
+    {
+        if (!isset($this->_headers['Content-Type'])) {
+            $this->mime($mime);
+            $this->charset($charset);
+            return;
+        }
+
+        list($mime, $charset) = $this->_inspectContentType();
+        unset($this->_headers['Content-Type']);
+
+        $this->mime($mime);
+        $this->charset($charset);
+    }
+
+    /**
+     * Extract the Content Type (mime + charset) from headers
+     *
+     * @return array
+     */
+    protected function _inspectContentType()
+    {
+        $mime = null;
+        $charset = null;
+        if (preg_match('/([-\w\/\.+]+)(;\s*?charset=(.+))?/i', $this->_headers['Content-Type']->value(), $matches)) {
+            $mime = $mime ?: $matches[1];
+            if (isset($matches[3])) {
+                $charset = $charset ?: $matches[3];
+            }
+        }
+        return [$mime, $charset];
     }
 
     /**
@@ -117,7 +244,9 @@ class MimeStream extends MultiStream
             unset($options[$name]);
         }
 
-        if ($stream instanceof PartStream) {
+        $part = $this->_classes['part'];
+
+        if ($stream instanceof $part) {
             foreach (['mime', 'charset', 'encoding'] as $name) {
                 if (!empty(${$name})) {
                     $stream->{$name}(${$name});
@@ -125,7 +254,7 @@ class MimeStream extends MultiStream
             }
             $stream->options($options);
         } elseif (is_scalar($stream)) {
-            $stream = new PartStream([
+            $stream = new $part([
                 'data'     => (string) $stream,
                 'mime'     => $mime,
                 'charset'  => $charset,
@@ -150,12 +279,14 @@ class MimeStream extends MultiStream
      */
     public function flush()
     {
-        $buffer = '';
-        $boundary = $this->boundary();
         if (!$this->isMultipart()) {
             $stream = reset($this->_streams);
-            return $stream ? $stream->toString() : '';
+            return ($stream ? $stream->toString() : '');
         }
+
+        $buffer = '';
+        $boundary = $this->boundary();
+
         foreach ($this->_streams as $stream) {
             if ($stream instanceof static) {
                 $buffer .= $stream->toString();
@@ -167,15 +298,15 @@ class MimeStream extends MultiStream
             $charset = $stream->charset();
             $options = $stream->options();
 
-            if ($mime && !$charset && preg_match('~^text/~', $mime)) {
-                $charset = 'utf-8';
-            }
-
             if ($mime && !$stream->encoding()) {
                 $stream->encoding(preg_match('~^text/~', $mime) ? 'quoted-printable' : 'base64');
             }
+            $content = $stream->toString();
 
-            $content = (string) $stream;
+            if ($mime && !$charset && preg_match('~^text/~', $mime)) {
+                $charset = Mime::optimalCharset($content);
+            }
+
             $headers = $this->_headers($options, $mime, $charset, $stream->encoding(), strlen($content));
             $buffer .= join("\r\n", $headers) . "\r\n\r\n";
             $buffer .= $content . "\r\n";
@@ -231,5 +362,31 @@ class MimeStream extends MultiStream
             $headers[] = 'Content-Language: ' . $options['language'];
         }
         return $headers;
+    }
+
+    /**
+     * Magic method to convert the instance into an HTTP message string.
+     *
+     * @return string
+     */
+    public function toMessage()
+    {
+        $headers = $this->_headers;
+        if ($this->isMultipart()) {
+            $boundary = $this->boundary();
+            $mime = $this->mime();
+            unset($this->_headers['Content-Type']);
+            $this->_headers['Content-Type'] = "{$mime}; boundary={$boundary}";
+        }
+        return $headers->toString() . "\r\n" . $this->toString();
+    }
+
+    /**
+     * Clones each streams.
+     */
+    public function __clone()
+    {
+        parent::__clone();
+        $this->_headers = clone $this->_headers;
     }
 }

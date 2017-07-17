@@ -44,7 +44,8 @@ describe("Media", function() {
             $expected .= 'Jane,Doe,"124 Main St.","Anytown, CA",91724' . "\n";
             expect($response->body())->toBe($expected);
 
-            expect((string) $response->headers['Content-Type'])->toBe('Content-Type: application/csv');
+            $headers = $response->headers();
+            expect((string) $headers['Content-Type'])->toBe('Content-Type: application/csv');
 
         });
 

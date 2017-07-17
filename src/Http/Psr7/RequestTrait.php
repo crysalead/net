@@ -170,11 +170,7 @@ trait RequestTrait
         $request->password(!empty($parts[1]) ? $parts[1] : null);
         $request->port($uri->getPort());
 
-        if ($preserveHost) {
-            $host = $request->headers['Host'];
-            $request->host($uri->getHost());
-            $request->headers['Host'] = $host;
-        } else {
+        if (!$preserveHost) {
             $request->host($uri->getHost());
         }
 

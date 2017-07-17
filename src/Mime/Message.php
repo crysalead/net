@@ -1,20 +1,20 @@
 <?php
 namespace Lead\Net\Mime;
 
-use Psr\Http\Message\StreamInterface;
 use InvalidArgumentException;
 use Lead\Set\Set;
-use Lead\Net\Mime\Stream\MimeStream;
-use Lead\Net\Mime\Stream\PartStream;
-use Lead\Net\Behavior\HasBodyTrait;
-use Lead\Net\Behavior\HasContentTypeTrait;
 
 /**
  * MIME-compliant email messages class.
  */
 class Message
 {
-    use HasBodyTrait, HasContentTypeTrait;
+    /**
+     * Class dependencies.
+     *
+     * @var array
+     */
+    protected $_classes = [];
 
     /**
      * MIME protocol version number
@@ -22,13 +22,6 @@ class Message
      * @var string
      */
     protected $_version = '1.0';
-
-    /**
-     * The headers instance.
-     *
-     * @var object
-     */
-    public $headers = null;
 
     /**
      * The hostname.
@@ -91,7 +84,6 @@ class Message
      *
      * @param array $config Configuration options. Possible values are:
      *                      - `'version'`  _string_ : MIME version (defaults `'1.0'`).
-     *                      - `'headers'`  _mixed_  : headars (defaults `[]`).
      *                      - `'classes'`  _array_  : class dependencies.
      */
     public function __construct($config = [])
@@ -101,35 +93,28 @@ class Message
             'host'      => 'localhost.localdomain',
             'mime'      => null,
             'charset'   => null,
-            'headers'   => [],
             'body'      => '',
             'altBody'   => '',
+            'headers'   => [],
             'classes'   => [
-                'stream'    => 'Lead\Net\Mime\Stream\MimeStream',
                 'address'   => 'Lead\Net\Mime\Address',
-                'headers'   => 'Lead\Net\Mime\Headers',
                 'addresses' => 'Lead\Net\Mime\Header\Addresses'
             ]
         ];
         $config = Set::merge($defaults, $config);
 
         $this->_classes = $config['classes'];
-        $class = $this->_classes['headers'];
-
-        $headers = $config['headers'];
-        $this->headers = is_object($headers) ? $headers : new $class(['data' => $headers]);
-        $this->headers['Date'] = date('r');
-
-        $this->_initContentType($config['mime'], $config['charset']);
-
-        $this->version($config['version']);
-        $this->host($config['host']);
 
         $addresses = $this->_classes['addresses'];
         $this->_recipients = new $addresses();
 
         $this->body($config['body']);
         $this->altBody($config['body']);
+
+        $this->_stream = new MixedPart(['headers' => $config['headers']]);
+
+        $this->version($config['version']);
+        $this->host($config['host']);
     }
 
     /**
@@ -143,8 +128,69 @@ class Message
         if (func_num_args() === 0) {
             return $this->_version;
         }
-        $this->headers->prepend('MIME-Version', $version);
+        $headers = $this->headers();
+        $headers->prepend('MIME-Version', $version);
         $this->_version = $version;
+        return $this;
+    }
+
+    /**
+     * Get/set the headers instance
+     *
+     * @param  string $headers The headers instance
+     * @return string
+     */
+    public function headers($headers = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->headers();
+        }
+        $this->_stream->headers($headers);
+        return $this;
+    }
+
+    /**
+     * Get/set the mime.
+     *
+     * @param  string $mime
+     * @return string           The mime.
+     */
+    public function mime($mime = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->mime();
+        }
+        $this->_stream->mime($mime);
+        return $this;
+    }
+
+    /**
+     * Get/set the charset.
+     *
+     * @param  string $charset
+     * @return string           The charset.
+     */
+    public function charset($charset = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->charset();
+        }
+        $this->_stream->charset($charset);
+        return $this;
+    }
+
+    /**
+     * Get/set the encoding.
+     *
+     * @param  string $encoding
+     * @return string           The encoding.
+     */
+    public function encoding($encoding = null)
+    {
+        if (!func_num_args()) {
+            return $this->_stream->encoding();
+        }
+        $this->_stream->encoding($encoding);
         return $this;
     }
 
@@ -171,10 +217,11 @@ class Message
      */
     public function priority($priority = null)
     {
+        $headers = $this->headers();
         if (!func_num_args()) {
-            return $this->headers['X-Priority'];
+            return $headers['X-Priority'];
         }
-        $this->headers['X-Priority'] = (string) $priority;
+        $headers['X-Priority'] = (string) $priority;
         return $this;
     }
 
@@ -207,7 +254,9 @@ class Message
         }
         $class = $this->_classes['address'];
         $this->_from = new $class($address, $name);
-        $this->headers['From'] = $this->_from->toString();
+
+        $headers = $this->headers();
+        $headers['From'] = $this->_from->toString();
         return $this;
     }
 
@@ -219,10 +268,11 @@ class Message
      */
     public function subject($subject = null)
     {
+        $headers = $this->headers();
         if (!func_num_args()) {
-            return $this->headers['Subject'];
+            return $headers['Subject'];
         }
-        $this->headers['Subject'] = Mime::encodeValue($subject, MIME::MAX_LINE_LENGTH, Mime::FOLDING);
+        $headers['Subject'] = Mime::encodeValue($subject, 998, "\r\n ");
         return $this;
     }
 
@@ -238,7 +288,8 @@ class Message
             return $this->_returnPath;
         }
         $this->_returnPath = $returnPath;
-        $this->headers['Return-Path'] = Mime::encodeEmail($returnPath);
+        $headers = $this->headers();
+        $headers['Return-Path'] = '<' . Mime::encodeEmail($returnPath) .'>';
         return $this;
     }
 
@@ -309,13 +360,14 @@ class Message
     protected function _addRecipient($type, $address, $name = null)
     {
         $classes = $this->_classes;
-        if (!isset($this->headers[$type])) {
+        $headers = $this->headers();
+        if (!isset($headers[$type])) {
             $addresses = $classes['addresses'];
-            $this->headers[$type] = new $addresses();
+            $headers[$type] = new $addresses();
         }
         $class = $classes['address'];
         $value = new $class($address, $name);
-        $this->headers[$type][] = $value;
+        $headers[$type][] = $value;
         return $value;
     }
 
@@ -391,6 +443,21 @@ class Message
      * @param  string      $value.
      * @return string|self
      */
+    public function body($value = null)
+    {
+        if (!func_num_args()) {
+            return $this->_body;
+        }
+        $this->_body = (string) $value;
+        return $this;
+    }
+
+    /**
+     * Get/set the alt body message.
+     *
+     * @param  string      $value.
+     * @return string|self
+     */
     public function altBody($value = null)
     {
         if (!func_num_args()) {
@@ -412,15 +479,27 @@ class Message
         if (!func_num_args()) {
             return $this->_body;
         }
+
+        $this->body($body);
         $this->mime('text/html');
-        $this->charset('UTF-8');
-        $this->body((string) $body);
+        $this->charset(Mime::optimalCharset($body));
+
         if ($altBody === 'true') {
             $this->_altBody = static::stripTags($this->_body);
         } elseif ($altBody !== null) {
             $this->_altBody = static::stripTags($altBody);
         }
         return $this;
+    }
+
+    /**
+     * Get message stream.
+     *
+     * @return object
+     */
+    public function stream()
+    {
+        return $this->_stream;
     }
 
     /**
@@ -432,47 +511,42 @@ class Message
     {
         $message = clone $this;
 
-        $stream = $this->_classes['stream'];
-
-        $body = $message->body();
         $altBody = $message->altBody();
         $attachments = $message->attachments();
         $inlines = $message->inlines();
 
-        $bodyMime = $message->mime() ?: 'text/plain';
-        $bodyCharset = $message->charset() ?: 'UTF-8';
+        $root = $cursor = $message->stream();
 
-        $message->headers['Message-ID'] = static::generateId($message->host());
-        $main = $cursor = $message->stream();
+        $body = $message->body();
+        $bodyMime = $cursor->mime() ?: 'text/plain';
+        $bodyCharset = $cursor->charset() ?: $cursor->charset(Mime::optimalCharset($body));
 
         if (count($attachments)) {
             $cursor->mime('multipart/mixed');
-            $current = $cursor->add(new $stream(['mime' => 'multipart/alternative']));
+            $current = $cursor->add(new MixedPart(['mime' => 'multipart/alternative']));
             foreach ($attachments as $path => $attachment) {
                 $current->add(fopen($path, 'r'), $attachment);
             }
             $cursor = $current;
         } elseif ($altBody || count($inlines)) {
             $cursor->mime('multipart/alternative');
-            $current = $cursor->add(new $stream(['mime' => 'multipart/alternative']));
-            $cursor = $current;
         }
 
         if ($altBody) {
             $cursor->add($altBody, [
                 'mime'     => 'text/plain',
-                'charset'  => 'ASCII',
-                'encoding' => Mime::optimalEncoding($body)
+                'charset'  => Mime::optimalCharset($altBody),
+                'encoding' => Mime::optimalEncoding($altBody)
             ]);
         }
 
         if ($body) {
             $options = [
-                'data'     => $body,
                 'mime'     => $bodyMime,
                 'charset'  => $bodyCharset,
                 'encoding' => Mime::optimalEncoding($body)
             ];
+
             if ($inlines) {
                 $cursor->mime('multipart/related');
                 $current = $cursor->add(new $stream(['mime' => 'multipart/related']));
@@ -485,9 +559,10 @@ class Message
             }
         }
 
-        $message->mime($main->mime());
-
-        return (string) $message->headers . $main->toString();
+        $headers = $root->headers();
+        $headers['Date'] = date('r');
+        $headers['Message-ID'] = static::generateId($message->host());
+        return $root->toMessage();
     }
 
     public function _buildMixed($message)
@@ -519,7 +594,7 @@ class Message
      */
     public function __clone()
     {
-        $this->headers = clone $this->headers;
+        $this->_stream = clone $this->_stream;
     }
 
     /**

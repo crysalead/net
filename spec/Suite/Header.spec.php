@@ -2,12 +2,12 @@
 namespace Lead\Net\Spec\Suite;
 
 use RuntimeException;
-use Lead\Net\Field;
+use Lead\Net\Header;
 
-describe("Field", function() {
+describe("Header", function() {
 
     beforeEach(function() {
-        $this->header = new Field();
+        $this->header = new Header();
     });
 
     describe("->name()", function() {
@@ -78,7 +78,7 @@ describe("Field", function() {
 
         it("parses an header", function() {
 
-            $header = Field::parse('Header-Name: value1, value2, value3');
+            $header = Header::parse('Header-Name: value1, value2, value3');
             expect($header->name())->toBe('Header-Name');
             expect($header->to('array'))->toBe([
                 'value1',

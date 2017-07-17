@@ -66,7 +66,7 @@ trait MessageTrait
     public function getHeaders()
     {
         $headers = [];
-        foreach ($this->headers as $name => $value) {
+        foreach ($this->headers() as $name => $value) {
             $headers[$name] = $value->data();
         }
         return $headers;
@@ -82,7 +82,8 @@ trait MessageTrait
      */
     public function hasHeader($name)
     {
-        return isset($this->headers[$name]);
+        $headers = $this->headers();
+        return isset($headers[$name]);
     }
 
     /**
@@ -101,7 +102,8 @@ trait MessageTrait
      */
     public function getHeader($name)
     {
-        return $this->headers[$name]->data();
+        $headers = $this->headers();
+        return $headers[$name]->data();
     }
 
     /**
@@ -125,7 +127,8 @@ trait MessageTrait
      */
     public function getHeaderLine($name)
     {
-        return $this->headers[$name]->value();
+        $headers = $this->headers();
+        return $headers[$name]->value();
     }
 
     /**
@@ -143,7 +146,8 @@ trait MessageTrait
     public function withHeader($name, $value)
     {
         $message = clone $this;
-        $message->headers[$name] = $value;
+        $headers = $message->headers();
+        $headers[$name] = $value;
         return $message;
     }
 
@@ -163,7 +167,8 @@ trait MessageTrait
     public function withAddedHeader($name, $value)
     {
         $message = clone $this;
-        $message->headers[$name][] = $value;
+        $headers = $message->headers();
+        $headers[$name][] = $value;
         return $message;
     }
 
@@ -178,7 +183,8 @@ trait MessageTrait
     public function withoutHeader($name)
     {
         $message = clone $this;
-        unset($message->headers[$name]);
+        $headers = $message->headers();
+        unset($headers[$name]);
         return $message;
     }
 
@@ -205,7 +211,9 @@ trait MessageTrait
     public function withBody(StreamInterface $body)
     {
         $message = clone $this;
-        $message->stream($body);
+        $stream = $message->stream();
+        $stream->close();
+        $stream->add($body);
         return $message;
     }
 }

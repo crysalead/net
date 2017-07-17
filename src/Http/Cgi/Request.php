@@ -311,7 +311,8 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
                 if ($key === 'ssl') {
                     return isset($this->env['HTTPS']) ? $this->env['HTTPS'] : false;
                 }
-                return isset($this->headers[$key]) ? $this->headers[$key] : null;
+                $headers = $this->headers();
+                return isset($headers[$key]) ? $headers[$key] : null;
         }
     }
 
@@ -460,7 +461,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         if (func_num_args() === 1) {
             $form = $form ?: [];
             $this->_form = $form;
-            $this->set(http_build_query($form));
+            $this->set($form);
             return $this;
         }
         return $this->_form;

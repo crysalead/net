@@ -130,7 +130,7 @@ describe("RequestTrait", function() {
 
             $uri = $new->getUri();
             expect($uri)->toBeAnInstanceOf('Psr\Http\Message\UriInterface');
-            expect((string) $uri)->toBe('https://username:password@www.domain.com:8000/foo?bar=baz#quz');
+            expect((string) $uri)->toBe('https://username:password@localhost:8000/foo?bar=baz#quz');
             expect($new->getHeaderLine('Host'))->toBe('localhost');
 
         });
