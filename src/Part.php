@@ -25,6 +25,9 @@ class Part extends \Lead\Storage\Stream\Stream
         $defaults = [
             'encoding' => null
         ];
+        if (!is_array($config)) {
+            $config = ['data' => $config];
+        }
         $config += $defaults;
         parent::__construct($config);
         $this->encoding($config['encoding']);

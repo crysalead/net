@@ -14,9 +14,9 @@ describe("Mime", function() {
 
         });
 
-        it("detects quoted-printable data", function() {
+        it("detects 8bit data", function() {
 
-            expect(Mime::optimalEncoding('poésie'))->toBe('quoted-printable');
+            expect(Mime::optimalEncoding('poésie'))->toBe('8bit');
 
         });
 

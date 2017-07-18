@@ -3,7 +3,7 @@ namespace Lead\Net\Http\Cgi;
 
 use Lead\Net\NetException;
 use Lead\Set\Set;
-use Lead\Storage\Stream\Stream;
+use Lead\Net\Part;
 use Lead\Net\Http\Psr7\ServerRequestTrait;
 
 class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\ServerRequestInterface
@@ -546,7 +546,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         }
 
         return new static($config + [
-            'body'    => new Stream(['filename' => 'php://input', 'mode' => 'r']),
+            'body'    => new Part(['filename' => 'php://input', 'mode' => 'r']),
             'query'   => isset($_GET) ? $_GET : [],
             'cookies' => $_COOKIE
         ]);

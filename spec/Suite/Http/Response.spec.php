@@ -106,8 +106,7 @@ describe("Response", function() {
             $expected = <<<EOD
 Expires: Mon, 26 Jul 1997 05:00:00 GMT\r
 Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0\r
-Pragma: no-cache\r
-
+Pragma: no-cache
 EOD;
 
             expect($response->headers()->to('header'))->toBe($expected);
@@ -126,8 +125,7 @@ EOD;
             $expected = <<<EOD
 Expires: Fri, 25 Dec 2015 00:00:00 GMT\r
 Cache-Control: max-age=600\r
-Pragma: no-cache\r
-
+Pragma: no-cache
 EOD;
             expect($response->headers()->to('header'))->toBe($expected);
 
@@ -178,8 +176,7 @@ EOD;
             $expected =<<<EOD
 Set-Cookie: foo1=bar1; Path=/\r
 Set-Cookie: foo2=bar2; Path=/\r
-Set-Cookie: foo3=bar3; Path=/\r
-
+Set-Cookie: foo3=bar3; Path=/
 EOD;
 
             expect($headers->to('header'))->toBe($expected);
@@ -368,8 +365,8 @@ EOD;
             $message = join("\r\n", [
                 'HTTP/1.1 200 OK',
                 'Connection: close',
-                'Content-Type: text/plain;charset=UTF8',
                 'Content-Length: 5',
+                'Content-Type: text/plain; charset=UTF-8',
                 'Set-Cookie: doctor=who; Path=/tardis; HttpOnly',
                 'Set-Cookie: test=foo%20bar; Expires=Fri, 25 Dec 2015 00:00:00 GMT; Secure',
                 'Set-Cookie: test=foo%2Bbin; Path=/test; Domain=.domain.com',

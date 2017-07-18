@@ -487,7 +487,7 @@ EOD;
         it("throws an exception when Content-Length is required but not be determined", function() {
 
             $closure = function() {
-                $stream = Double::instance(['extends' => 'Lead\Storage\Stream\Stream']);
+                $stream = Double::instance(['extends' => 'Lead\Net\Part']);
                 allow($stream)->toReceive('length')->andReturn(null);
 
                 $request = new Request([

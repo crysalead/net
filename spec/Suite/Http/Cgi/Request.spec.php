@@ -51,8 +51,7 @@ describe("Request", function() {
 Host: localhost\r
 Connection: Close\r
 User-Agent: Mozilla/5.0\r
-Content-Type: text/html; charset=UTF-8\r
-
+Content-Type: text/html; charset=UTF-8
 EOD;
 
             expect((string) $request->headers())->toBe($expected);
@@ -94,8 +93,7 @@ Accept-Encoding: gzip\r
 Connection: Keep-Alive\r
 Referer: www.search-engine.com\r
 User-Agent: Mozilla/3.0\r
-Content-Type: text/html; charset=UTF-8\r
-
+Content-Type: text/html; charset=UTF-8
 EOD;
 
             expect((string) $request->headers())->toBe($expected);

@@ -32,8 +32,7 @@ describe("Message", function() {
 
             $expected =<<<EOD
 User-Agent: Mozilla/5.0\r
-Cache-Control: no-cache\r
-
+Cache-Control: no-cache
 EOD;
 
             expect(Headers::toHeader($message->headers()))->toBe($expected);
@@ -148,8 +147,7 @@ EOD;
         beforeEach(function() {
             $this->headers = <<<EOD
 Custom-Header: Custom Value\r
-Content-Type: text/html\r
-
+Content-Type: text/html
 EOD;
         });
 

@@ -179,8 +179,7 @@ describe("Headers", function() {
 Content-Type: text/plain\r
 X-Custom-ABC: abc\r
 Accept: text/html;q=1.0, */*;q=0.1\r
-Cookie: sessionid=123\r
-
+Cookie: sessionid=123
 EOD;
 
             expect(Headers::toHeader($this->headers))->toBe($expected);
@@ -196,8 +195,7 @@ EOD;
             $this->expected = <<<EOD
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
 Content-Type: text/html; charset=UTF-8\r
-Vary: Accept-Encoding, Cookie, User-Agent\r
-
+Vary: Accept-Encoding, Cookie, User-Agent
 EOD;
         });
 
@@ -300,7 +298,7 @@ EOD;
 
             $this->headers->push('Content-Type', 'text/plain');
             $this->headers->prepend('Host', 'localhost');
-            expect((string) $this->headers)->toBe("Host: localhost\r\nContent-Type: text/plain\r\n");
+            expect((string) $this->headers)->toBe("Host: localhost\r\nContent-Type: text/plain");
 
         });
 
@@ -326,8 +324,7 @@ EOD;
             $header = <<<EOD
 Date: Thu, 25 Dec 2014 00:00:00 GMT\r
 Content-Type: text/html; charset=UTF-8\r
-Vary: Accept-Encoding, Cookie, User-Agent\r
-
+Vary: Accept-Encoding, Cookie, User-Agent
 EOD;
 
             $headers = new Headers();

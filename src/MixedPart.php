@@ -71,8 +71,8 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
 
         parent::__construct($config);
 
-        $this->_initContentType($config['mime'], $config['charset']);
         $this->boundary($config['boundary']);
+        $this->_initContentType($config['mime'], $config['charset']);
     }
 
     /**
@@ -112,7 +112,7 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
     }
 
     /**
-     * Gets/sets the Content-Type.
+     * Get/set the Content-Type.
      *
      * @param  string      $mime A full Content-Type i.e. `'application/json'`.
      * @return string|self
@@ -120,25 +120,17 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
     public function mime($mime = null)
     {
         if (!func_num_args()) {
-            if (!$this->isMultipart()) {
-                list($mime, $charset) = $this->_inspectContentType();
-                return $this->_mime = $mime;
-            }
-            return preg_match('~^multipart/~', $this->_mime) ? $this->_mime : 'multipart/form-data';
+            list($mime, $charset) = $this->_inspectContentType();
+            return $this->_mime = $mime;
         }
 
-        unset($this->_headers['Content-Type']);
-        if ($this->_mime = $mime) {
-            $charset = $this->charset();
-            $this->_headers['Content-Type'] = $mime . ($charset ? '; charset=' . $charset : '');
-        } else {
-            $this->_mime = null;
-        }
+        $this->_mime = $mime ? strtolower($mime) : null;
+        $this->_updateContentType();
         return $this;
     }
 
     /**
-     * Gets/sets the Content-Type charset.
+     * Get/set the Content-Type charset.
      *
      * @param  string      $charset A charset i.e. `'UTF-8'`.
      * @return string|self
@@ -146,20 +138,29 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
     public function charset($charset = null)
     {
         if (!func_num_args()) {
-            return $this->_charset;
+            list($mime, $charset) = $this->_inspectContentType();
+            return $this->_charset = $charset;
         }
-        $mime = $this->mime();
-        unset($this->_headers['Content-Type']);
-        if ($charset) {
-            $this->_charset = $charset ? strtoupper($charset) : null;
-            if ($mime) {
-                $this->_headers['Content-Type'] = $mime . ($this->_charset ? '; charset=' . $this->_charset : '');
-            }
-        } elseif ($mime) {
-            $this->_charset = null;
-            $this->_headers['Content-Type'] = $mime;
-        }
+        $this->_charset = $charset ? strtoupper($charset) : null;
+        $this->_updateContentType();
         return $this;
+    }
+
+    /**
+     * Update Content-Type helper
+     */
+    public function _updateContentType()
+    {
+        unset($this->_headers['Content-Type']);
+        $suffix = '';
+        if ($this->isMultipart()) {
+            $suffix = '; boundary=' . $this->boundary();
+        } elseif ($this->_charset) {
+            $suffix = '; charset=' . $this->_charset . $suffix;
+        }
+        if ($this->_mime) {
+            $this->_headers['Content-Type'] = $this->_mime . $suffix;
+        }
     }
 
     /**
@@ -177,7 +178,6 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
         }
 
         list($mime, $charset) = $this->_inspectContentType();
-        unset($this->_headers['Content-Type']);
 
         $this->mime($mime);
         $this->charset($charset);
@@ -208,7 +208,7 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
      */
     public function isMultipart()
     {
-        return count($this->_streams) > 1 || preg_match('~^multipart/~i', $this->_mime);
+        return preg_match('~^multipart/~i', $this->_mime);
     }
     /**
      * Add a stream
@@ -240,6 +240,11 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
         $mime = $options['mime'];
         $charset = $options['charset'];
 
+        if (!$this->isMultipart() && !count($this->_streams)) {
+            $mime = $this->mime() && ($mime === null || $mime === true) ? $this->mime() : $mime;
+            $charset = $this->charset() && $charset === null ? $this->charset() : $charset;
+        }
+
         foreach (['mime', 'charset', 'encoding'] as $name) {
             unset($options[$name]);
         }
@@ -253,9 +258,9 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
                 }
             }
             $stream->options($options);
-        } elseif (is_scalar($stream)) {
+        } elseif (is_scalar($stream) || is_resource($stream)) {
             $stream = new $part([
-                'data'     => (string) $stream,
+                'data'     => $stream,
                 'mime'     => $mime,
                 'charset'  => $charset,
                 'encoding' => $encoding,
@@ -263,13 +268,45 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
             ]);
         }
 
-        if (isset($options['disposition']) && !isset($options['name'])) {
+        if ($mime === 'multipart/form-data' && !isset($options['name'])) {
             throw new InvalidArgumentException("The `'name'` option is required.");
         }
 
         parent::add($stream);
 
+        $this->syncContentType();
+
         return $stream;
+    }
+
+    /**
+     * Remove a stream.
+     *
+     * @param  integer $index An index.
+     * @return object         The removed stream.
+     */
+    public function remove($index)
+    {
+        $stream = parent::remove($index);
+        $this->syncContentType();
+        return $stream;
+    }
+
+    /**
+     * Sync Content-Type helper.
+     */
+    public function syncContentType()
+    {
+        $stream = reset($this->_streams);
+        if (!$this->isMultipart() && $stream) {
+            unset($this->_headers['Content-Type']);
+            $this->mime($stream->mime());
+            $this->charset($stream->charset());
+            unset($this->_headers['Content-Transfer-Encoding']);
+            if ($encoding = $stream->encoding()) {
+                $this->_headers['Content-Transfer-Encoding'] = $encoding;
+            }
+        }
     }
 
     /**
@@ -279,20 +316,22 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
      */
     public function flush()
     {
+        $buffer = '';
         if (!$this->isMultipart()) {
-            $stream = reset($this->_streams);
-            return ($stream ? $stream->toString() : '');
+            foreach ($this->_streams as $stream) {
+                $buffer .= $stream->toString();
+            }
+            return $buffer;
         }
 
-        $buffer = '';
         $boundary = $this->boundary();
 
         foreach ($this->_streams as $stream) {
             if ($stream instanceof static) {
-                $buffer .= $stream->toString();
+                $buffer .= "\r\n--" . $boundary . "\r\n" . $stream->toMessage();
                 continue;
             }
-            $buffer .= '--' . $boundary . "\r\n";
+            $buffer .= "\r\n--" . $boundary . "\r\n";
 
             $mime = $stream->mime();
             $charset = $stream->charset();
@@ -309,9 +348,9 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
 
             $headers = $this->_headers($options, $mime, $charset, $stream->encoding(), strlen($content));
             $buffer .= join("\r\n", $headers) . "\r\n\r\n";
-            $buffer .= $content . "\r\n";
+            $buffer .= $content;
         }
-        return $buffer . '--' . $this->boundary() . "--\r\n";
+        return $buffer . "\r\n--" . $this->boundary() . "--\r\n";
     }
 
     /**
@@ -326,9 +365,14 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
         $headers = !empty($options['headers']) ? $options['headers'] : [];
 
         if (!empty($options['disposition'])) {
-            $parts = [$options['disposition'], "name=\"{$options['name']}\""];
-            if (!empty($options['filename'])) {
-                $parts[] = "filename=\"{$options['filename']}\"";
+            $parts = [$options['disposition']];
+            foreach (['name', 'filename'] as $name) {
+                if (!empty($options[$name])) {
+                    $value = htmlspecialchars_decode(htmlspecialchars($options[$name], ENT_NOQUOTES | ENT_IGNORE, 'UTF-8'), ENT_NOQUOTES);
+                    $value = preg_replace('~[\s/\\\]~', '', $value);
+                    $value = addcslashes($value, '"');
+                    $parts[] = "{$name}=\"{$value}\"";
+                }
             }
             $headers[] = "Content-Disposition: " . join('; ', $parts);
         }
@@ -371,14 +415,7 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
      */
     public function toMessage()
     {
-        $headers = $this->_headers;
-        if ($this->isMultipart()) {
-            $boundary = $this->boundary();
-            $mime = $this->mime();
-            unset($this->_headers['Content-Type']);
-            $this->_headers['Content-Type'] = "{$mime}; boundary={$boundary}";
-        }
-        return $headers->toString() . "\r\n" . $this->toString();
+        return $this->_headers->toString() . "\r\n". "\r\n" . $this->toString();
     }
 
     /**

@@ -60,6 +60,7 @@ describe("MixedPart", function() {
             $expected = <<<EOD
 Content-Type: multipart/form-data; boundary=boundary\r
 \r
+\r
 --boundary\r
 Content-Disposition: inline; name="foo"\r
 Content-Type: image/png\r
@@ -90,6 +91,7 @@ EOD;
             $expected = <<<EOD
 Content-Type: multipart/form-data; boundary=boundary\r
 \r
+\r
 --boundary\r
 x-foo: "bar"\r
 Content-Disposition: form-data; name="foo"\r
@@ -115,6 +117,7 @@ EOD;
             $expected = <<<EOD
 Content-Type: multipart/form-data; boundary=boundary\r
 \r
+\r
 --boundary\r
 Content-Disposition: attachment; name="foo"\r
 Content-Type: text/plain; charset=US-ASCII\r
@@ -138,7 +141,7 @@ EOD;
 
             $closure = function() use ($mimeStream) {
                 $stream = new Part();
-                $mimeStream->add($stream, ['disposition' => 'attachment']);
+                $mimeStream->add($stream, ['mime' => 'multipart/form-data', 'disposition' => 'attachment']);
             };
 
             expect($closure)->toThrow(new InvalidArgumentException("The `'name'` option is required."));
@@ -148,10 +151,24 @@ EOD;
 
     });
 
-    describe("->read()", function() {
+    describe("->toMessage()", function() {
 
-        it("serializes fields", function() {
+        it("serializes messages", function() {
+
             $mimeStream = new MixedPart(['boundary' => 'boundary']);
+
+            $mimeStream->add(new Part(['data' => 'bar']));
+            $mimeStream->add(new Part(['data' => 'bam']));
+
+            expect($mimeStream->mime())->toBe('text/plain');
+            expect($mimeStream->toMessage())->toBe("Content-Type: text/plain\r\n\r\nbarbam");
+
+            $mimeStream->close();
+
+        });
+
+        it("serializes multipart messages", function() {
+            $mimeStream = new MixedPart(['mime' => 'multipart/form-data', 'boundary' => 'boundary']);
 
             $mimeStream->add(new Part(['data' => 'bar']), [
                 'name' => 'foo',
@@ -164,6 +181,7 @@ EOD;
 
             $expected = <<<EOD
 Content-Type: multipart/form-data; boundary=boundary\r
+\r
 \r
 --boundary\r
 Content-Disposition: form-data; name="foo"\r
@@ -187,9 +205,9 @@ EOD;
 
         });
 
-        it("serializes non string fields", function() {
+        it("serializes multipart messages with non string fields", function() {
 
-            $mimeStream = new MixedPart(['boundary' => 'boundary']);
+            $mimeStream = new MixedPart(['mime' => 'multipart/form-data', 'boundary' => 'boundary']);
 
             $mimeStream->add(new Part(['data' => 1]), ['name' => 'int','disposition' => 'form-data']);
             $mimeStream->add(new Part(['data' => false]), ['name' => 'bool1','disposition' => 'form-data']);
@@ -199,6 +217,7 @@ EOD;
             $expected = <<<EOD
 Content-Type: multipart/form-data; boundary=boundary\r
 \r
+\r
 --boundary\r
 Content-Disposition: form-data; name="int"\r
 Content-Type: application/octet-stream\r
@@ -207,8 +226,6 @@ Content-Transfer-Encoding: base64\r
 MQ==\r
 --boundary\r
 Content-Disposition: form-data; name="bool1"\r
-Content-Type: application/octet-stream\r
-Content-Transfer-Encoding: base64\r
 \r
 \r
 --boundary\r
@@ -244,6 +261,7 @@ EOD;
             $mimeStream->add('hello');
 
 $expected = <<<EOD
+\r
 --boundary\r
 Content-Type: text/plain; charset=US-ASCII\r
 Content-Transfer-Encoding: quoted-printable\r
@@ -267,32 +285,6 @@ EOD;
 
         });
 
-        it("returns multipart content for multiple stream whatever the used mime", function() {
-
-            $mimeStream = new MixedPart(['mime' => 'text/plain', 'boundary' => 'boundary']);
-            $mimeStream->add('hello');
-            $mimeStream->add('world');
-
-$expected = <<<EOD
---boundary\r
-Content-Type: text/plain; charset=US-ASCII\r
-Content-Transfer-Encoding: quoted-printable\r
-\r
-hello\r
---boundary\r
-Content-Type: text/plain; charset=US-ASCII\r
-Content-Transfer-Encoding: quoted-printable\r
-\r
-world\r
---boundary--\r
-
-EOD;
-
-            expect($mimeStream->toString())->toBe($expected);
-            $mimeStream->close();
-
-        });
-
     });
 
     describe("->toMessage()", function() {
@@ -301,7 +293,7 @@ EOD;
 
             $mimeStream = new MixedPart(['mime' => 'multipart/form-data']);
             $boundary = $mimeStream->boundary();
-            expect($mimeStream->toMessage())->toBe("Content-Type: multipart/form-data; boundary={$boundary}\r\n\r\n--{$boundary}--\r\n");
+            expect($mimeStream->toMessage())->toBe("Content-Type: multipart/form-data; boundary={$boundary}\r\n\r\n\r\n--{$boundary}--\r\n");
 
             $mimeStream->close();
 

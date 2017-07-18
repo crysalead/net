@@ -3,7 +3,7 @@ namespace Lead\Net\Spec\Suite\Http\Psr7;
 
 use InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
-use Lead\Storage\Stream\Stream;
+use Lead\Net\Part;
 use Lead\Net\Http\Psr7\Uri;
 use Lead\Net\Http\Request;
 
@@ -186,7 +186,7 @@ describe("MessageTrait", function() {
 
             $request = new Request(['data' => 'Body Message']);
 
-            $stream = new Stream('New Message');
+            $stream = new Part('New Message');
             $new = $request->withBody($stream);
 
             expect($request->getBody()->toString())->toBe('Body Message');

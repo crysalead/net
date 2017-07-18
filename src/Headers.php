@@ -326,7 +326,7 @@ class Headers extends \Lead\Collection\Collection
         if ($headers->cookies && $result = $headers->cookies->to('header', $options)) {
             $data[] = $result;
         }
-        return $data ? join(self::EOL, $data) . self::EOL : '';
+        return $data ? join(self::EOL, $data) : '';
     }
 
     /**

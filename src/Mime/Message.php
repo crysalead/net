@@ -24,11 +24,11 @@ class Message
     protected $_version = '1.0';
 
     /**
-     * The hostname.
+     * The client hostname.
      *
      * @var string
      */
-    protected $_host = 'localhost.localdomain';
+    protected $_client = 'localhost.localdomain';
 
     /**
      * The word wrap.
@@ -90,7 +90,7 @@ class Message
     {
         $defaults = [
             'version'   => '1.0',
-            'host'      => 'localhost.localdomain',
+            'client'    => 'localhost.localdomain',
             'mime'      => null,
             'charset'   => null,
             'body'      => '',
@@ -114,7 +114,7 @@ class Message
         $this->_stream = new MixedPart(['headers' => $config['headers']]);
 
         $this->version($config['version']);
-        $this->host($config['host']);
+        $this->client($config['client']);
     }
 
     /**
@@ -131,6 +131,21 @@ class Message
         $headers = $this->headers();
         $headers->prepend('MIME-Version', $version);
         $this->_version = $version;
+        return $this;
+    }
+
+    /**
+     * Get/set the client hostname.
+     *
+     * @param  string      $client The client hostname
+     * @return string|self
+     */
+    public function client($client = null)
+    {
+        if (!func_num_args()) {
+            return $this->_client;
+        }
+        $this->_client = $client;
         return $this;
     }
 
@@ -191,21 +206,6 @@ class Message
             return $this->_stream->encoding();
         }
         $this->_stream->encoding($encoding);
-        return $this;
-    }
-
-    /**
-     * Get/set the host.
-     *
-     * @param  string      $host The host of the message
-     * @return string|self
-     */
-    public function host($host = null)
-    {
-        if (!func_num_args()) {
-            return $this->_host;
-        }
-        $this->_host = $host;
         return $this;
     }
 
@@ -282,7 +282,7 @@ class Message
      * @param  string $returnPath The sender email address.
      * @return mixed
      */
-    public function returnPath($returnPath)
+    public function returnPath($returnPath = null)
     {
         if (!func_num_args()) {
             return $this->_returnPath;
@@ -406,17 +406,15 @@ class Message
      */
     public function addInline($path, $name = null, $mime = true, $encoding = true)
     {
-        $filename = static::sanitize(basename($path));
-        $name = $name ?: $filename;
+        $cid = static::generateId($this->client());
+        $filename = basename($path);
         $this->_inlines[$path] = [
-            'name'        => $name,
-            'filename'    => $filename,
+            'filename'    => $name ?: $filename,
             'disposition' => 'attachment',
             'mime'        => $mime,
-            'headers'     => [
-                'Content-ID' => static::generateId($this->host())
-            ]
+            'headers'     => ['Content-ID: ' . $cid]
         ];
+        return $cid;
     }
 
     /**
@@ -424,17 +422,15 @@ class Message
      */
     public function addAttachment($path, $name = null, $mime = true, $encoding = true)
     {
-        $filename = static::sanitize(basename($path));
-        $name = $name ?: $filename;
+        $cid = static::generateId($this->client());
+        $filename = basename($path);
         $this->_attachments[$path] = [
-            'name'        => $name,
-            'filename'    => $filename,
+            'filename'    => $name ?: $filename,
             'disposition' => 'attachment',
             'mime'        => $mime,
-            'headers'     => [
-                'Content-ID' => static::generateId($this->host())
-            ]
+            'headers'     => ['Content-ID: ' . $cid]
         ];
+        return $cid;
     }
 
     /**
@@ -474,21 +470,39 @@ class Message
      * @param  string      $altBody The alt body.
      * @return string|self
      */
-    public function html($body, $altBody = null)
+    public function html($body, $basePath = null)
     {
         if (!func_num_args()) {
             return $this->_body;
+        }
+
+        if ($basePath) {
+            $cids = [];
+            $hasInline = preg_match_all('~
+                (<img[^<>]*\s src\s*=\s*
+                |<body[^<>]*\s background\s*=\s*
+                |<[^<>]+\s style\s*=\s* ["\'][^"\'>]+[:\s] url\(
+                |<style[^>]*>[^<]+ [:\s] url\()
+                (["\']?)(?![a-z]+:|[/#])([^"\'>)\s]+)
+                |\[\[ ([\w()+./@\\~-]+) \]\]
+            ~ix', $body, $matches, PREG_OFFSET_CAPTURE | PREG_SET_ORDER);
+            if ($hasInline) {
+
+                foreach (array_reverse($matches) as $m) {
+                    $file = rtrim($basePath, '/\\') . '/' . (isset($m[4]) ? $m[4][0] : urldecode($m[3][0]));
+                    if (!isset($cids[$file])) {
+                        $cids[$file] = substr($this->addInline($file), 1, -1);
+                    }
+                    $body = substr_replace($body, "{$m[1][0]}{$m[2][0]}cid:{$cids[$file]}", $m[0][1], strlen($m[0][0]));
+                }
+            }
         }
 
         $this->body($body);
         $this->mime('text/html');
         $this->charset(Mime::optimalCharset($body));
 
-        if ($altBody === 'true') {
-            $this->_altBody = static::stripTags($this->_body);
-        } elseif ($altBody !== null) {
-            $this->_altBody = static::stripTags($altBody);
-        }
+        $this->_altBody = static::stripTags($this->_body);
         return $this;
     }
 
@@ -519,16 +533,18 @@ class Message
 
         $body = $message->body();
         $bodyMime = $cursor->mime() ?: 'text/plain';
-        $bodyCharset = $cursor->charset() ?: $cursor->charset(Mime::optimalCharset($body));
+        $bodyCharset = $cursor->charset() ?: Mime::optimalCharset($body);
 
         if (count($attachments)) {
             $cursor->mime('multipart/mixed');
-            $current = $cursor->add(new MixedPart(['mime' => 'multipart/alternative']));
+            $current = $cursor->add(new MixedPart());
             foreach ($attachments as $path => $attachment) {
-                $current->add(fopen($path, 'r'), $attachment);
+                $cursor->add(fopen($path, 'r'), $attachment);
             }
             $cursor = $current;
-        } elseif ($altBody || count($inlines)) {
+        }
+
+        if ($altBody || count($inlines)) {
             $cursor->mime('multipart/alternative');
         }
 
@@ -548,8 +564,7 @@ class Message
             ];
 
             if ($inlines) {
-                $cursor->mime('multipart/related');
-                $current = $cursor->add(new $stream(['mime' => 'multipart/related']));
+                $current = $cursor->add(new MixedPart(['mime' => 'multipart/related']));
                 $current->add($body, $options);
                 foreach ($inlines as $path => $inline) {
                     $current->add(fopen($path, 'r'), $inline);
@@ -561,7 +576,7 @@ class Message
 
         $headers = $root->headers();
         $headers['Date'] = date('r');
-        $headers['Message-ID'] = static::generateId($message->host());
+        $headers['Message-ID'] = static::generateId($this->client());
         return $root->toMessage();
     }
 
@@ -600,12 +615,12 @@ class Message
     /**
      * Unique ID Generator.
      *
-     * @param  string hostname
+     * @param  string $client The client host name.
      * @return string
      */
-    public static function generateId($host)
+    public static function generateId($client)
     {
-        return sprintf('<%s@%s>', md5(uniqid(time())), $host);
+        return sprintf('<%s@%s>', md5(uniqid(time())), $client);
     }
 
     /**
@@ -620,14 +635,13 @@ class Message
             '~<(style|script|head).*</\\1>~Uis' => '',
             '~<t[dh][ >]~i' => ' $0',
             '~<a\s[^>]*href=(?|"([^"]+)"|\'([^\']+)\')[^>]*>(.*?)</a>~is' => '$2 &lt;$1&gt;',
-            '~[\r\n]+~' => ' ',
+            '~[\r\n ]+~' => ' ',
             '~<(/?p|/?h\d|li|br|/tr)[ >/]~i' => "\n$0",
         ];
 
         $text = preg_replace(array_keys($patterns), array_values($patterns), $html);
         $text = html_entity_decode(strip_tags($text), ENT_QUOTES, $charset);
         $text = preg_replace('~[ \t]+~', ' ', $text);
-
         return trim($text);
     }
 }

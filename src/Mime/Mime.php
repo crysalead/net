@@ -23,7 +23,7 @@ abstract class Mime
         if (preg_match_all('/[\000-\010\013\014\016-\037\177-\377]/', $body) > (strlen($body) / 3)) {
             return 'base64';
         }
-        return 'quoted-printable';
+        return '8bit';
     }
 
     /**
@@ -69,7 +69,8 @@ abstract class Mime
                 }
             case '8bit':
             case 'binary':
-                return $wrapWidth ? wordwrap($body, $wrapWidth, $le, $cut) : $body;
+                $body = ltrim(str_replace("\r", '', $body), "\n");
+                return $wrapWidth ? wordwrap($body, $wrapWidth, "\n", $cut) : $body;
                 break;
             default:
                 throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");
@@ -103,7 +104,14 @@ abstract class Mime
      */
     public static function encodeValue($value, $wrapWidth = 998, $folding = "\r\n ")
     {
-        $encoding = Mime::optimalEncoding($value);
+        if (!preg_match('~[^\x00-\x7F]~', $value)) {
+            $encoding = '7bit';
+        } elseif (preg_match_all('/[\000-\010\013\014\016-\037\177-\377]/', $value) > (strlen($value) / 3)) {
+            $encoding = 'base64';
+        } else {
+            $encoding = 'quoted-printable';
+        }
+
         $encodedName = Mime::encode($value, $encoding, $wrapWidth, $folding, true);
 
         $value = trim(str_replace(["\r", "\n"], '', $value));

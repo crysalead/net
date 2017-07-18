@@ -78,10 +78,11 @@ class Message
         $this->version($config['version']);
         $this->format($config['format']);
         $this->chunkSize($config['chunkSize']);
-        $this->body($config['body']);
 
         if ($config['data'] !== null) {
             $this->set($config['data']);
+        } else {
+            $this->body($config['body']);
         }
     }
 
@@ -332,7 +333,7 @@ class Message
     public function toMessage()
     {
         $this->_setContentLength();
-        return $this->line() . "\r\n" . $this->headers()->toString() . "\r\n" . $this->toString();
+        return $this->line() . "\r\n" . $this->headers()->toString() . "\r\n". "\r\n" . $this->toString();
     }
 
     /**
