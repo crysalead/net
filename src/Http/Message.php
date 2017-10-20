@@ -261,10 +261,10 @@ class Message
      *
      * @param  mixed      $value         The formatted body.
      * @param  array      $options       The stream options.
-     * @param  array      $encodeOptions The encoding options.
+     * @param  array      $mediaOptions  The media options.
      * @return mixed|self
      */
-    public function set($value = null, $options = [], $encodeOptions = [])
+    public function set($value = null, $options = [], $mediaOptions = [])
     {
         $media = $this->_classes['media'];
         $format = $this->format();
@@ -275,7 +275,7 @@ class Message
 
         $stream = $this->stream();
         $stream->close();
-        $stream->add($format ? $media::encode($format, $value, $encodeOptions) : $value, $options);
+        $stream->add($format ? $media::encode($format, $value, $mediaOptions) : $value, $options);
         return $this;
     }
 
