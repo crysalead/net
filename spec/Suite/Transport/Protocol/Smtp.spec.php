@@ -13,9 +13,12 @@ describe("Curl", function() {
         });
 
         $this->mailer = new Smtp([
-            'client' => 'staffplanning.dev',
-            'host'   => 'staffplanning.dev',
-            'port'   => 1025
+            'client'   => 'maildev.domain.com',
+            'host'     => 'maildev.domain.com',
+            'username' => 'maildev',
+            'password' => 'maildev',
+            'secure'   => 'starttls',
+            'port'     => 1025
         ]);
 
     });

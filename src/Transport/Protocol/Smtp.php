@@ -35,7 +35,7 @@ class Smtp
      *
      * @var integer
      */
-    protected $_port = 25;
+    protected $_port = 587;
 
     /**
      * Connection username.
@@ -52,11 +52,11 @@ class Smtp
     protected $_password = '';
 
     /**
-     * Secure mode (ssl|tls).
+     * Secure mode (ssl|tls|starttls) or false.
      *
-     * @var string
+     * @var boolean
      */
-    protected $_secure = '';
+    protected $_secure = false;
 
     /**
      * Timeout value.
@@ -84,10 +84,10 @@ class Smtp
         $defaults = [
             'client'     => null,
             'host'       => null,
-            'port'       => !isset($options['secure']) || $options['secure'] === 'ssl' ? 465 : 25,
+            'port'       => 587,
             'username'   => null,
             'password'   => null,
-            'secure'     => 465,
+            'secure'     => false,
             'timeout'    => 10,
             'context'    => [],
             'persistent' => false
@@ -102,7 +102,7 @@ class Smtp
             throw new InvalidArgumentException('SMTP FQDN/IP is missing.');
         }
 
-        $this->_secure = $options['secure'];
+        $this->_secure = $options['secure'] ? strtolower($options['secure']) : false;
         $this->_client = $options['client'];
         $this->_host = $options['host'];
         $this->_port = (int) $options['port'];
@@ -121,8 +121,8 @@ class Smtp
      */
     protected function connect()
     {
-        $scheme = ($this->_secure === 'ssl' ? 'ssl://' : '');
-        $url = $scheme . $this->_host . ':' . $this->_port;
+        $schema = ($this->_secure === 'ssl' || $this->_secure === 'tls' ? $this->_secure . '://' : '');
+        $url = $schema  . $this->_host . ':' . $this->_port;
         $this->_connection = stream_socket_client($url, $errno, $error, $this->_timeout, STREAM_CLIENT_CONNECT, $this->_context);
         if (!$this->_connection) {
             throw new NetException($error, $errno);
@@ -133,7 +133,7 @@ class Smtp
         $this->write("EHLO {$this->_client}");
         $ehloResponse = $this->read();
 
-        if ($this->_secure === 'tls') {
+        if ($this->_secure === 'starttls') {
             $this->write('STARTTLS', 220);
             if (!stream_socket_enable_crypto($this->_connection, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
                 throw new NetException('Unable to connect via TLS.');
