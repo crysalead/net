@@ -265,6 +265,35 @@ describe("SetCookie", function() {
             expect($cookie->match('http://www.domain2.com/blog'))->toBe(false);
         });
 
+        it("checks if the cookie match an URL", function() {
+
+             foreach ([
+                ['/foo', '/foo', true],
+                ['/foo', '/Foo', false],
+                ['/foo', '/fo', false],
+                ['/foo', '/foo/bar', true],
+                ['/foo', '/foo/bar/baz', true],
+                ['/foo', '/foo/bar//baz', true],
+                ['/foo', '/foobar', false],
+                ['/foo/bar', '/foo', false],
+                ['/foo/bar', '/foobar', false],
+                ['/foo/bar', '/foo/bar', true],
+                ['/foo/bar', '/foo/bar/', true],
+                ['/foo/bar', '/foo/bar/baz', true],
+                ['/foo/bar/', '/foo/bar', false],
+                ['/foo/bar/', '/foo/bar/', true],
+                ['/foo/bar/', '/foo/bar/baz', true]
+            ] as $value) {
+
+                $cookie = new SetCookie('bar', [
+                    'path' => $value[0],
+                    'domain' => '.domain.com'
+                ]);
+                expect($cookie->match('http://www.domain.com' . $value[1]))->toBe($value[2]);
+            }
+
+        });
+
         it("checks cookies with no domain doesn't match", function() {
 
             $cookie = new SetCookie('bar', [
@@ -285,6 +314,45 @@ describe("SetCookie", function() {
             expect($cookie->match('http://www.domain.com/blog'))->toBe(false);
         });
 
+        it("checks cookies on a subdomain doesn't match any IP value", function() {
+
+            $cookie = new SetCookie('bar', [
+                'path'   => '/blog',
+                'domain' => '.167.14.18',
+                'secure' => false
+            ]);
+
+            expect($cookie->match('http://190.167.14.18/blog'))->toBe(false);
+        });
+
+        it("checks cookies on an IP match its corresponding IP", function() {
+
+            $cookie = new SetCookie('bar', [
+                'path'   => '/blog',
+                'domain' => '190.167.14.18',
+                'secure' => false
+            ]);
+
+            expect($cookie->match('http://190.167.14.18/blog'))->toBe(true);
+        });
+
+    });
+
+    describe("->toString()", function() {
+
+        it("returns a string representation of a cookie", function() {
+
+            $cookie = new SetCookie('123', [
+                'domain' => '.foo.com',
+                'expires' => 1382916008,
+                'path' => '/abc',
+                'httponly' => true,
+                'secure' => true
+            ]);
+
+            expect($cookie->toString('test'))->toBe('test=123; Domain=.foo.com; Path=/abc; Expires=Sun, 27 Oct 2013 23:20:08 GMT; Secure; HttpOnly');
+
+        });
     });
 
 });

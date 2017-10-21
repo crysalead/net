@@ -315,29 +315,7 @@ class SetCookies extends \Lead\Collection\Collection
                 throw new Exception("Invalid Set-Cookie name `'{$name}'`.");
             }
 
-            $data = $cookie->data();
-
-            $parts = [];
-            $parts[] = $name . '=' . rawurlencode($data['value']);
-
-            if (isset($data['max-age'])) {
-                $parts[] = 'Max-Age=' . (string) $data['max-age'];
-            } elseif (isset($data['expires'])) {
-                $parts[] = 'Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $data['expires']);
-            }
-            if ($data['path']) {
-                $parts[] = 'Path=' . $data['path'];
-            }
-            if ($data['domain']) {
-                $parts[] = 'Domain=' . $data['domain'];
-            }
-            if ($data['secure']) {
-                $parts[] = 'Secure';
-            }
-            if ($data['httponly']) {
-                $parts[] = 'HttpOnly';
-            }
-            $result[] = join('; ', $parts);
+            $result[] = $cookie->toString($name);
         }
         if (!$result) {
             return;

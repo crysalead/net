@@ -194,7 +194,19 @@ class SetCookie
             return false;
         }
 
-        return $this->_data['path'] && strpos($infos['path'], $this->_data['path']) === 0;
+        if ($this->_data['path'] === '/' || $this->_data['path'] == $infos['path']) {
+            return true;
+        }
+
+        if (strpos($infos['path'], $this->_data['path']) !== 0) {
+            return false;
+        }
+
+        if (substr($this->_data['path'], -1, 1) === '/') {
+            return true;
+        }
+
+        return substr($infos['path'], strlen($this->_data['path']), 1) === '/';
     }
 
     /**
@@ -211,6 +223,7 @@ class SetCookie
 
     /**
      * Checks if a domain match the SetCookie domain.
+     * http://tools.ietf.org/html/rfc6265#section-5.2.3
      *
      * @param  string  $domain The domain name.
      * @return boolean         Returns `true` if domains match, `false otherwise`.
@@ -220,14 +233,19 @@ class SetCookie
         if (!$this->_data['domain']) {
             return false;
         }
-        $hostDomain = strtolower($domain);
-        $cookieDomain = strtolower($this->_data['domain']);
 
-        if ($cookieDomain[0] === '.') {
-            $cookieDomain = substr($cookieDomain, 1);
+        $hostDomain = strtolower($domain);
+        $cookieDomain = ltrim(strtolower($this->_data['domain']), '.');
+
+        if (!$cookieDomain || !strcmp($domain, $cookieDomain)) {
+            return true;
         }
 
-        return ($cookieDomain == $hostDomain || preg_match('/\.' . preg_quote($cookieDomain) . '$/', $hostDomain));
+        if (filter_var($hostDomain, FILTER_VALIDATE_IP)) {
+            return false;
+        }
+
+        return (bool) preg_match('~\.' . preg_quote($cookieDomain) . '$~', $hostDomain);
     }
 
     /**
@@ -253,6 +271,38 @@ class SetCookie
     public function data()
     {
         return $this->_data;
+    }
+
+    /**
+     * Return the string representation of a Set-Cookie.
+     *
+     * @param  string $name The Set-Cookie name.
+     * @return string
+     */
+    public function toString($name)
+    {
+        $parts = [];
+        $data = $this->data();
+        $parts[] = $name . '=' . rawurlencode($data['value']);
+
+        if ($data['domain']) {
+            $parts[] = 'Domain=' . $data['domain'];
+        }
+        if ($data['path']) {
+            $parts[] = 'Path=' . $data['path'];
+        }
+        if (isset($data['max-age'])) {
+            $parts[] = 'Max-Age=' . (string) $data['max-age'];
+        } elseif (isset($data['expires'])) {
+            $parts[] = 'Expires=' . gmdate('D, d M Y H:i:s \G\M\T', $data['expires']);
+        }
+        if ($data['secure']) {
+            $parts[] = 'Secure';
+        }
+        if ($data['httponly']) {
+            $parts[] = 'HttpOnly';
+        }
+        return join('; ', $parts);
     }
 
     /**

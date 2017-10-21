@@ -74,6 +74,21 @@ class Cookie extends \Lead\Collection\Collection
     }
 
     /**
+     * Return the string representation of a Cookie.
+     *
+     * @param  string $name The Cookie name.
+     * @return string
+     */
+    public function toString($name)
+    {
+        $parts = [];
+        foreach ($this->data() as $value) {
+            $parts[] = $name . '=' . urlencode($value);
+        }
+        return join('; ', $parts);
+    }
+
+    /**
      * Checks if a cookie name is valid.
      *
      * @param  string  $name The name of the cookie.

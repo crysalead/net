@@ -302,7 +302,7 @@ describe("SetCookies", function() {
 
             $date = gmdate('D, d M Y H:i:s \G\M\T', $expires);
             $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
-                "Set-Cookie: mycookie=the%20cookie%20value; Expires={$date}; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
+                "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Expires={$date}; Secure; HttpOnly"
             );
 
         });
@@ -318,7 +318,7 @@ describe("SetCookies", function() {
             ]);
 
             $this->expect(SetCookies::toHeader(['mycookie' => $cookie]))->toBe(
-                "Set-Cookie: mycookie=the%20cookie%20value; Max-Age=3600; Path=/blog; Domain=.domain.com; Secure; HttpOnly"
+                "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Max-Age=3600; Secure; HttpOnly"
             );
 
         });

@@ -369,7 +369,7 @@ EOD;
                 'Content-Type: text/plain; charset=UTF-8',
                 'Set-Cookie: doctor=who; Path=/tardis; HttpOnly',
                 'Set-Cookie: test=foo%20bar; Expires=Fri, 25 Dec 2015 00:00:00 GMT; Secure',
-                'Set-Cookie: test=foo%2Bbin; Path=/test; Domain=.domain.com',
+                'Set-Cookie: test=foo%2Bbin; Domain=.domain.com; Path=/test',
                 '',
                 'Test!'
             ]);

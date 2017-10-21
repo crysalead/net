@@ -165,11 +165,8 @@ class Cookies extends \Lead\Collection\Collection
             if (!Cookie::isValidName($name)) {
                 throw new Exception("Invalid cookie name `'{$name}'`.");
             }
-            $parts = [];
-            foreach ($cookie->data() as $value) {
-                $parts[] = $name . '=' . urlencode($value);
-            }
-            $result[] = join('; ', $parts);
+
+            $result[] = $cookie->toString($name);
         }
         if (!$result) {
             return;
