@@ -34,7 +34,7 @@ trait ServerRequestTrait
      */
     public function getCookieParams()
     {
-        return Cookies::toArray($this->headers()->cookies);
+        return Cookies::getRequestCookies($this);
     }
 
     /**
@@ -57,8 +57,8 @@ trait ServerRequestTrait
     public function withCookieParams(array $cookies)
     {
         $request = clone $this;
-        $class = $this->_classes['cookies'];
-        $request->headers()->cookies = new $class(['data' => $cookies]);
+        $headers = $request->headers();
+        $headers['Cookie'] = Cookies::getRequestCookieHeader($cookies);
         return $request;
     }
 

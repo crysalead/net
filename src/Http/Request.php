@@ -128,11 +128,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             'query'         => [],
             'fragment'      => '',
             'auth'          => null,
-            'cookies'       => [],
-            'mode'          => 'origin',
-            'classes' => [
-                'cookies' => 'Lead\Net\Http\Cookie\Cookies'
-            ]
+            'mode'          => 'origin'
         ];
 
         $config = Set::merge($defaults, $config);
@@ -159,9 +155,6 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
         $this->query($config['query']);
         $this->fragment($config['fragment']);
         $this->auth($config['auth']);
-
-        $cookies = $this->_classes['cookies'];
-        $headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**

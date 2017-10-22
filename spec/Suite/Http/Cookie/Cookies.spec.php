@@ -1,99 +1,118 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http\Cookie;
 
-use Exception;
+use RuntimeException;
 use Lead\Net\Http\Cookie\Cookie;
 use Lead\Net\Http\Cookie\Cookies;
 
 describe("Cookies", function() {
 
     beforeEach(function() {
-        $this->cookies = new Cookies();
+        $this->setCookies = new Cookies();
     });
 
     describe("->offsetSet()", function() {
 
-        it('sets a cookie', function() {
+        it("sets a Set-Cookie", function() {
 
-            $this->cookies['foo'] = 'bar';
-            expect($this->cookies['foo']->value())->toBe('bar');
+            $this->setCookies['foo'] = 'bar';
 
-        });
-
-        it('sets a cookie using the array syntax', function() {
-
-            $this->cookies['foo'] = ['value' => 'bar'];
-            expect($this->cookies['foo']->value())->toBe('bar');
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
 
-        it('sets a cookie using an instance', function() {
+        it("sets a Set-Cookie using the array syntax", function() {
 
-            $this->cookies['foo'] = new Cookie('bar');
-            expect($this->cookies['foo']->value())->toBe('bar');
-
-        });
-
-        it("sets multiple values for a cookie", function() {
-
-            $this->cookies['foo1'] = new Cookie('bar1');
-            $this->cookies['foo1'][] = new Cookie('bar2');
-            $this->cookies['foo1'][] = new Cookie('bar3');
-
-            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo1=bar2; foo1=bar3");
+            $this->setCookies['foo'] = [
+                'value'    => 'bar',
+                'expires'  => 'Thu, 25 Dec 2014 00:00:00 GMT',
+                'httponly' => true
+            ];
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
+            expect($this->setCookies['foo'][0]->expires())->toBe(1419465600);
+            expect($this->setCookies['foo'][0]->httponly())->toBe(true);
 
         });
 
-        it("overrides a cookie value", function() {
+        it("sets a Set-Cookie using an instance", function() {
 
-            $this->cookies['foo1'] = new Cookie('bar1');
-            $this->cookies['foo1'] = new Cookie('bar2');
-
-            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar2");
+            $this->setCookies['foo'] = new Cookie(['value' => 'bar']);
+            expect($this->setCookies['foo'][0]->value())->toBe('bar');
 
         });
 
-        it('throws an exception if the cookie is an invalid instance', function() {
+        it("overrides a Set-Cookie", function() {
+
+            $this->setCookies['foo'] = [
+                'value'    => 'bar',
+                'expires'  => 'Thu, 25 Dec 2014 00:00:00 GMT',
+                'httponly' => true
+            ];
+
+            $this->setCookies['foo'] = [
+                'value'    => 'baz',
+                'expires'  => 'Fri, 25 Dec 2015 00:00:00 GMT',
+                'httponly' => false
+            ];
+            expect($this->setCookies['foo'][0]->value())->toBe('baz');
+            expect($this->setCookies['foo'][0]->expires())->toBe(1451001600);
+            expect($this->setCookies['foo'][0]->httponly())->toBe(false);
+
+        });
+
+        it("throws an exception if the Set-Cookie is an invalid instance", function() {
 
             $closure = function() {
-                $this->cookies['foo'] = (object) 'bar';
+                $this->setCookies['foo'] = (object) 'bar';
             };
-            expect($closure)->toThrow(new Exception('Error, only `Lead\Net\Http\Cookie\Cookie` instances are allowed in this collection.'));
+            expect($closure)->toThrow(new RuntimeException('Error, only `Lead\Net\Http\Cookie\Cookie` instances are allowed in this collection.'));
 
         });
 
-        it("throws an exception for trying to get an unexisting cookie", function() {
+        it("throws an exception for trying to get an unexisting Set-Cookie", function() {
 
             $closure = function() {
-                $this->cookies['foo'];
+                $this->setCookies['foo'];
             };
-            expect($closure)->toThrow(new Exception("Unexisting Cookie `'foo'`."));
+            expect($closure)->toThrow(new RuntimeException("Unexisting Set-Cookie `'foo'`."));
 
         });
 
-        it("throws an exception with invalid names", function() {
+        it("throws an exception when trying to set multiple values for a Set-Cookie", function() {
 
-            foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
+            skipIf(defined('HHVM_VERSION'));
 
-                $closure = function() use ($invalid) {
-                    $this->cookies["ab{$invalid}ba"] = 'bar';
-                };
-                expect($closure)->toThrow(new Exception("Invalid Cookie name `'ab{$invalid}ba'`."));
-
-            }
+            $closure = function() {
+                $this->setCookies['foo'] = 'bar';
+                $this->setCookies['foo'][] = 'baz';
+            };
+            expect($closure)->toThrow('`E_NOTICE` Indirect modification of overloaded element of Lead\Net\Http\Cookie\Cookies has no effect');
 
         });
+
+        // it("throws an exception with invalid names", function() {
+
+        //     foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
+
+        //         $closure = function() use ($invalid) {
+        //             $this->setCookies["ab{$invalid}ba"] = 'bar';
+        //         };
+        //         expect($closure)->toThrow(new RuntimeException("Invalid Set-Cookie name `'ab{$invalid}ba'`."));
+
+        //     }
+
+        // });
 
     });
 
     describe("->offsetExists()", function() {
 
-        it('checks if a cookie exists', function() {
+        it('checks if a Set-Cookie exists', function() {
 
-            expect(isset($this->cookies['foo']))->toBe(false);
+            expect(isset($this->setCookies['foo']))->toBe(false);
 
-            $this->cookies['foo'] = 'bar';
-            expect(isset($this->cookies['foo']))->toBe(true);
+            $this->setCookies['foo'] = 'bar';
+            expect(isset($this->setCookies['foo']))->toBe(true);
 
         });
 
@@ -101,20 +120,20 @@ describe("Cookies", function() {
 
     describe("->offsetUnset()", function() {
 
-        it('unsets all cookies', function() {
+        it('unsets all Set-Cookie of the same name', function() {
 
-            $this->cookies['foo'] = 'bar';
-            expect(isset($this->cookies['foo']))->toBe(true);
+            $this->setCookies['foo'] = 'bar';
+            expect(isset($this->setCookies['foo']))->toBe(true);
 
-            unset($this->cookies['foo']);
-            expect(isset($this->cookies['foo']))->toBe(false);
+            unset($this->setCookies['foo']);
+            expect(isset($this->setCookies['foo']))->toBe(false);
 
         });
 
         it('bails out on unexisting cookie', function() {
 
-            unset($this->cookies['foo']);
-            expect(isset($this->cookies['foo']))->toBe(false);
+            unset($this->setCookies['foo']);
+            expect(isset($this->setCookies['foo']))->toBe(false);
 
         });
 
@@ -124,120 +143,220 @@ describe("Cookies", function() {
 
         it('returns existing cookie names', function() {
 
-            $this->cookies['foo'] = 'bar';
-            $this->cookies['baz'] = 'foo';
+            $this->setCookies['foo'] = 'bar';
+            $this->setCookies['baz'] = 'foo';
 
-            expect($this->cookies->keys())->toBe(['foo', 'baz']);
-
-        });
-
-    });
-
-    describe("->to('header')", function() {
-
-        it('generates HTTP Cookie header', function() {
-
-            $this->cookies['foo1'] = 'bar1';
-            $this->cookies['foo2'] = 'bar2';
-            $this->cookies['foo3'] = 'bar3';
-
-            expect($this->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
+            expect($this->setCookies->keys())->toBe(['foo', 'baz']);
 
         });
 
     });
 
-    describe("::parseCookie()", function() {
+    describe("->flushExpired()", function() {
 
-        it("create a cookie from an HTTP header", function() {
+        it('generates HTTP headers', function() {
 
-            $cookies = Cookies::parse('mycookie=the+cookie+value; mycookie2=the+cookie2+value');
+            $this->setCookies['foo1'] = ['value' => 'bar1', 'expires' => strtotime('+10 days')];
+            $this->setCookies['foo2'] = ['value' => 'bar2', 'expires' => strtotime('-1 day')];
+            $this->setCookies['foo3'] = ['value' => 'bar3', 'expires' => strtotime('+1 day')];
 
-            $this->expect($cookies)->toEqual([
-                [
-                    'name'     => 'mycookie',
-                    'value'    => [
-                        'the cookie value'
-                    ]
-                ],
-                [
-                    'name'     => 'mycookie2',
-                    'value'    => [
-                        'the cookie2 value'
-                    ]
-                ]
+            $this->setCookies->flushExpired();
+
+            expect($this->setCookies->keys())->toBe(['foo1', 'foo3']);
+
+        });
+
+    });
+
+    // describe("->to('header')", function() {
+
+    //     it('generates HTTP headers', function() {
+
+    //         $this->setCookies['foo1'] = 'bar1';
+    //         $this->setCookies['foo2'] = 'bar2';
+    //         $this->setCookies['foo3'] = 'bar3';
+
+    //         expect($this->setCookies->to('header'))->toBe(join("\r\n", [
+    //             'Set-Cookie: foo1=bar1; Path=/',
+    //             'Set-Cookie: foo2=bar2; Path=/',
+    //             'Set-Cookie: foo3=bar3; Path=/'
+    //         ]));
+
+    //     });
+
+    // });
+
+    // describe("->data()", function() {
+
+    //     it('exports Set-Cookies', function() {
+
+    //         $this->setCookies['foo1'] = ['value' => 'bar1', 'path' => '/home'];
+    //         $this->setCookies['foo1'] = ['value' => 'bar11', 'path' => '/home/index'];
+    //         $this->setCookies['foo2'] = ['value' => 'bar2', 'path' => '/'];
+
+    //         expect($this->setCookies->data())->toBe([
+    //             "foo1" => [
+    //                 [
+    //                     "name" => "foo1",
+    //                     "value" => "bar1",
+    //                     "expires" => null,
+    //                     "path" => "/home",
+    //                     "domain" => null,
+    //                     "max-age" => null,
+    //                     "secure" => false,
+    //                     "httponly" => false
+    //                 ],
+    //                 [
+    //                     "name" => "foo1",
+    //                     "value" => "bar11",
+    //                     "expires" => null,
+    //                     "path" => "/home/index",
+    //                     "domain" => null,
+    //                     "max-age" => null,
+    //                     "secure" => false,
+    //                     "httponly" => false
+    //                 ]
+    //             ],
+    //             "foo2" => [
+    //                 [
+    //                     "name" => "foo2",
+    //                     "value" => "bar2",
+    //                     "expires" => null,
+    //                     "path" => "/",
+    //                     "domain" => null,
+    //                     "max-age" => null,
+    //                     "secure" => false,
+    //                     "httponly" => false
+    //                 ]
+    //             ]
+    //         ]);
+
+    //     });
+
+    // });
+
+    describe("::fromString()", function() {
+
+        it("parses a Set-Cookie from an HTTP header", function() {
+
+            $setCookie = Cookie::fromString(
+                'mycookie=the+cookie+value; Expires=Thu, 25 Dec 2014 00:00:00 GMT; Path=/blog; Domain=.domain.com; Secure; HttpOnly'
+            );
+
+            $this->expect($setCookie->data())->toBe([
+                'name'     => 'mycookie',
+                'value'    => 'the cookie value',
+                'expires'  => 1419465600,
+                'path'     => '/blog',
+                'domain'   => '.domain.com',
+                'max-age'  => null,
+                'secure'   => true,
+                'httponly' => true
             ]);
 
         });
 
     });
 
-    describe("->data()", function() {
+    // describe("::toValue()", function() {
 
-        it('exports cookies', function() {
+    //     it('generates HTTP Cookie value', function() {
 
-            $this->cookies['foo1'] = 'bar1';
-            $this->cookies['foo2'] = 'bar2';
-            $this->cookies['foo3'] = 'bar3';
+    //         $cookies = new Cookies();
+    //         $cookies['foo1'] = 'bar1';
+    //         $cookies['foo2'] = 'bar2';
+    //         $cookies['foo3'] = 'bar3';
 
-            expect($this->cookies->data())->toBe([
-                'foo1' => 'bar1',
-                'foo2' => 'bar2',
-                'foo3' => 'bar3'
-            ]);
+    //         expect(Cookies::toValue($cookies))->toBe("foo1=bar1; Path=/\r\nSet-Cookie: foo2=bar2; Path=/\r\nSet-Cookie: foo3=bar3; Path=/");
 
-        });
+    //     });
 
-    });
-
-    describe("::toValue()", function() {
-
-        it('generates HTTP Cookie value', function() {
-
-            $cookies = new Cookies();
-            $cookies['foo1'] = 'bar1';
-            $cookies['foo2'] = 'bar2';
-            $cookies['foo3'] = 'bar3';
-
-            expect(Cookies::toValue($cookies))->toBe("foo1=bar1; foo2=bar2; foo3=bar3");
-
-        });
-
-    });
+    // });
 
     describe("::toHeader()", function() {
 
-        it('generates HTTP Cookie header', function() {
+        // it('generates a Set-Cookie HTTP headers', function() {
 
-            $cookies = new Cookies();
-            $cookies['foo1'] = 'bar1';
-            $cookies['foo2'] = 'bar2';
-            $cookies['foo3'] = 'bar3';
+        //     $cookies = new Cookies();
+        //     $cookies['foo1'] = 'bar1';
+        //     $cookies['foo2'] = 'bar2';
+        //     $cookies['foo3'] = 'bar3';
 
-            expect(Cookies::toHeader($cookies))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
+        //     expect(Cookies::toHeader($cookies))->toBe(join("\r\n", [
+        //         'Set-Cookie: foo1=bar1; Path=/',
+        //         'Set-Cookie: foo2=bar2; Path=/',
+        //         'Set-Cookie: foo3=bar3; Path=/'
+        //     ]));
 
-        });
+        // });
 
-        it("encodes values", function() {
+        // it("generates a custom Set-Cookie HTTP header", function() {
 
-            $cookie = new Cookie('the cookie value');
-            $this->expect(Cookies::toHeader(['mycookie' => $cookie]))->toBe("Cookie: mycookie=the+cookie+value");
+        //     $nextYear = date('Y') + 1;
+        //     $expires = strtotime("{$nextYear}-12-25 00:00:00 UTC");
 
-        });
+        //     $cookie = new Cookie([
+        //         'name'     => 'mycookie',
+        //         'value'    => 'the cookie value',
+        //         'expires'  => $expires,
+        //         'path'     => '/blog',
+        //         'domain'   => '.domain.com',
+        //         'max-age'  => null,
+        //         'secure'   => true,
+        //         'httponly' => true
+        //     ]);
 
-        it("throws an exception with invalid names", function() {
+        //     $date = gmdate('D, d M Y H:i:s \G\M\T', $expires);
+        //     $this->expect(Cookies::toHeader([$cookie]))->toBe(
+        //         "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Expires={$date}; Secure; HttpOnly"
+        //     );
 
-            foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
+        // });
 
-                $closure = function() use ($invalid) {
-                    $cookie = new Cookie('foo');
-                    Cookies::toHeader(["ab{$invalid}ba" => $cookie]);
-                };
-                expect($closure)->toThrow(new Exception("Invalid cookie name `'ab{$invalid}ba'`."));
+        // it("generates a custom Set-Cookie HTTP header using Max-Age instead of Expires", function() {
 
-            }
+        //     $cookie = new Cookie([
+        //         'name'     => 'mycookie',
+        //         'value'    => 'the cookie value',
+        //         'path'     => '/blog',
+        //         'domain'   => '.domain.com',
+        //         'max-age'  => '3600',
+        //         'secure'   => true,
+        //         'httponly' => true
+        //     ]);
 
-        });
+        //     $this->expect(Cookies::toHeader([$cookie]))->toBe(
+        //         "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Max-Age=3600; Secure; HttpOnly"
+        //     );
+
+        // });
+
+        // it("ignores not setted values but Path", function() {
+
+        //     $cookie = new Cookie([
+        //         'name'     => 'mycookie',
+        //         'value'    => 'the cookie value'
+        //     ]);
+
+        //     $this->expect(Cookies::toHeader([$cookie]))->toBe(
+        //         "Set-Cookie: mycookie=the%20cookie%20value; Path=/"
+        //     );
+
+        // });
+
+        // it("throws an exception with invalid names", function() {
+
+        //     foreach (str_split("=,; \t\r\n\013\014") as $invalid) {
+
+        //         $closure = function() use ($invalid) {
+        //             $cookie = new Cookie('foo');
+        //             Cookies::toHeader(["ab{$invalid}ba" => $cookie]);
+        //         };
+        //         expect($closure)->toThrow(new RuntimeException("Invalid Set-Cookie name `'ab{$invalid}ba'`."));
+
+        //     }
+
+        // });
 
     });
 

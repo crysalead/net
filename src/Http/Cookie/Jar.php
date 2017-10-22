@@ -17,9 +17,9 @@ class Jar
     public static function toJar($setCookies)
     {
         $result = [];
-        foreach ($setCookies as $name => $cookie) {
-            if (!$cookie->expired()) {
-                $result[] = static::_line($name, $cookie);
+        foreach ($setCookies as $cookie) {
+            if ($cookie->isValid() && !$cookie->expired()) {
+                $result[] = static::_line($cookie);
             }
         }
         return $result ? join("\n", $result) . "\n" : '';
@@ -32,11 +32,8 @@ class Jar
      * @param  string The cookie instance value.
      * @return string
      */
-    protected static function _line($name, $cookie)
+    protected static function _line($cookie)
     {
-        if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
-        }
         $domain =  $cookie->domain();
 
         $parts = [
@@ -45,7 +42,7 @@ class Jar
             $cookie->path() ?: '/',
             $cookie->secure() ? 'TRUE' : 'FALSE',
             (string) $cookie->expires(),
-            $name,
+            $cookie->name(),
             $cookie->value()
         ];
         return join("\t", $parts);

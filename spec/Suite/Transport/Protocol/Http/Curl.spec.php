@@ -288,12 +288,12 @@ describe("Curl", function() {
 
                 it("sends GET with a cookie", function() {
 
-                    $request = Request::create('GET', $this->url('/cookies'), ['cookies' => [
-                        'sessionid' => '123'
-                    ]]);
+                    $request = Request::create('GET', $this->url('/cookies'));
                     $response = new Response();
 
-                    $this->curl->send($request, $response);
+                    $this->curl->send($request, $response, ['cookies' => [
+                        'sessionid' => '123'
+                    ]]);
 
                     expect($response->statusCode())->toBe(200);
 

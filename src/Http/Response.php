@@ -80,18 +80,13 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      *
      * @param array $config Configuration options:
      *                      - `'status'`  _mixed_ : The response status (default: `[]`).
-     *                      - `'cookies'` _array_ : set-cookie definition (default: `[]`).
      */
     public function __construct($config = [])
     {
         $defaults = [
             'status'   => 200,
             'location' => null,
-            'format'   => null,
-            'cookies'  => [],
-            'classes' => [
-                'cookies' => 'Lead\Net\Http\Cookie\SetCookies'
-            ]
+            'format'   => null
         ];
         $config = Set::merge($defaults, $config);
 
@@ -104,9 +99,6 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         if ($config['location']) {
             $headers['Location'] = $config['location'];
         }
-
-        $cookies = $this->_classes['cookies'];
-        $headers->cookies = new $cookies(['data' => $config['cookies']]);
     }
 
     /**
