@@ -30,42 +30,6 @@ describe("Response", function() {
 
         });
 
-        it("sets set-cookies", function() {
-
-            $response = new Response([
-                'cookies' => [
-                    'foo' => 'bar',
-                    'bar' => 'foo'
-                ]
-            ]);
-
-            expect($response->headers()->cookies->data())->toEqual([
-                'foo' => [
-                    [
-                        'value'    => 'bar',
-                        'expires'  => null,
-                        'path'     => '/',
-                        'domain'   => null,
-                        'max-age'  => null,
-                        'secure'   => false,
-                        'httponly' => false
-                    ]
-                ],
-                'bar' => [
-                    [
-                        'value'    => 'foo',
-                        'expires'  => null,
-                        'path'     => '/',
-                        'domain'   => null,
-                        'max-age'  => null,
-                        'secure'   => false,
-                        'httponly' => false
-                    ]
-                ]
-            ]);
-
-        });
-
     });
 
     describe("->status()", function() {
@@ -168,9 +132,9 @@ EOD;
             $response = new Response();
 
             $headers = $response->headers();
-            $headers['Set-Cookie'] = 'foo1=bar1; Path=/';
-            $headers['Set-Cookie'] = 'foo2=bar2; Path=/';
-            $headers['Set-Cookie'] = 'foo3=bar3; Path=/';
+            $headers['Set-Cookie'][] = 'foo1=bar1; Path=/';
+            $headers['Set-Cookie'][] = 'foo2=bar2; Path=/';
+            $headers['Set-Cookie'][] = 'foo3=bar3; Path=/';
 
 
             $expected =<<<EOD
@@ -229,19 +193,19 @@ EOD;
                 'format' => 'json',
                 'data'   => ['hello' => 'world']
             ]);
-            $cookies = $response->headers()->cookies;
 
-            $cookies['foo'] = 'bar';
-            $cookies['bin'] = 'baz';
-            $cookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
+            $headers = $response->headers();
+            $headers['Set-Cookie'][] = 'foo=bar; Path=/';
+            $headers['Set-Cookie'][] = 'bin=baz; Path=/';
+            $headers['Set-Cookie'][] = 'foo=bin; Path=/foo';
 
             $expected = <<<EOD
 HTTP/1.1 200 OK\r
 Content-Type: application/json\r
-Content-Length: 17\r
 Set-Cookie: foo=bar; Path=/\r
 Set-Cookie: bin=baz; Path=/\r
 Set-Cookie: foo=bin; Path=/foo\r
+Content-Length: 17\r
 \r
 {"hello":"world"}
 EOD;
@@ -259,11 +223,6 @@ EOD;
                 'format' => 'json',
                 'data'   => ['hello' => 'world']
             ]);
-            $cookies = $response->headers()->cookies;
-
-            $cookies['foo'] = 'bar';
-            $cookies['bin'] = 'baz';
-            $cookies['foo'] = ['value' => 'bin', 'path' => '/foo'];
 
             expect($response->toString())->toBe('{"hello":"world"}');
 
@@ -339,19 +298,6 @@ EOD;
 
         });
 
-        it("clones cookies", function() {
-
-            $response = new Response(['body' => 'Body Message']);
-            $cookies = $response->headers()->cookies;
-            $cookies['foo'] = 'bar';
-
-            $newRequest = clone $response;
-            $new = $newRequest->headers()->cookies;
-            expect($cookies['foo'][0])->not->toBe($new['foo'][0]);
-            expect($cookies['foo'][0]->value())->toBe($new['foo'][0]->value());
-
-        });
-
     });
 
     describe("::parse()", function() {
@@ -366,48 +312,25 @@ EOD;
                 'HTTP/1.1 200 OK',
                 'Connection: close',
                 'Content-Length: 5',
-                'Content-Type: text/plain; charset=UTF-8',
                 'Set-Cookie: doctor=who; Path=/tardis; HttpOnly',
                 'Set-Cookie: test=foo%20bar; Expires=Fri, 25 Dec 2015 00:00:00 GMT; Secure',
                 'Set-Cookie: test=foo%2Bbin; Domain=.domain.com; Path=/test',
+                'Content-Type: text/plain; charset=UTF-8',
                 '',
                 'Test!'
             ]);
-            $cookies = [
-                'doctor' => [
-                    [
-                        'value'    => 'who',
-                        'expires'  => null,
-                        'path'     => '/tardis',
-                        'domain'   => null,
-                        'max-age'  => null,
-                        'secure'   => false,
-                        'httponly' => true
-                    ]
-                ],
-                'test' => [
-                    [
-                        'value'    => 'foo bar',
-                        'expires'  => 1451001600,
-                        'path'     => null,
-                        'domain'   => null,
-                        'max-age'  => null,
-                        'secure'   => true,
-                        'httponly' => false
-                    ],
-                    [
-                        'value'    => 'foo+bin',
-                        'expires'  => null,
-                        'path'     => '/test',
-                        'domain'   => '.domain.com',
-                        'max-age'  => null,
-                        'secure'   => false,
-                        'httponly' => false
-                    ]
-                ]
-            ];
+
             $response = Response::parse($message);
-            expect($response->headers()->cookies->data())->toBe($cookies);
+
+            expect($response->headers()->data())->toBe([
+                'Connection: close',
+                'Content-Length: 5',
+                'Set-Cookie: doctor=who; Path=/tardis; HttpOnly',
+                'Set-Cookie: test=foo%20bar; Expires=Fri, 25 Dec 2015 00:00:00 GMT; Secure',
+                'Set-Cookie: test=foo%2Bbin; Domain=.domain.com; Path=/test',
+                'Content-Type: text/plain; charset=UTF-8'
+            ]);
+
             expect($response->toMessage())->toBe($message);
 
         });

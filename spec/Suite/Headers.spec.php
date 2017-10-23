@@ -129,32 +129,11 @@ describe("Headers", function() {
 
             $this->headers['Content-Type'] = 'text/plain';
             $this->headers['X-Custom-ABC'] = 'abc';
-            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = 'text/html;q=1.0';
             $this->headers['Accept'][] = '*/*;q=0.1';
-            $this->headers->cookies['sessionid'] = '123';
+            $this->headers['Cookie'][] = 'sessionid=123';
 
             expect($this->headers->data())->toBe([
-                'Content-Type' => 'text/plain',
-                'X-Custom-ABC' => 'abc',
-                'Accept'       => 'text/html;q=1.0, */*;q=0.1',
-                'Cookie'       => 'sessionid=123'
-            ]);
-
-        });
-
-    });
-
-    describe("::toList()", function() {
-
-        it("exports headers as a list", function() {
-
-            $this->headers['Content-Type'] = 'text/plain';
-            $this->headers['X-Custom-ABC'] = 'abc';
-            $this->headers['Accept'] = 'text/html;q=1.0';
-            $this->headers['Accept'][] = '*/*;q=0.1';
-            $this->headers->cookies['sessionid'] = '123';
-
-            expect(Headers::toList($this->headers))->toBe([
                 'Content-Type: text/plain',
                 'X-Custom-ABC: abc',
                 'Accept: text/html;q=1.0, */*;q=0.1',
@@ -171,9 +150,9 @@ describe("Headers", function() {
 
             $this->headers['Content-Type'] = 'text/plain';
             $this->headers['X-Custom-ABC'] = 'abc';
-            $this->headers['Accept'] = 'text/html;q=1.0';
+            $this->headers['Accept'][] = 'text/html;q=1.0';
             $this->headers['Accept'][] = '*/*;q=0.1';
-            $this->headers->cookies['sessionid'] = '123';
+            $this->headers['Cookie'][] = 'sessionid=123';
 
             $expected = <<<EOD
 Content-Type: text/plain\r

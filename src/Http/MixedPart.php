@@ -17,12 +17,10 @@ class MixedPart extends \Lead\Net\MixedPart
     public function __construct($config = [])
     {
         $config += [
-            'headers' => null,
-            'cookies' => null
+            'headers' => null
         ];
         $config['headers'] = is_object($config['headers']) ?  $config['headers'] : new Headers([
             'data'      => $config['headers'],
-            'cookies'   => $config['cookies'],
             'length'    => 0,
             'maxLength' => 2998
         ]);

@@ -282,15 +282,16 @@ describe("Curl", function() {
 
                     $result = json_decode($response->body(), true);
 
-                    expect($requestedAt)->toBe($result['headers']['Requested-At']);
+                    expect($result['headers'])->toContain('Requested-At: ' . $requestedAt);
 
                 });
 
                 it("sends GET with a cookie", function() {
 
-                    $request = Request::create('GET', $this->url('/cookies'), ['cookies' => [
-                        'sessionid' => '123'
-                    ]]);
+                    $request = Request::create('GET', $this->url('/cookies'));
+                    $headers = $request->headers();
+                    $headers['Cookie'][] = 'sessionid=123';
+
                     $response = new Response();
 
                     $this->curl->send($request, $response);

@@ -139,7 +139,7 @@ class Curl
             $query = $request;
         } else {
             $query = $request->export();
-            $query['headers'] = $request->headers()->to('list');
+            $query['headers'] = $request->headers()->data();
         }
 
         if (!isset($query['url'])) {

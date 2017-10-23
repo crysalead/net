@@ -25,22 +25,6 @@ describe("Request", function() {
 
         });
 
-        it("sets cookies", function() {
-
-            $request = new Request([
-                'cookies' => [
-                    'foo' => 'bar',
-                    'bar' => 'foo'
-                ]
-            ]);
-
-            expect($request->headers()->cookies->data())->toEqual([
-                'foo' => 'bar',
-                'bar' => 'foo'
-            ]);
-
-        });
-
     });
 
     describe("::create()", function() {
@@ -376,29 +360,6 @@ describe("Request", function() {
 
     });
 
-    context("through ->headers()", function() {
-
-        beforeEach(function() {
-            $this->request = new Request();
-            $this->headers = $this->request->headers();
-        });
-
-        it("sets Cookie value", function() {
-
-            $this->headers['Cookie'] = 'foo1=bar1; foo2=bar2; foo3=bar3';
-            expect($this->headers->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo2=bar2; foo3=bar3");
-
-        });
-
-        it("sets Cookie value with same cookie names", function() {
-
-            $this->headers['Cookie'] = 'foo1=bar1; foo1=bar2; foo1=bar3';
-            expect($this->headers->cookies->to('header'))->toBe("Cookie: foo1=bar1; foo1=bar2; foo1=bar3");
-
-        });
-
-    });
-
     describe("->toMessage()", function() {
 
         it("casts the instance to a string", function() {
@@ -585,19 +546,6 @@ EOD;
             $new = clone $request;
             expect($request->headers())->not->toBe($new->headers());
             expect($request->stream())->not->toBe($new->stream());
-
-        });
-
-        it("clones cookies", function() {
-
-            $request = new Request(['data' => 'Body Message']);
-            $cookies = $request->headers()->cookies;
-            $cookies['foo'] = 'bar';
-
-            $newRequest = clone $request;
-            $new = $newRequest->headers()->cookies;
-            expect($cookies['foo'])->not->toBe($new['foo']);
-            expect($cookies['foo']->value())->toBe($new['foo']->value());
 
         });
 

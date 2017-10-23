@@ -25,16 +25,8 @@ class Headers extends \Lead\Collection\Collection
      */
     protected static $_formats = [
         'array'  => 'Lead\Net\Headers::toArray',
-        'list'   => 'Lead\Net\Headers::toList',
         'header' => 'Lead\Net\Headers::toHeader'
     ];
-
-    /**
-     * Contains cookies collection.
-     *
-     * @var object
-     */
-    public $cookies = null;
 
     /**
      * EOL
@@ -66,7 +58,6 @@ class Headers extends \Lead\Collection\Collection
     {
         $defaults = [
             'data'      => [],
-            'cookies'   => null,
             'length'    => 0,
             'maxLength' => 0,
             'classes' => [
@@ -79,8 +70,6 @@ class Headers extends \Lead\Collection\Collection
         if (empty($this->_classes['header'])) {
             throw new InvalidArgumentException('Missing header dependency.');
         }
-
-        $this->cookies = $config['cookies'];
 
         $this->_length = $config['length'];
         $this->_maxLength = $config['maxLength'];
@@ -224,8 +213,11 @@ class Headers extends \Lead\Collection\Collection
             if (!$name) {
                 throw new Exception("Error, invalid header name, can't be empty.");
             }
-            if ($this->_setCookie($name, $parsed)) {
-                continue;
+
+            if ($name === 'set-cookie' && isset($this->_data[$name])) {
+                $previsous = $this->_data[$name];
+                $previsous[] = $parsed->value();
+                $parsed = $previsous;
             }
             if ($prepend) {
                 $this->_data = [$name => $parsed] + $this->_data;
@@ -234,26 +226,6 @@ class Headers extends \Lead\Collection\Collection
             }
         }
         return $this;
-    }
-
-    /**
-     * Adds a Cookie header.
-     *
-     * @param  string  $name    The header name.
-     * @param  string  $header  The header instance.
-     * @return boolean          Returns `true` if a cookie has been added, `false otherwise`.
-     */
-    protected function _setCookie($name, $header)
-    {
-        $cookies = $this->cookies;
-        if (!$cookies || $name !== strtolower($cookies::NAME)) {
-            return false;
-        }
-
-        foreach ($cookies::parse($header->plain()) as $cookie) {
-            $cookies[$cookie['name']] = $cookie;
-        }
-        return true;
     }
 
     /**
@@ -286,28 +258,13 @@ class Headers extends \Lead\Collection\Collection
     {
         $data = [];
         foreach ($headers as $name => $header) {
-            $data[$name] = $header->value();
-        }
-        if ($headers->cookies && $result = $headers->cookies->to('value')) {
-            $cookies = $headers->cookies;
-            $data[$cookies::NAME] = $result;
-        }
-        return $data;
-    }
-
-    /**
-     * Gets the headers as an array.
-     *
-     * @return array Returns the headers.
-     */
-    public static function toList($headers, $options = [])
-    {
-        $data = [];
-        foreach ($headers as $name => $header) {
-            $data[] = $name . ': ' . $header->value();
-        }
-        if ($headers->cookies && $result = $headers->cookies->to('header')) {
-            $data[] = $result;
+            if (strtolower($name) === 'set-cookie') {
+                foreach ($header->data() as $value) {
+                    $data[] = $name . ': ' . $value;
+                }
+            } else {
+                $data[] = $name . ': ' . $header->value();
+            }
         }
         return $data;
     }
@@ -322,9 +279,6 @@ class Headers extends \Lead\Collection\Collection
         $data = [];
         foreach ($headers as $key => $header) {
             $data[] = $header->to('header', $options);
-        }
-        if ($headers->cookies && $result = $headers->cookies->to('header', $options)) {
-            $data[] = $result;
         }
         return $data ? join(self::EOL, $data) : '';
     }
@@ -364,9 +318,6 @@ class Headers extends \Lead\Collection\Collection
     {
         foreach ($this->_data as $key => $value) {
             $this->_data[$key] = clone $value;
-        }
-        if ($this->cookies) {
-            $this->cookies = clone $this->cookies;
         }
     }
 }

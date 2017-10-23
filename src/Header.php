@@ -157,7 +157,11 @@ class Header extends \Lead\Collection\Collection
         ];
         $options += $defaults;
 
-        $header = static::wrap($collection->name() . ': ' . $collection->value(), $options['length']);
+        if (strtolower($collection->name()) === 'set-cookie') {
+            $header = static::wrap($collection->name() . ': ' . join("\r\n" . $collection->name() . ': ', $collection->data()), $options['length']);
+        } else {
+            $header = static::wrap($collection->name() . ': ' . $collection->value(), $options['length']);
+        }
 
         $maxLength = $options['maxLength'];
         if ($maxLength && preg_match('~^(.{' . $maxLength . ',})~m', $header)) {
