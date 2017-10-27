@@ -1,9 +1,12 @@
 <?php
 namespace Lead\Net\Spec\Suite\Http;
 
+use RuntimeException;
 use Lead\Net\NetException;
 use Lead\Net\Http\Request;
 use Lead\Net\Http\Response;
+use Lead\Net\Http\Cookie\Cookie;
+use Lead\Net\Http\Cookie\Cookies;
 
 use Kahlan\Plugin\Monkey;
 
@@ -180,6 +183,97 @@ EOD;
             };
 
             expect($closure)->toThrow(new NetException('Unsupported Media Type: ["application/vnd.api+json"].', 415));
+
+        });
+
+    });
+
+    describe("->applyCookies()", function() {
+
+        it('generates a Set-Cookie HTTP headers', function() {
+
+            $response = new Response();
+
+            $cookies = new Cookies();
+            $cookies['foo1'] = 'bar1';
+            $cookies['foo2'] = 'bar2';
+            $cookies['foo3'] = 'bar3';
+
+            $response->applyCookies($cookies);
+            $headers = $response->headers();
+
+            expect($headers['Set-Cookie']->to('header'))->toBe(join("\r\n", [
+                'Set-Cookie: foo1=bar1; Path=/',
+                'Set-Cookie: foo2=bar2; Path=/',
+                'Set-Cookie: foo3=bar3; Path=/'
+            ]));
+
+        });
+
+        it("generates a custom Set-Cookie HTTP header", function() {
+
+            $nextYear = date('Y') + 1;
+            $expires = strtotime("{$nextYear}-12-25 00:00:00 UTC");
+
+            $response = new Response();
+            $cookie = new Cookie([
+                'name'     => 'mycookie',
+                'value'    => 'the cookie value',
+                'expires'  => $expires,
+                'path'     => '/blog',
+                'domain'   => '.domain.com',
+                'max-age'  => null,
+                'secure'   => true,
+                'httponly' => true
+            ]);
+
+            $date = gmdate('D, d M Y H:i:s \G\M\T', $expires);
+
+            $response->applyCookies([$cookie]);
+            $headers = $response->headers();
+
+            $this->expect($headers['Set-Cookie']->to('header'))->toBe(
+                "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Expires={$date}; Secure; HttpOnly"
+            );
+
+        });
+
+        it("generates a custom Set-Cookie HTTP header using Max-Age instead of Expires", function() {
+
+            $response = new Response();
+            $cookie = new Cookie([
+                'name'     => 'mycookie',
+                'value'    => 'the cookie value',
+                'path'     => '/blog',
+                'domain'   => '.domain.com',
+                'max-age'  => '3600',
+                'secure'   => true,
+                'httponly' => true
+            ]);
+
+            $response->applyCookies([$cookie]);
+            $headers = $response->headers();
+
+            $this->expect($headers['Set-Cookie']->to('header'))->toBe(
+                "Set-Cookie: mycookie=the%20cookie%20value; Domain=.domain.com; Path=/blog; Max-Age=3600; Secure; HttpOnly"
+            );
+
+        });
+
+        it("ignores not setted values but Path", function() {
+
+            $response = new Response();
+            $cookie = new Cookie([
+                'name'     => 'mycookie',
+                'value'    => 'the cookie value'
+            ]);
+
+            $response->applyCookies([$cookie]);
+            $headers = $response->headers();
+
+            $this->expect($headers['Set-Cookie']->to('header'))->toBe(
+                "Set-Cookie: mycookie=the%20cookie%20value; Path=/"
+            );
 
         });
 

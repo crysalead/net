@@ -1,7 +1,7 @@
 <?php
 namespace Lead\Net\Http\Psr7;
 
-use Lead\Net\Http\Cookie\Cookies;
+use Lead\Net\Http\Cookie\CookieValues;
 
 /**
  * PSR-7 ServerRequest interoperability trait
@@ -34,7 +34,8 @@ trait ServerRequestTrait
      */
     public function getCookieParams()
     {
-        return Cookies::toArray($this->headers()->cookies);
+        $headers = $this->headers();
+        return CookieValues::toArray($headers['Cookie']->value());
     }
 
     /**
@@ -57,8 +58,8 @@ trait ServerRequestTrait
     public function withCookieParams(array $cookies)
     {
         $request = clone $this;
-        $class = $this->_classes['cookies'];
-        $request->headers()->cookies = new $class(['data' => $cookies]);
+        $headers = $request->headers();
+        $headers['Cookie'] = CookieValues::toString($cookies);
         return $request;
     }
 

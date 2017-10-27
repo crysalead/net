@@ -52,7 +52,7 @@ class Header extends \Lead\Collection\Collection
         $this->_plain = $value;
 
         if (!empty($this->_plain)) {
-            $data = array_map('trim', explode(',', $this->_plain));
+            $data = array_map('trim', strtolower($name) === 'set-cookie' ? [$this->_plain] : explode(',', $this->_plain));
         } else {
             $data = [];
         }
@@ -105,7 +105,11 @@ class Header extends \Lead\Collection\Collection
      */
     public function value()
     {
-        return join(', ', $this->_data);
+        if (strtolower($this->name()) === 'set-cookie') {
+            return join("\r\n" . $this->name() . ': ', $this->data());
+        } else {
+            return join(', ', $this->_data);
+        }
     }
 
     /**

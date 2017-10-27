@@ -3,6 +3,8 @@ namespace Lead\Net\Spec\Suite\Http;
 
 use Lead\Net\NetException;
 use Lead\Net\Http\Request;
+use Lead\Net\Http\Cookie\Cookies;
+
 use Kahlan\Plugin\Double;
 
 describe("Request", function() {
@@ -355,6 +357,43 @@ describe("Request", function() {
 
             $request->auth(false);
             expect(isset($headers['Authorization']))->toBe(false);
+
+        });
+
+    });
+
+    describe("->applyCookies()", function() {
+
+        beforeEach(function() {
+
+            $this->cookies = new Cookies();
+            $this->cookies['foo1'] = ['value' => 'bar1', 'path' => '/home', 'domain' => '.domain.com'];
+            $this->cookies['foo1'] = ['value' => 'bar11', 'path' => '/home/index', 'domain' => '.domain.com'];
+            $this->cookies['foo2'] = ['value' => 'bar2', 'path' => '/', 'domain' => '.domain.com'];
+
+        });
+
+        it('generates the Cookie header', function() {
+
+            $request = new Request(['host' => 'www.domain.com']);
+            $request->applyCookies($this->cookies);
+
+            $headers = $request->headers();
+            expect($headers['Cookie']->value())->toBe('foo2=bar2');
+
+        });
+
+        it('orders most specific cookie first', function() {
+
+            $request = new Request([
+                'host' => 'www.domain.com',
+                'path' => '/home/index'
+            ]);
+
+            $request->applyCookies($this->cookies);
+
+            $headers = $request->headers();
+            expect($headers['Cookie']->value())->toBe('foo1=bar11; foo1=bar1; foo2=bar2');
 
         });
 

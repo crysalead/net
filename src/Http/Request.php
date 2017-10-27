@@ -6,6 +6,7 @@ use Lead\Net\NetException;
 use Lead\Text\Text;
 use Lead\Set\Set;
 use Lead\Net\Scheme;
+use Lead\Net\Http\Cookie\CookieValues;
 
 /**
  * Facilitates HTTP request creation by assembling connection and path info, `GET` and `POST` data,
@@ -486,6 +487,43 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             return;
         }
         parent::_setContentLength();
+    }
+
+    /**
+     * Set the Cookie header
+     *
+     * @param  array $cookies The cookies.
+     * @return self
+     */
+    public function applyCookies($cookies)
+    {
+        $values = [];
+        foreach ($cookies as $cookie) {
+            if ($cookie->matches($this->url())) {
+                $values[$cookie->path()] = $cookie->name() . '=' . $cookie->value();
+            }
+        }
+
+        $keys = array_map('strlen', array_keys($values));
+        array_multisort($keys, SORT_DESC, $values);
+        $headers = $this->headers();
+        if ($values) {
+            $headers['Cookie'] = implode('; ', $values);
+        } else {
+            unset($headers['Cookie']);
+        }
+        return $this;
+    }
+
+    /**
+     * Extract cookies value.
+     *
+     * @return array The cookies value.
+     */
+    public function cookieValues()
+    {
+        $headers = $request->headers();
+        return isset($headers['Cookie']) ? CookieValues::toArray($headers['Cookie']->value()) : [];
     }
 
     /**

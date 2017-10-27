@@ -1,17 +1,14 @@
 <?php
 namespace Lead\Net\Http\Cookie;
 
-use Exception;
-use Generator;
+use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
+
+use RuntimeException;
 use Lead\Set\Set;
 
-/**
- * Collection of `Cookie`.
- */
 class Cookies extends \Lead\Collection\Collection
 {
-    const NAME = 'Cookie';
-
     /**
      * Class dependencies
      *
@@ -20,37 +17,46 @@ class Cookies extends \Lead\Collection\Collection
     protected $_classes = [];
 
     /**
+     * Loaded cookie data.
+     *
+     * @var array
+     */
+    protected $_data = [];
+
+    /**
+     * Set to true to throw exceptions when invalid cookies are added to the cookie jar.
+     *
+     * @var boolean
+     */
+    protected $_strictMode = false;
+
+    /**
      * Contains all exportable formats and their handler
      *
      * @var array
      */
     protected static $_formats = [
-        'value' => 'Lead\Net\Http\cookie\Cookies::toValue',
-        'array'  => 'Lead\Net\Http\cookie\Cookies::toArray',
-        'header' => 'Lead\Net\Http\cookie\Cookies::toHeader'
+        'array'  => 'Lead\Net\Http\Cookie\Cookies::toArray'
     ];
 
     /**
      * Constructor
      *
      * @param $config The config. Possible values are:
-     *                - `'classes'`  _array_ : The class dependencies.
+     *                - `'strictMode'`  _array_ : Set to true to throw exceptions when invalid
+     *                                            cookies are added to the cookie jar.
      */
     public function __construct($config = [])
     {
         $defaults = [
-            'data'    => [],
+            'strictMode' => false,
             'classes' => [
-                'header' => 'Lead\Net\Http\Header',
                 'cookie' => 'Lead\Net\Http\Cookie\Cookie'
             ]
         ];
         $config = Set::merge($defaults, $config);
         $this->_classes = $config['classes'];
-
-        foreach ($config['data'] as $key => $value) {
-            $this[$key] = $value;
-        }
+        $this->_strictMode = $config['strictMode'];
     }
 
     /**
@@ -63,19 +69,19 @@ class Cookies extends \Lead\Collection\Collection
     public function offsetSet($name, $value)
     {
         $cookie = $this->_classes['cookie'];
-        if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid Cookie name `'{$name}'`.");
-        }
-        if (!is_object($value)) {
-            $value = isset($value['value']) ? new $cookie($value['value']) : new $cookie($value);
-        }
+        $value = $this->_autobox($name, $value);
         if (!$value instanceof $cookie) {
-            throw new Exception("Error, only `{$cookie}` instances are allowed in this collection.");
+            throw new RuntimeException("Error, only `{$cookie}` instances are allowed in this collection.");
         }
-        return $this->_data[$name] = $value;
+        $hash = $name . ';' . $value->domain() . ';' . $value->path();
+        $this->_hashes[$name][] = $hash;
+        $this->_names[$hash] = $name;
+
+        return $this->_data[$hash] = $value;
     }
 
-   /**
+
+    /**
      * Gets a set-cookie.
      *
      * @param  string $name  The cookie name.
@@ -84,10 +90,275 @@ class Cookies extends \Lead\Collection\Collection
      */
     public function offsetGet($name)
     {
-        if (!array_key_exists($name, $this->_data)) {
-            throw new Exception("Unexisting Cookie `'{$name}'`.");
+        $data = [];
+        if (!isset($this->_hashes[$name])) {
+            throw new RuntimeException("Unexisting Set-Cookie `'{$name}'`.");
         }
-        return $this->_data[$name];
+        foreach ($this->_hashes[$name] as $key => $hash) {
+            $data[] = $this->_data[$hash];
+        }
+        return $data;
+    }
+
+    /**
+     * Checks if a set-cookie of a specific name exists.
+     *
+     * @param  string  $name The cookie name.
+     * @return boolean
+     */
+    public function offsetExists($name)
+    {
+        return isset($this->_hashes[$name]);
+    }
+
+    /**
+     * Removes all set-cookies of a specific name.
+     *
+     * @param string $name The cookie name.
+     */
+    public function offsetUnset($name)
+    {
+        if (!isset($this->_hashes[$name])) {
+            return;
+        }
+        foreach ($this->_hashes[$name] as $hash) {
+            unset($this->_data[$hash]);
+            unset($this->_names[$hash]);
+        }
+        unset($this->_hashes[$name]);
+    }
+
+    /**
+     * Returns the key of the current item.
+     *
+     * @return scalar Scalar on success or `null` on failure.
+     */
+    public function key()
+    {
+        $hash = key($this->_data);
+        return $this->_names[$hash];
+    }
+
+    /**
+     * Returns the item keys.
+     *
+     * @return array The keys of the items.
+     */
+    public function keys()
+    {
+        return array_keys($this->_hashes);
+    }
+
+    /**
+     * Autoboxes a cookie value.
+     *
+     * @param  mixed  $value The cookie value.
+     * @return object        The cookie instance.
+     */
+    protected function _autobox($name, $value)
+    {
+        if (is_object($value)) {
+            return $value;
+        }
+        $cookie = $this->_classes['cookie'];
+        if (!is_array($value)) {
+            $value = ['value' => $value];
+        }
+        $value['name'] = $name;
+        return new $cookie($value);
+    }
+
+    /**
+     * Removes expired cookies.
+     *
+     * @return object Returns `$this`.
+     */
+    public function flushExpired()
+    {
+        foreach ($this->_hashes as $name => $hashes) {
+            foreach ($hashes as $key => $hash) {
+                $cookie = $this->_data[$hash];
+                if ($cookie->expired()) {
+                    unset($this->_data[$hash]);
+                    unset($this->_names[$hash]);
+                    unset($this->_hashes[$name][$key]);
+                    if (!$this->_hashes[$name]) {
+                        unset($this->_hashes[$name]);
+                    }
+                }
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * Remove some cookies from the Jar.
+     *
+     * @param  string  $domain A domain name.
+     * @param  string  $path   A path name.
+     * @param  string  $name   A cookie name.
+     * @return self
+     */
+    public function clear($domain = null, $path = null, $name = null)
+    {
+        if (!$domain) {
+            $this->_data = [];
+            return;
+        } elseif (!$path) {
+            $this->_data = array_filter(
+                $this->_data,
+                function ($cookie) use ($path, $domain) {
+                    return !$cookie->matchesDomain($domain);
+                }
+            );
+        } elseif (!$name) {
+            $this->_data = array_filter(
+                $this->_data,
+                function ($cookie) use ($path, $domain) {
+                    return !($cookie->matchesPath($path) &&
+                        $cookie->matchesDomain($domain));
+                }
+            );
+        } else {
+            $this->_data = array_filter(
+                $this->_data,
+                function ($cookie) use ($path, $domain, $name) {
+                    return !($cookie->name() == $name &&
+                        $cookie->matchesPath($path) &&
+                        $cookie->matchesDomain($domain));
+                }
+            );
+        }
+        return $this;
+    }
+
+    /**
+     * Clear session based cookies.
+     *
+     * @return self
+     */
+    public function clearSessionCookies()
+    {
+        $this->_data = array_filter(
+            $this->_data,
+            function ($cookie) {
+                return !$cookie->discard() && $cookie->expires();
+            }
+        );
+        return $this;
+    }
+
+    /**
+     * Add a cookie.
+     *
+     * @param  SetCookie $cookie The cookie to add.
+     * @return boolean
+     */
+    public function add($cookie)
+    {
+        // If the name string is empty (but not 0), ignore the set-cookie
+        // string entirely.
+        $name = $cookie->name();
+
+        if (!$name && $name !== '0') {
+            return false;
+        }
+
+        // Only allow cookies with set and valid domain, name, value
+        $result = $cookie->isValid();
+        if ($result !== true) {
+            if ($this->_strictMode) {
+                throw new RuntimeException('Invalid cookie: ' . $result);
+            } else {
+                $cookieValue = $cookie->value();
+                if ($cookieValue === null || $cookieValue === '') {
+                    $this->clear($cookie->domain(), $cookie->path(), $cookie->name());
+                }
+                return false;
+            }
+        }
+
+        // Resolve conflicts with previously set cookies
+        foreach ($this->_data as $i => $c) {
+
+            // Two cookies are identical, when their path, and domain are
+            // identical.
+            if ($c->path() != $cookie->path() ||
+                $c->domain() != $cookie->domain() ||
+                $c->name() != $cookie->name()
+            ) {
+                continue;
+            }
+
+            // The previously set cookie is a discard cookie and this one is
+            // not so allow the new cookie to be set
+            if (!$cookie->discard() && $c->discard()) {
+                unset($this->_data[$i]);
+                continue;
+            }
+
+            // If the new cookie's expiration is further into the future, then
+            // replace the old cookie
+            if ($cookie->expires() > $c->expires()) {
+                unset($this->_data[$i]);
+                continue;
+            }
+
+            // If the value has changed, we better change it
+            if ($cookie->value() !== $c->value()) {
+                unset($this->_data[$i]);
+                continue;
+            }
+
+            // The cookie exists, so no need to continue
+            return false;
+        }
+
+        $this->_data[] = $cookie;
+
+        return true;
+    }
+
+    /**
+     * Collect the Set-Cookie header from a response.
+     *
+     * @param  RequestInterface  $request  The request.
+     * @param  ResponseInterface $response The response.
+     * @return self
+     */
+    public function fetchCookies($request, $response)
+    {
+        foreach ($response->cookies($request) as $cookie) {
+            $this->add($cookie);
+        }
+        return $this;
+    }
+
+    /**
+     * Computes cookie path following RFC 6265 section 5.1.4
+     *
+     * @link https://tools.ietf.org/html/rfc6265#section-5.1.4
+     *
+     * @param RequestInterface $request
+     * @return string
+     */
+    protected function _pathFrom(RequestInterface $request)
+    {
+        $uriPath = $request->path();
+        if ($uriPath === '') {
+            return '/';
+        }
+        if (strpos($uriPath, '/') !== 0) {
+            return '/';
+        }
+        if ($uriPath === '/') {
+            return '/';
+        }
+        if (($lastSlashPos = strrpos($uriPath, '/')) === 0) {
+            return '/';
+        }
+
+        return substr($uriPath, 0, $lastSlashPos);
     }
 
     /**
@@ -101,76 +372,18 @@ class Cookies extends \Lead\Collection\Collection
     }
 
     /**
-     * Parses a Cookie header value.
+     * Exports set-cookies.
      *
-     * @param  string  $header A Cookie header value.
-     * @return array           An array of parsed cookies.
-     */
-    public static function parse($header)
-    {
-        $cookies = explode(';', $header);
-        $data = [];
-        foreach ($cookies as $cookie) {
-            list($name, $value) = explode('=', $cookie);
-            $name = trim($name);
-            $value = urldecode($value);
-            if (!isset($data[$name])) {
-                $data[$name] = ['name' => $name, 'value' => [$value]];
-            } else {
-                $data[$name]['value'][] = $value;
-            }
-        }
-        return array_values($data);
-    }
-
-    /**
-     * Exports cookies.
-     *
-     * @param  Traversable $cookies The cookies.
-     * @param  array       $options Options.
-     * @return array                The export array.
+     * @param  Traversable $setCookies The set-cookies.
+     * @param  array       $options    Options.
+     * @return array                   The export array.
      */
     public static function toArray($cookies, $options = [])
     {
         $data = [];
         foreach ($cookies as $name => $cookie) {
-           $data[$name] = $cookie->value();
+            $data[$name][] = $cookie->data();
         }
         return $data;
-    }
-
-    /**
-     * Builds a complete Cookie header from a cookies collection.
-     *
-     * @param  object $cookies A `Cookies` collection.
-     * @return string
-     */
-    public static function toHeader($cookies)
-    {
-        if ($value = static::toValue($cookies)) {
-            return static::NAME . ': ' . $value;
-        }
-    }
-
-    /**
-     * Builds a Cookie header value.
-     *
-     * @param  object $cookies A `Cookies` collection.
-     * @return string
-     */
-    public static function toValue($cookies)
-    {
-        $result = [];
-        foreach ($cookies as $name => $cookie) {
-            if (!Cookie::isValidName($name)) {
-                throw new Exception("Invalid cookie name `'{$name}'`.");
-            }
-
-            $result[] = $cookie->toString($name);
-        }
-        if (!$result) {
-            return;
-        }
-        return join('; ', $result);
     }
 }

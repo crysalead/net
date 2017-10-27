@@ -5,6 +5,7 @@ use Psr\Http\Message\StreamInterface;
 use Lead\Net\NetException;
 use Lead\Set\Set;
 use Lead\Net\Part;
+use Lead\Net\Http\Cookie\Cookie;
 
 /**
  * Parses and stores the status, headers and body of an HTTP response.
@@ -329,6 +330,47 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             return;
         }
         echo  "0\r\n\r\n";
+    }
+
+    /**
+     * Set the Set-Cookie header
+     *
+     * @param  array $cookies The cookies.
+     * @return self
+     */
+    public function applyCookies($cookies)
+    {
+        $headers = $this->headers();
+
+        foreach ($cookies as $cookie) {
+            $headers['Set-Cookie'][] = $cookie->toString();
+        }
+        return $this;
+    }
+
+    /**
+     * Extract cookies.
+     *
+     * @return array The cookies array.
+     */
+    public function cookies($request)
+    {
+        $headers = $response->headers();
+        if (!isset($headers['Set-Cookie'])) {
+            return [];
+        }
+        $setCookies = [];
+        foreach ($headers['Set-Cookie'] as $setCookieHeader) {
+            $setCookie = Cookie::fromString($setCookieHeader);
+            if (!$setCookie->domain()) {
+                $setCookie->domain($request->hostname());
+            }
+            if (strpos($setCookie->path(), '/') !== 0) {
+                $setCookie->path($this->_pathFrom($request));
+            }
+            $setCookies[] = $setCookie;
+        }
+        return $setCookies;
     }
 
     /**

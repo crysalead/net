@@ -1,7 +1,7 @@
 <?php
 namespace Lead\Net\Http\Cookie;
 
-use Exception;
+use RuntimeException;
 
 /**
  * Jar parser.
@@ -14,10 +14,10 @@ class Jar
      * @param  object $cookies A `SetCookies` collection.
      * @return string
      */
-    public static function toJar($setCookies)
+    public static function toJar($cookies)
     {
         $result = [];
-        foreach ($setCookies as $name => $cookie) {
+        foreach ($cookies as $name => $cookie) {
             if (!$cookie->expired()) {
                 $result[] = static::_line($name, $cookie);
             }
@@ -34,8 +34,8 @@ class Jar
      */
     protected static function _line($name, $cookie)
     {
-        if (!$cookie::isValidName($name)) {
-            throw new Exception("Invalid cookie name `'{$name}'`.");
+        if (!$cookie->isValid()) {
+            throw new RuntimeException("Invalid cookie `'{$name}'`.");
         }
         $domain =  $cookie->domain();
 
@@ -45,7 +45,7 @@ class Jar
             $cookie->path() ?: '/',
             $cookie->secure() ? 'TRUE' : 'FALSE',
             (string) $cookie->expires(),
-            $name,
+            $cookie->name(),
             $cookie->value()
         ];
         return join("\t", $parts);
@@ -63,7 +63,7 @@ class Jar
         $parts = explode("\t", trim($line));
 
         if (count($parts) !== 7) {
-            throw new Exception("Invalid cookie JAR format.");
+            throw new RuntimeException("Invalid cookie JAR format.");
         }
 
         $config = [];
