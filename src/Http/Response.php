@@ -95,10 +95,9 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
 
         $this->status($config['status']);
 
-        $headers = $this->headers();
-
         if ($config['location']) {
-            $headers['Location'] = $config['location'];
+            $this->redirect($config['location']);
+
         }
     }
 
@@ -371,6 +370,23 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             $setCookies[] = $setCookie;
         }
         return $setCookies;
+    }
+
+    /**
+     * Set a redirect location.
+     *
+     * @param string  $location The redirect location.
+     * @param integer $status   The redirect HTTP status.
+     */
+    public function redirect($location, $status = 302)
+    {
+        if (!$location) {
+            return;
+        }
+        $this->status($status);
+        $headers = $this->headers();
+        $headers['Location'] = $location;
+        return $this;
     }
 
     /**
