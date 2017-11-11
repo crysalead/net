@@ -147,12 +147,13 @@ class Media
      * @param  mixed $format  Format into which data will be converted, i.e. `'json'`.
      * @param  mixed $data    Either an array or object (usually an instance of `Collection`) which will
      *                        be converted into the specified format.
+     * @param  object $message A message reference.
      * @param  array $options Additional handler-specific options to pass to the content handler.
      * @return mixed
      */
-    public static function to($format, $data, $options = [])
+    public static function to($format, $data, $options = [], $message = null)
     {
-        return static::encode($format, $data, $options);
+        return static::encode($format, $data, $options, $message);
     }
 
     /**
@@ -161,9 +162,10 @@ class Media
      * @param  string $format  The format into which `$data` will be encoded.
      * @param  mixed  $data    Arbitrary data you wish to encode.
      * @param  array  $options Handler-specific options.
+     * @param  object $message A message reference.
      * @return string          The encoded string data.
      */
-    public static function encode($format, $data, $options = [])
+    public static function encode($format, $data, $options = [], $message = null)
     {
         $definition = static::get($format);
 
@@ -183,7 +185,7 @@ class Media
         }
 
         $handler = $definition['encode'];
-        return is_string($handler) ? $handler($data) : $handler($data, $definition + $options);
+        return is_string($handler) ? $handler($data) : $handler($data, $definition + $options, $message);
     }
 
     /**
@@ -192,9 +194,10 @@ class Media
      * @param  string $format  The format into which `$data` will be decoded.
      * @param  string $data    String data to decode.
      * @param  array  $options Handler-specific options.
+     * @param  object $message A message reference.
      * @return mixed           The arbitrary decoded data.
      */
-    public static function decode($format, $data, $options = [])
+    public static function decode($format, $data, $options = [], $message = null)
     {
         $definition = static::get($format);
 
@@ -202,7 +205,7 @@ class Media
             return $data;
         }
         $handler = $definition['decode'];
-        return is_string($handler) ? $handler($data) : $handler($data, $definition + $options);
+        return is_string($handler) ? $handler($data) : $handler($data, $definition + $options, $message);
     }
 
     /**

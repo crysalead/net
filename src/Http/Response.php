@@ -294,7 +294,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
                 if (!$format && !is_string($data)) {
                     throw new NetException("The data must be a string when no format is defined.");
                 }
-                $data = $media::encode($format, $data, $options['encode']);
+                $data = $media::encode($format, $data, $options['encode'], $this);
             }
             $stream = new Part(['data' => $data] + $options['stream']);
         }

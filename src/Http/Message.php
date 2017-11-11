@@ -253,7 +253,7 @@ class Message
     {
         $media = $this->_classes['media'];
         $format = $this->format();
-        return $format ? $media::decode($format, $this->_stream->toString(), $decodeOptions) : $this->_stream->toString();
+        return $format ? $media::decode($format, $this->_stream->toString(), $decodeOptions, $this) : $this->_stream->toString();
     }
 
     /**
@@ -275,7 +275,7 @@ class Message
 
         $stream = $this->stream();
         $stream->close();
-        $stream->add($format ? $media::encode($format, $value, $mediaOptions) : $value, $options);
+        $stream->add($format ? $media::encode($format, $value, $mediaOptions, $this) : $value, $options);
         return $this;
     }
 
@@ -322,7 +322,7 @@ class Message
         if (!$media::get($format)) {
             throw new InvalidArgumentException("Unsupported format `{$format}`.");
         }
-        return $media::decode($format, $this->body(), $options);
+        return $media::decode($format, $this->body(), $options, $this);
     }
 
     /**
