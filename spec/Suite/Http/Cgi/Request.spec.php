@@ -557,6 +557,19 @@ EOD;
 
         });
 
+        it("supports custom BASE_PATH en var", function() {
+
+            $_SERVER['BASE_PATH'] = '/api';
+            $_SERVER['REQUEST_URI'] = '/api/controller/action';
+            $_SERVER['SCRIPT_NAME'] = '/api/controller/action';
+
+            $request = Request::ingoing();
+
+            expect($request->basePath())->toBe('/api');
+            expect($request->path())->toBe('/controller/action');
+
+        });
+
         it("throw an exception when `'REQUEST_URI'` is missing", function() {
 
             $closure = function() {

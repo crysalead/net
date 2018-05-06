@@ -228,28 +228,33 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
 
         $uri = $env['REQUEST_URI'];
         list($path) = explode('?', $uri, 2);
+        $path = '/' . trim($path, '/');
 
-        $basePath = '/' . trim($env['SCRIPT_NAME'], '/');
-
-        if (strncmp($basePath, $path, strlen($basePath)) === 0) {
-            $basename = basename($basePath);
-            if (preg_match('~^.*\.php$~', $basename)) {
-                $path = '/' . trim(substr($path, strlen($basePath)), '/');
-                $basePath = '/' . trim(dirname($basePath), '/');
-            } else {
-                $basePath = '';
-            }
+        if (isset($env['BASE_PATH'])) {
+            $basePath = '/' . trim($env['BASE_PATH'], '/');
+            $path = '/' . (trim(substr($path, strlen($basePath)), '/') ?: '/');
         } else {
-            $cut = $i = 0;
-            $len = min(strlen($path), strlen($basePath));
-            while ($i < $len && $path[$i] === $basePath[$i]) {
-                if ($basePath[$i] === '/') {
-                    $cut = $i;
+            $basePath = '/' . trim($env['SCRIPT_NAME'], '/');
+            if (strncmp($basePath, $path, strlen($basePath)) === 0) {
+                $basename = basename($basePath);
+                if (preg_match('~^.*\.php$~', $basename)) {
+                    $path = '/' . trim(substr($path, strlen($basePath)), '/');
+                    $basePath = '/' . trim(dirname($basePath), '/');
+                } else {
+                    $basePath = '';
                 }
-                $i++;
+            } else {
+                $cut = $i = 0;
+                $len = min(strlen($path), strlen($basePath));
+                while ($i < $len && $path[$i] === $basePath[$i]) {
+                    if ($basePath[$i] === '/') {
+                        $cut = $i;
+                    }
+                    $i++;
+                }
+                $basePath = substr($path, 0, $cut);
+                $path = '/' . (trim(substr($path, $cut), '/') ?: '/');
             }
-            $basePath = substr($path, 0, $cut);
-            $path = '/' . (trim(substr($path, $cut), '/') ?: '/');
         }
         return $defaults += [
             'path'     => $path,
