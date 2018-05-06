@@ -12,7 +12,7 @@ describe("Curl", function() {
         $this->curl = new Curl();
 
         $this->url = function($path) {
-            return 'http://localhost:8080/' . trim($path, '/');
+            return 'http://localhost:10080/' . trim($path, '/');
         };
 
         $this->statusCodes = function() {

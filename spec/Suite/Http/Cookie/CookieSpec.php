@@ -225,7 +225,7 @@ describe("Cookie", function() {
             expect($cookie->matches('http://www.domain2.com/blog'))->toBe(false);
         });
 
-        it("checks if the cookie match an URL", function() {
+        it("checks if the cookie match some URLs", function() {
 
              foreach ([
                 ['/foo', '/foo', true],

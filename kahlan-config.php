@@ -1,6 +1,6 @@
 <?php
 use Lead\Set\Set;
-use Kahlan\Filter\Filter;
+use Kahlan\Filter\Filters;
 use Kahlan\Code\Code;
 use Kahlan\Code\TimeoutException;
 
@@ -33,7 +33,7 @@ function defineGlobals($config = []) {
 $echo = null;
 $httpecho = null;
 
-Filter::register('start-servers', function($chain) use (&$echo, &$httpecho) {
+Filters::apply($this, 'run', function($next) use (&$echo, &$httpecho) {
     $pipesEcho = [];
     $command = 'exec php ' . __DIR__ . '/spec/Server/echo.php';
     echo "Running echo server through command `{$command}`\n";
@@ -44,7 +44,7 @@ Filter::register('start-servers', function($chain) use (&$echo, &$httpecho) {
     ], $pipesEcho);
 
     $pipesHttpEcho = [];
-    $command = 'exec php -S localhost:8080 ' . __DIR__ . '/spec/Server/httpecho.php';
+    $command = 'exec php -S localhost:10080 ' . __DIR__ . '/spec/Server/httpecho.php';
     echo "Running HTTP server command `{$command}`\n";
     $httpecho = proc_open($command, [
         0 => ['pipe', 'r'],
@@ -65,7 +65,7 @@ Filter::register('start-servers', function($chain) use (&$echo, &$httpecho) {
 
     try {
         $fp = Code::spin(function() {
-            return @fsockopen('localhost', 8080);
+            return @fsockopen('localhost', 10080);
         }, 5, true);
         fclose($fp);
     } catch (TimeoutException $e) {
@@ -73,16 +73,11 @@ Filter::register('start-servers', function($chain) use (&$echo, &$httpecho) {
         proc_terminate($httpecho);
         exit(-1);
     }
-
-    return $chain->next();
+    return $next();
 });
 
-Filter::apply($this, 'run', 'start-servers');
-
-Filter::register('stop-servers', function($chain) use (&$echo, &$httpecho) {
+Filters::apply($this, 'stop', function($next) use (&$echo, &$httpecho) {
     proc_terminate($echo);
     proc_terminate($httpecho);
-    return $chain->next();
+    return $next();
 });
-
-Filter::apply($this, 'stop', 'stop-servers');
