@@ -181,9 +181,11 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
 
         list($scheme, $version) = explode('/', $env['SERVER_PROTOCOL']);
 
-        $headers = [
-            'Content-Type' => $env['CONTENT_TYPE']
-        ];
+        $headers = [];
+
+        if (empty($config['mime'])) {
+            $headers['Content-Type'] = $env['CONTENT_TYPE'];
+        }
 
         if (isset($env['CONTENT_LENGTH'])) {
             $headers['Content-Length'] = $env['CONTENT_LENGTH'];

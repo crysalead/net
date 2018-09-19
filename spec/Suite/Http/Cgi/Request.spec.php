@@ -155,6 +155,29 @@ EOD;
 
         });
 
+        it("overrides the default Content-Type a mime is provided", function() {
+
+            $request = new Request([
+                'method'  => 'POST',
+                'mime'    => 'application/x-www-form-urlencoded',
+                'data'    => ['name1' => 'value1', 'name2' => 'value2']
+            ]);
+
+            $expected =<<<EOD
+POST / HTTP/1.1\r
+Host: localhost\r
+Connection: Close\r
+User-Agent: Mozilla/5.0\r
+Content-Type: application/x-www-form-urlencoded\r
+Content-Length: 25\r
+\r
+name1=value1&name2=value2
+EOD;
+
+            expect($request->toMessage())->toBe($expected);
+
+        });
+
     });
 
     describe("->is()", function() {

@@ -175,8 +175,9 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
             $this->mime($mime);
             $this->charset($charset);
             return;
+        } elseif ($mime) {
+            $this->mime($mime);
         }
-
         list($mime, $charset) = $this->_inspectContentType();
 
         $this->mime($mime);
