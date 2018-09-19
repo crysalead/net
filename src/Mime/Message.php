@@ -40,16 +40,16 @@ class Message
     /**
      * Multipart inlines attachment
      *
-     * @var object
+     * @var array
      */
-    protected $_inlines = null;
+    protected $_inlines = [];
 
     /**
      * Multipart attachments
      *
-     * @var object
+     * @var array
      */
-    protected $_attachments = null;
+    protected $_attachments = [];
 
     /**
      * Alt body message

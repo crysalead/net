@@ -362,7 +362,8 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         if (!is_array($detector)) {
             throw new Exception("Invalid `'{$flag}'` detector definition.");
         }
-        list($key, $check) = each($detector);
+        $key = key($detector);
+        $check = current($detector);
         $value = $this->attr($key);
 
         if (is_array($check)) {
