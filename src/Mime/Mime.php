@@ -68,9 +68,11 @@ abstract class Mime
                     throw new RuntimeException("Can't use `'{$encoding}'` encoding, non 7 bit characters detected.");
                 }
             case '8bit':
-            case 'binary':
                 $body = ltrim(str_replace("\r", '', $body), "\n");
                 return $wrapWidth ? wordwrap($body, $wrapWidth, "\n", $cut) : $body;
+                break;
+            case 'binary':
+                return ltrim(str_replace("\r", '', $body), "\n");
                 break;
             default:
                 throw new InvalidArgumentException("Unsupported encoding `'{$encoding}'`.");

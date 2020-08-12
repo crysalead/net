@@ -182,7 +182,7 @@ EOD;
                 $response->negotiate($request);
             };
 
-            expect($closure)->toThrow(new NetException('Unsupported Media Type: ["application/vnd.api+json"].', 415));
+            expect($closure)->toThrow(new NetException('Unsupported Media Type: `application/vnd.api+json`.', 415));
 
         });
 

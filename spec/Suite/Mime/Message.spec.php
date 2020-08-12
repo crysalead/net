@@ -242,7 +242,7 @@ AAA3+wZPKJuvKQAAAABJRU5ErkJggg==
 --%S%
 Content-ID: <%S%@localhost.localdomain>
 Content-Disposition: attachment; filename="luouk.zip"
-Content-Type: application/x-gzip
+Content-Type: application/%S?%gzip
 Content-Transfer-Encoding: base64
 
 H4sICEqsblkAA2hlbGxvd29ybGQudHh0APNIzcnJVwjPL8pJUeQCAN3dFH0NAAAA
@@ -280,7 +280,7 @@ Hello World!
 --%S%
 Content-ID: <%S%@%S%>
 Content-Disposition: attachment; filename="luouk.zip"
-Content-Type: application/x-gzip
+Content-Type: application/%S?%gzip
 Content-Transfer-Encoding: base64
 
 H4sICEqsblkAA2hlbGxvd29ybGQudHh0APNIzcnJVwjPL8pJUeQCAN3dFH0NAAAA

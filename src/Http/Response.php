@@ -117,7 +117,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             }
         }
         $mimes = join('", "', array_keys($request->accepts()));
-        throw new NetException("Unsupported Media Type: [\"{$mimes}\"].", 415);
+        throw new NetException("Unsupported Media Type: `{$mimes}`.", 415);
     }
 
     /**

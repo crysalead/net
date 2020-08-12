@@ -589,7 +589,7 @@ describe("Curl", function() {
                         $this->curl->send($request, $response);
                     };
 
-                    expect($closure)->toThrow(new NetException('SSL peer certificate or SSH remote key was not OK', 51));
+                    expect($closure)->toThrow('SSL peer certificate or SSH remote key was not OK');
 
                 });
 
@@ -602,7 +602,7 @@ describe("Curl", function() {
                         $this->curl->send($request, $response, ['verifyHost' => 0]);
                     };
 
-                    expect($closure)->not->toThrow(new NetException('SSL peer certificate or SSH remote key was not OK'));
+                    expect($closure)->not->toThrow('SSL peer certificate or SSH remote key was not OK');
 
                 });
 
