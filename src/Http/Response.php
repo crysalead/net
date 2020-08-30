@@ -105,13 +105,14 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      * Performs a format negotiation from a `Request` object, by iterating over the accepted
      * content types in sequence, from most preferred to least.
      *
-     * @param  object $request A request instance .
+     * @param  object $request        A request instance.
+     * @param  array  $allowedFormats Some allowed formats.
      */
-    public function negotiate($request)
+    public function negotiate($request, $allowedFormats = null)
     {
         $media = $this->_classes['media'];
         foreach ($request->accepts() as $mime => $value) {
-            if ($format = $media::suitable($request, $mime)) {
+            if ($format = $media::suitable($request, $mime, $allowedFormats)) {
                 $this->format($format);
                 return;
             }

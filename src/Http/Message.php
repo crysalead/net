@@ -174,16 +174,17 @@ class Message
     /**
      * Gets/sets the format of the request.
      *
-     * @param  string      $format A format name.
+     * @param  string $format A format name.
+     * @param  array  $allowedFormats Some allowed formats.
      * @return string|self
      */
-    public function format($format = null)
+    public function format($format = null, $allowedFormats = null)
     {
         $media = $this->_classes['media'];
 
         if (!func_num_args()) {
             if ($this->_format === null) {
-                $this->_format = $media::suitable($this);
+                $this->_format = $media::suitable($this, null, $allowedFormats);
             }
             return $this->_format;
         }

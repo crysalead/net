@@ -105,19 +105,23 @@ class Media
     /**
      * Iterates through all existing formats to match a compatible one for the provided request.
      *
-     * @param  object  $message An instance of message.
-     * @param  string  $mime    An overriding content type.
-     * @return boolean          Returns a compatible format name or `null` if none matched.
+     * @param  object  $message        An instance of message.
+     * @param  string  $mime           An overriding content type.
+     * @param  array   $allowedFormats Some allowed formats.
+     * @return boolean                 Returns a compatible format name or `null` if none matched.
      */
-    public static function suitable($message, $mime = null)
+    public static function suitable($message, $mime = null, $allowedFormats = null)
     {
         $formats = static::$_formats;
 
-        if (func_num_args() === 1) {
+        if ($mime === null) {
             $mime = $message->mime();
         }
 
         foreach ($formats as $format => $definition) {
+            if ($allowedFormats && !in_array($format, $allowedFormats, true)) {
+                continue;
+            }
             if (!in_array($mime, $definition['mime'], true)) {
                 continue;
             }
