@@ -1,6 +1,6 @@
 # Net - Network Message Library
 
-[![Build Status](https://travis-ci.org/crysalead/net.svg?branch=master)](https://travis-ci.org/crysalead/net)
+[![Build Status](https://travis-ci.com/crysalead/net.svg?branch=master)](https://travis-ci.com/crysalead/net)
 [![Code Coverage](https://scrutinizer-ci.com/g/crysalead/net/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/crysalead/net/)
 
 This library is a Network Message implementation in PHP. The library provides some PSR-7 compatible accessors and can be used with any PSR-7 compatible transport layer library.
