@@ -222,7 +222,7 @@ class Headers extends \Lead\Collection\Collection
             if ($prepend) {
                 $this->_data = [$name => $parsed] + $this->_data;
             } else {
-                $this->_data = array_merge($this->_data, [$name => $parsed]);
+                $this->_data[$name] = $parsed;
             }
         }
         return $this;

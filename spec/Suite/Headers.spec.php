@@ -69,6 +69,25 @@ describe("Headers", function() {
 
         });
 
+        it("overrides a value inside a loop", function() {
+
+            $this->headers['Accept'] = 'application/vnd.api+json';
+            $this->headers['Authorization'] = ' Bearer eyJ0eXAiOiJKV1QiLCJhbGc...';
+            $this->headers['Content-Type'] = 'application/vnd.api+json';
+
+            foreach ($this->headers as $key => $header) {
+                if ($key === 'Authorization') {
+                    $this->headers[$key] = '<FILTERED DATA>';
+                }
+            }
+            expect($this->headers->data())->toBe([
+                'Accept: application/vnd.api+json',
+                'Authorization: <FILTERED DATA>',
+                'Content-Type: application/vnd.api+json'
+            ]);
+
+        });
+
         it("throws an exception with an empty name", function() {
 
             $closure = function() {
