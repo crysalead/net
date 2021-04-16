@@ -62,13 +62,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     protected $_ignorePath = null;
 
     /**
-     * Holds the value of the current locale, set through the `locale()` method.
-     *
-     * @var string
-     */
-    protected $_locale = null;
-
-    /**
      * Options used to detect features of the request, using `is()`.
      * Custom detectors can be added using `detect()`.
      *
@@ -88,7 +81,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
      *                      - `'form'`       _array_   : Form data (defaults: `[]`).
      *                      - `'params'`     _array_   : Custom routing params (defaults: `[]`).
      *                      - `'env'`        _array_   : Environment variables (defaults: `[]`).
-     *                      - `'locale'`     _string_  : An optional locale string (defaults: `''`).
      *                      - `'classes'`    _array_   : Classes dependencies.
      *                      - `'detectors'`  _array_   : Request detector definition.
      */
@@ -99,7 +91,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
             'form'      => [],
             'params'    => [],
             'env'       => [],
-            'locale'    => null,
             'classes'   => [
                 'environment' => 'Lead\Env\Env',
                 'auth'        => 'Lead\Net\Http\Auth'
@@ -141,7 +132,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
 
         $this->ignorePath($config['ignorePath']);
         $this->basePath($config['basePath']);
-        $this->locale($config['locale']);
 
         if (isset($this->_form['_method'])) {
             $this->env['REQUEST_METHOD'] = strtoupper($this->_form['_method']);
@@ -439,26 +429,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     }
 
     /**
-     * Sets or returns the current locale string.
-     *
-     * @param  string      $locale An optional locale string like `'en'`, `'en_US'` or `'de_DE'`.
-     *                             If specified, will overwrite the existing locale.
-     * @return string|null         Returns the currently set locale string.
-     */
-    public function locale($locale = null)
-    {
-        if ($locale) {
-            $this->_locale = $locale;
-        }
-        if ($this->_locale) {
-            return $this->_locale;
-        }
-        if (isset($this->_params['locale'])) {
-            return $this->_params['locale'];
-        }
-    }
-
-    /**
      * Gets/sets the form data.
      *
      * @param  array $form The data to set or none to get the setted one.
@@ -486,7 +456,6 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         $this->_setContentLength();
         return [
             'basePath' => $this->basePath(),
-            'locale'   => $this->locale(),
             'form'     => $this->form(),
             'params'   => $this->params()
         ] + parent::export($options);

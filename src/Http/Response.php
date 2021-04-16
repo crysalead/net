@@ -87,13 +87,17 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         $defaults = [
             'status'   => 200,
             'location' => null,
-            'format'   => null
+            'format'   => null,
+            'locale'   => null
         ];
         $config = Set::merge($defaults, $config);
 
         parent::__construct($config);
 
         $this->status($config['status']);
+        if ($config['locale']) {
+            $this->locale($config['locale']);
+        }
 
         if ($config['location']) {
             $this->redirect($config['location']);
@@ -119,6 +123,23 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         }
         $mimes = join('", "', array_keys($request->accepts()));
         throw new NetException("Unsupported Media Type: `{$mimes}`.", 415);
+    }
+
+    /**
+     * Gets/sets the content langage.
+     *
+     * @param  string|array $locale A locale `'en'`, `'en_US'` or `'de_DE'`.
+     * @return string|null          Returns the locale.
+     */
+    public function locale($locale = null)
+    {
+        if (!func_num_args()) {
+            $locales = $this->hasHeader('Content-Language') ? $this->getHeader('Content-Language') : [];
+            return reset($locales);
+        }
+        $headers = $this->headers();
+        $headers['Content-Language'] = $locale;
+        return $this;
     }
 
     /**

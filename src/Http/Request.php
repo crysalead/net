@@ -170,34 +170,28 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
     }
 
     /**
-     * Gets/sets the format of the request.
-     *
-     * @param  string $format A format name.
-     * @param  array  $allowedFormats Some allowed formats.
-     * @return string|self
-     */
-    public function format($format = null, $allowedFormats = null)
-    {
-        if (func_num_args()) {
-            return parent::format($format, $allowedFormats);
-        }
-        if ($this->_format === null) {
-            $this->negotiate();
-        }
-        return $this->_format;
-    }
-
-    /**
      * Return information about the mime of content that the client is requesting.
      *
-     * @param  boolean $all If `true` lists all accepted content mimes
-     * @return mixed        Returns the negotiated mime or the accepted content mimes sorted by
-     *                      client preference if `$all` is set to `true`.
+     * @return mixed        Returns the the accepted content mimes sorted by client preference.
      */
-    public function accepts()
+    public function accepts($accepts = [])
     {
-        $accepts = $this->hasHeader('Accept') ? $this->getHeader('Accept') : ['text/html'];
+        $headers = $this->headers();
+        if (func_num_args()) {
+            foreach ($accepts as $i => $value) {
+                if (is_string($value)) {
+                    $q = 0;
+                } else {
+                    $q = $value === 1 ? 0 : $value;
+                    $value = $i;
+                }
+                $headers['Accept'][] = $value . ($q ? ';q=' . $q : '');
+            }
+            return $this;
+        }
+        $accepts = isset($headers['Accept']) ? $headers['Accept']->data() : ['text/html'];
 
+        $preferences = [];
         foreach ($accepts as $i => $value) {
             list($mime, $q) = preg_split('/;\s*q\s*=\s*/', $value, 2) + [$value, 1.0];
             $stars = substr_count($mime, '*');
@@ -208,6 +202,60 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
         krsort($preferences);
         $preferences = call_user_func_array('array_merge', $preferences);
         return $preferences;
+    }
+
+    /**
+     * Return information about the language that the client is requesting.
+     *
+     * @return mixed        Returns the language sorted by client preference.
+     */
+    public function locales($locales = [])
+    {
+        $headers = $this->headers();
+        if (func_num_args()) {
+            foreach ($locales as $i => $value) {
+                if (is_string($value)) {
+                    $q = 0;
+                } else {
+                    $q = $value === 1 ? 0 : $value;
+                    $value = $i;
+                }
+                $headers['Accept-Language'][] = $value . ($q ? ';q=' . $q : '');
+            }
+            return $this;
+        }
+        $locales = isset($headers['Accept-Language']) ? $headers['Accept-Language']->data() : [];
+
+        $preferences = [];
+        foreach ($locales as $i => $value) {
+            list($mime, $q) = preg_split('/;\s*q\s*=\s*/', $value, 2) + [$value, 1.0];
+            $stars = substr_count($mime, '*');
+            $score = $stars ? (0.03 - $stars * 0.01) : $q;
+            $score = $score * 100000 + strlen($mime); //RFC 4288 assumes a max length of 127/127 = 255 chars for mime.
+            $preferences[$score][trim($mime)] = (float) $q;
+        }
+        krsort($preferences);
+        $preferences = call_user_func_array('array_merge', $preferences);
+        return $preferences;
+    }
+
+    /**
+     * Returns the prefered locale.
+     *
+     * @param  boolean $full    When true, return the full locale string like `'en'`, `'en_US'` or `'de_DE'`.
+     * @param  string  $default The default locale.
+     * @return string           Returns the prefered locale.
+     */
+    public function locale($full = false, $default = 'en')
+    {
+        $locales = $this->locales();
+        $locale = null;
+        foreach ($locales as $i => $value) {
+            $locale = is_string($value) ? $value : $i;
+            break;
+        }
+        $locale = $locale ?: $default;
+        return $full ? $locale : substr($locale, 0, 2);
     }
 
     /**

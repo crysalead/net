@@ -362,6 +362,105 @@ describe("Request", function() {
 
     });
 
+    describe("->accepts()", function() {
+
+        it("sets the Accept header", function() {
+
+            $request = new Request();
+
+            $request->accepts([
+                "text/html;level=1" => 1,
+                "text/html" => 0.7,
+                "text/html;level=2" => 0.4,
+                "text/*" => 0.3,
+                "*/*" => 0.5
+            ]);
+
+            $headers = $request->headers();
+            expect((string) $headers['Accept'])->toBe('Accept: text/html;level=1, text/html;q=0.7, text/html;level=2;q=0.4, text/*;q=0.3, */*;q=0.5');
+        });
+
+        it("parses the Accept header", function() {
+
+            $request = new Request();
+
+            $headers = $request->headers();
+            $headers['Accept'] = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1,text/html;level=2;q=0.4, */*;q=0.5';
+
+            expect($request->accepts())->toEqual([
+                "text/html;level=1" => 1,
+                "text/html" => 0.7,
+                "text/html;level=2" => 0.4,
+                "text/*" => 0.3,
+                "*/*" => 0.5
+            ]);
+        });
+
+    });
+
+    describe("->locales()", function() {
+
+        it("sets the Accept-Language header", function() {
+
+            $request = new Request();
+
+            $request->locales([
+                "fr_FR" => 1,
+                "fr" => 0.7,
+                "en_GB" => 0.4,
+                "en" => 0.3
+            ]);
+
+            $headers = $request->headers();
+            expect((string) $headers['Accept-Language'])->toBe('Accept-Language: fr_FR, fr;q=0.7, en_GB;q=0.4, en;q=0.3');
+        });
+
+        it("parses the Accept-Language header", function() {
+
+            $request = new Request();
+
+            $headers = $request->headers();
+            $headers['Accept-Language'] = 'fr_FR, fr;q=0.7, en_GB;q=0.4, en;q=0.3';
+
+            expect($request->locales())->toEqual([
+                "fr_FR" => 1,
+                "fr" => 0.7,
+                "en_GB" => 0.4,
+                "en" => 0.3
+            ]);
+        });
+
+    });
+
+    describe("->locale()", function() {
+
+        it("returns the default locale", function() {
+
+            $request = new Request();
+
+            $headers = $request->headers();
+            expect($request->locale())->toBe('en');
+            expect($request->locale(true, 'fr'))->toBe('fr');
+        });
+
+        it("returns the prefered locale", function() {
+
+            $request = new Request();
+
+            $request->locales([
+                "fr_FR" => 1,
+                "fr" => 0.7,
+                "en_GB" => 0.4,
+                "en" => 0.3
+            ]);
+
+            $headers = $request->headers();
+            expect($request->locale())->toBe('fr');
+            expect($request->locale(true))->toBe('fr_FR');
+        });
+
+    });
+
     describe("->applyCookies()", function() {
 
         beforeEach(function() {

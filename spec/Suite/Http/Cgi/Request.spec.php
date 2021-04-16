@@ -31,7 +31,6 @@ describe("Request", function() {
 
             expect($request->export())->toEqual([
                 'basePath' => '',
-                'locale'   => null,
                 'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',
@@ -351,62 +350,6 @@ EOD;
 
     });
 
-    describe("->locale()", function() {
-
-        it("gets the locale", function() {
-
-            $request = new Request(['locale' => 'en']);
-            expect($request->locale())->toBe('en');
-
-        });
-
-        it("gets the locale from params", function() {
-
-            $request = new Request(['params' => ['locale' => 'en']]);
-            expect($request->locale())->toBe('en');
-
-        });
-
-        it("returns the locale if exists first", function() {
-
-            $request = new Request([
-                'locale' => 'es',
-                'params' => ['locale' => 'en']
-            ]);
-            expect($request->locale())->toBe('es');
-
-        });
-
-        it("sets the locale if exists first", function() {
-
-            $request = new Request(['locale' => 'en']);
-            $request->locale('fr');
-            expect($request->locale())->toBe('fr');
-
-        });
-
-    });
-
-    describe("->accepts()", function() {
-
-        it("parses accept header", function() {
-
-            $request = new Request();
-
-            $headers = $request->headers();
-            $headers['Accept'] = 'text/*;q=0.3, text/html;q=0.7, text/html;level=1,text/html;level=2;q=0.4, */*;q=0.5';
-
-            expect($request->accepts())->toEqual([
-                "text/html;level=1" => 1,
-                "text/html" => 0.7,
-                "text/html;level=2" => 0.4,
-                "text/*" => 0.3,
-                "*/*" => 0.5
-            ]);
-        });
-
-    });
-
     describe("::ingoing()", function() {
 
         beforeEach(function() {
@@ -419,7 +362,6 @@ EOD;
 
             expect($request->export())->toEqual([
                 'basePath' => '/base/path/webroot',
-                'locale'   => null,
                 'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',
@@ -460,7 +402,6 @@ EOD;
 
             expect($request->export())->toEqual([
                 'basePath' => '/base/path/webroot',
-                'locale'   => null,
                 'form'     => $_POST,
                 'params'   => [],
                 'method'   => 'POST',
@@ -490,7 +431,6 @@ EOD;
 
             expect($request->export())->toEqual([
                 'basePath' => '/base/path',
-                'locale'   => null,
                 'form'     => [],
                 'params'   => [],
                 'method'   => 'GET',

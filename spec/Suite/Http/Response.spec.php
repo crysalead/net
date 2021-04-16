@@ -63,6 +63,26 @@ describe("Response", function() {
 
     });
 
+    describe("->locale()", function() {
+
+        it("gets the locale", function() {
+
+            $request = new Response(['locale' => 'en']);
+            expect($request->locale())->toBe('en');
+
+        });
+
+
+        it("sets the locale if exists first", function() {
+
+            $request = new Response(['locale' => 'en']);
+            $request->locale('fr');
+            expect($request->locale())->toBe('fr');
+
+        });
+
+    });
+
     describe("->cache()", function() {
 
         it("adds no-cache headers", function() {
