@@ -75,6 +75,11 @@ class Message
             'headers' => $config['headers']
         ]);
 
+        if ($mime = $this->_stream->mime()) {
+            $media = $this->_classes['media'];
+            $config['format'] = $media::suitable($this, $mime);
+        }
+
         $this->version($config['version']);
         $this->format($config['format']);
         $this->chunkSize($config['chunkSize']);
@@ -138,6 +143,8 @@ class Message
             return $this->_stream->mime();
         }
         $this->_stream->mime($mime);
+        $media = $this->_classes['media'];
+        $this->_format = $media::suitable($this, $mime);
         return $this;
     }
 
@@ -178,14 +185,11 @@ class Message
      * @param  array  $allowedFormats Some allowed formats.
      * @return string|self
      */
-    public function format($format = null, $allowedFormats = null)
+    public function format($format = null)
     {
         $media = $this->_classes['media'];
 
         if (!func_num_args()) {
-            if ($this->_format === null) {
-                $this->_format = $media::suitable($this, null, $allowedFormats);
-            }
             return $this->_format;
         }
         if ($format === null) {
@@ -197,7 +201,6 @@ class Message
         }
         $this->_format = $format;
         $this->mime($mime);
-
         return $this;
     }
 

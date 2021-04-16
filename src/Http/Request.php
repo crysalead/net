@@ -133,7 +133,6 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
         ];
 
         $config = Set::merge($defaults, $config);
-
         parent::__construct($config);
 
         $headers = $this->headers();
