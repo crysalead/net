@@ -25,49 +25,50 @@ if (socket_listen($sock, $backlog) === false) {
     exit(-1);
 }
 
-$clients = [];
+$clients = [$sock];
 
 do {
-    $read = [];
-    $read[] = $sock;
 
-    $read = array_merge($read, $clients);
+    $read = $clients;
 
     if (socket_select($read, $write, $except, $timeout) < 1)
     {
         continue;
     }
 
-    if (in_array($sock, $read)) {
-
-        if (($client = socket_accept($sock)) === false) {
-            echo socket_strerror(socket_last_error($sock)) . "\n";
-            break;
-        }
-        $clients[] = $client;
-        $welcome = "TCP Ping/Pong Server\r\n";
-        socket_write($client, $welcome, strlen($welcome));
-    }
-
-    foreach ($clients as $key => $client) {
-        if (in_array($client, $read)) {
+    foreach ($read as $client) {
+        if ($client === $sock) {
+            if (($client = socket_accept($sock)) === false) {
+                echo socket_strerror(socket_last_error($sock)) . "\n";
+                break;
+            }
+            $clients[] = $client;
+            $welcome = "TCP Ping/Pong Server\r\n";
+            socket_write($client, $welcome, strlen($welcome));
+        } else {
             if (($buffer = @socket_read($client, $bufferSize, PHP_NORMAL_READ)) === false) {
+                socket_close($client);
+                $key = array_search($client, $clients, true);
                 unset($clients[$key]);
+                continue;
             }
             if (!$buffer = trim($buffer)) {
                 continue;
             }
             if ($buffer === 'exit') {
                 socket_shutdown($client);
-                unset($clients[$key]);
-                socket_close($client);
-                break;
+                continue;
             }
             $talkback = "Received: '{$buffer}'\r\n";
-            socket_write($client, $talkback, strlen($talkback));
+            if (socket_write($client, $talkback, strlen($talkback)) === false) {
+                socket_close($client);
+                $key = array_search($client, $clients, true);
+                unset($clients[$key]);
+            }
         }
     }
 } while (true);
 
+socket_shutdown($sock);
 socket_close($sock);
 ?>

@@ -44,7 +44,7 @@ Filters::apply($this, 'run', function($next) use (&$echo, &$httpecho) {
     ], $pipesEcho);
 
     $pipesHttpEcho = [];
-    $command = 'exec php -S localhost:10080 ' . __DIR__ . '/spec/Server/httpecho.php';
+    $command = 'exec php -S 127.0.0.1:10080 ' . __DIR__ . '/spec/Server/httpecho.php';
     echo "Running HTTP server command `{$command}`\n";
     $httpecho = proc_open($command, [
         0 => ['pipe', 'r'],
@@ -54,7 +54,7 @@ Filters::apply($this, 'run', function($next) use (&$echo, &$httpecho) {
 
     try {
         $fp = Code::spin(function() {
-            return @fsockopen('localhost', 10000);
+            return @fsockopen('127.0.0.1', 10000);
         }, 5, true);
         fclose($fp);
     } catch (TimeoutException $e) {
@@ -65,7 +65,7 @@ Filters::apply($this, 'run', function($next) use (&$echo, &$httpecho) {
 
     try {
         $fp = Code::spin(function() {
-            return @fsockopen('localhost', 10080);
+            return @fsockopen('127.0.0.1', 10080);
         }, 5, true);
         fclose($fp);
     } catch (TimeoutException $e) {

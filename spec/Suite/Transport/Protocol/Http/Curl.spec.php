@@ -12,7 +12,7 @@ describe("Curl", function() {
         $this->curl = new Curl();
 
         $this->url = function($path) {
-            return 'http://localhost:10080/' . trim($path, '/');
+            return 'http://127.0.0.1:10080/' . trim($path, '/');
         };
 
         $this->statusCodes = function() {
@@ -86,7 +86,7 @@ describe("Curl", function() {
 
                 it("sends some data", function() {
 
-                    $socket = $this->curl(['url' => 'telnet://localhost:10000', 'body' => "jaillet\r\nexit\r\n"]);
+                    $socket = $this->curl(['url' => 'telnet://127.0.0.1:10000', 'body' => "jaillet\r\nexit\r\n"]);
                     $response = new Response();
                     $this->curl->send($socket, $response);
                     expect((string) $response)->toBe("TCP Ping/Pong Server\r\nReceived: 'jaillet'\r\n");
@@ -95,12 +95,9 @@ describe("Curl", function() {
 
                 xit("sends some data", function() {
 
-                    $socket = $this->curl(['url' => 'telnet://localhost:23']);
+                    $socket = $this->curl(['url' => 'telnet://127.0.0.1:23']);
                     $socket->on('received', function($data) {
                         $this->send("jaillet\r\n");
-                    })->then(function($data) {
-                    })->then(function($data) {
-                        $this->send("the_lotus\r\n");
                     })->then(function($data) {
                     })->then(function($data) {
                         $this->send("exit\r\n");
@@ -180,7 +177,7 @@ describe("Curl", function() {
 
                     $response = new Response();
                     $this->curl->send([
-                        'url' => 'telnet://localhost:10000',
+                        'url' => 'telnet://127.0.0.1:10000',
                         'body' => "jaillet\r\nexit\r\n"
                     ], $response);
                     expect((string) $response)->toBe("TCP Ping/Pong Server\r\nReceived: 'jaillet'\r\n");
