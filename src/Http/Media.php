@@ -174,6 +174,9 @@ class Media
         $definition = static::get($format);
 
         if (empty($definition['encode'])) {
+            if ($data === null) {
+                return '';
+            }
             if (is_string($data)) {
                 return $data;
             }

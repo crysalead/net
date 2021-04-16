@@ -271,7 +271,11 @@ class Message
         $format = $this->format();
 
         if (!$format && !is_string($value)) {
-            throw new NetException("The data must be a string when no format/mime is defined.");
+            if ($value === null) {
+                $value = '';
+            } else {
+                throw new NetException("The data must be a string when no format/mime is defined.");
+            }
         }
 
         $stream = $this->stream();
