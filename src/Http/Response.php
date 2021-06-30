@@ -273,6 +273,10 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
         if ($headers['Transfer-Encoding']->value() === 'chunked') {
             return;
         }
+
+        if ($this->statusCode() === 204) {
+            return;
+        }
         if ($this->_stream->isSeekable()) {
             $this->_stream->rewind();
         }
