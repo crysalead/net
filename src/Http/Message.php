@@ -396,8 +396,11 @@ class Message
     /**
      * Auto adds a Content-Length header if necessary.
      */
-    protected function _setContentLength()
+    protected function _setContentLength($noContent = false)
     {
+        if ($noContent) {
+            return;
+        }
         $headers = $this->headers();
         if ($headers['Transfer-Encoding']->value() === 'chunked') {
             return;

@@ -327,6 +327,25 @@ EOD;
 
         });
 
+        it("forces Content-Length to 0 for 204 resonse", function() {
+
+            $response = new Response([
+                'format' => 'json',
+                'data'   => ['hello' => 'world']
+            ]);
+
+            $response->status(204);
+
+            $expected = <<<EOD
+HTTP/1.1 204 No Content\r
+Content-Type: application/json\r
+\r
+
+EOD;
+            expect($response->toMessage())->toBe($expected);
+
+        });
+
     });
 
     describe("->toString()", function() {
@@ -395,6 +414,31 @@ EOD;
                 ["HTTP/1.1 200 OK"],
                 ["Content-Type: application/json"],
                 ["Transfer-Encoding: chunked"]
+            ]);
+
+        });
+
+        it("echoes a 204 response", function() {
+
+            $headers = [];
+
+            Monkey::patch('header', function() use (&$headers) {
+                $headers[] = func_get_args();
+            });
+
+            $closure = function() {
+                $response = new Response([
+                    'format' => 'json',
+                    'data'   => ['hello' => 'world']
+                ]);
+                $response->status(204);
+                $response->dump();
+            };
+
+            expect($closure)->toEcho('');
+            expect($headers)->toEqual([
+                ["HTTP/1.1 204 No Content"],
+                ["Content-Type: application/json"]
             ]);
 
         });

@@ -529,12 +529,12 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
      *
      * @param object $request
      */
-    public function _setContentLength()
+    public function _setContentLength($noContent = false)
     {
         if (in_array($this->method(), ['GET', 'HEAD', 'DELETE'], true)) {
             return;
         }
-        parent::_setContentLength();
+        parent::_setContentLength($noContent);
     }
 
     /**

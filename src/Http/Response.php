@@ -264,7 +264,8 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function dump()
     {
-        $this->_setContentLength();
+        $noContent = $this->statusCode() === 204;
+        $this->_setContentLength($noContent);
         header($this->line());
         $headers = $this->headers();
         foreach ($headers as $header) {
@@ -274,7 +275,7 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
             return;
         }
 
-        if ($this->statusCode() === 204) {
+        if ($noContent) {
             return;
         }
         if ($this->_stream->isSeekable()) {
@@ -423,13 +424,25 @@ class Response extends \Lead\Net\Http\Message implements \Psr\Http\Message\Respo
      */
     public function export($options = [])
     {
-        $this->_setContentLength();
+        $this->_setContentLength($this->statusCode() === 204);
         return [
             'status'  => $this->status(),
             'version' => $this->version(),
             'headers' => $this->headers(),
             'body'    => $this->stream()
         ];
+    }
+
+    /**
+     * Magic method to convert the instance into an HTTP message string.
+     *
+     * @return string
+     */
+    public function toMessage()
+    {
+        $noContent = $this->statusCode() === 204;
+        $this->_setContentLength($noContent);
+        return $this->line() . "\r\n" . $this->headers()->toString() . "\r\n". "\r\n" . ($noContent ? '' : $this->toString());
     }
 
     /**
