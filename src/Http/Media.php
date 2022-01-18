@@ -216,6 +216,26 @@ class Media
     }
 
     /**
+     * Join encoded data according to the specified format.
+     *
+     * @param  string $format  The format into which `$data` will be encoded.
+     * @param  mixed  $data    Arbitrary data you wish to encode.
+     * @param  array  $options Handler-specific options.
+     * @param  object $message A message reference.
+     * @return string          The encoded string data.
+     */
+    public static function join($format, $data, $options = [], $message = null)
+    {
+        $definition = static::get($format);
+
+        if (empty($definition['join'])) {
+            return is_array($data) ? implode('', $data) : (string) $data;
+        }
+        $handler = $definition['join'];
+        return is_string($handler) ? $handler($data) : $handler($data, $definition + $options, $message);
+    }
+
+    /**
      * Resets the `Media` class.
      */
     public static function reset()
