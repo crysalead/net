@@ -406,7 +406,7 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
         }
         $this->_basePathTmp = $basePath;
         if ($this->_ignorePath) {
-            $basePath = preg_replace($this->_ignorePath, '', $basePath);
+            $basePath = preg_replace($this->_ignorePath, '', $basePath ?: '');
         }
         $this->_basePath = $basePath && $basePath !== '/' ? '/' . trim($basePath, '/') : '';
         return $this;

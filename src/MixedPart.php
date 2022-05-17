@@ -209,7 +209,7 @@ class MixedPart extends \Lead\Storage\Stream\MultiStream
      */
     public function isMultipart()
     {
-        return preg_match('~^multipart/~i', $this->_mime);
+        return preg_match('~^multipart/~i', $this->_mime ?: '');
     }
     /**
      * Add a stream

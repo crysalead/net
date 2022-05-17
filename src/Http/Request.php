@@ -197,7 +197,7 @@ class Request extends \Lead\Net\Http\Message implements \Psr\Http\Message\Reques
             $stars = substr_count($mime, '*');
             $score = $stars ? (0.03 - $stars * 0.01) : $q;
             $score = $score * 100000 + strlen($mime); //RFC 4288 assumes a max length of 127/127 = 255 chars for mime.
-            $preferences[$score][strtolower(trim($mime))] = (float) $q;
+            $preferences[round($score)][strtolower(trim($mime))] = (float) $q;
         }
         krsort($preferences);
         $preferences = call_user_func_array('array_merge', $preferences);

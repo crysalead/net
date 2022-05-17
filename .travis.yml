@@ -2,12 +2,11 @@ language: php
 
 php:
   - 7.4
-  - 8.0
+  - 8.1
 
 before_script:
   - if [[ $TRAVIS_SECURE_ENV_VARS = "true" ]]; then composer config -g github-oauth.github.com $GITHUB_COMPOSER_AUTH; fi
   - echo 'xdebug.mode = coverage' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
-  - composer self-update
   - composer install --no-interaction
 
 script: bin/kahlan --coverage=3 --clover=clover.xml
@@ -18,4 +17,4 @@ after_success:
 
 env:
   global:
-    - secure: MgDiOLOg+oubbtqxljo7h+1BRitEecy2fBdeIPtOE5cUumEjLPijyKKRL1Dp4Hr2fcp0Q6OOdsBz8Csl3jL5AfVDCq0acg2U35s1FSafkAUNJ3LP79FM8CAOqarBOTcMu96Klpt2hqYAFbE4Qiy/Tmy6EgKs/Up8V5SD03t/K17ugj1g9fC3192/vm9nIXwQrJIf0Y4MjN87iSgY8QiH9b661Bs3PHj19w6R08cdPIotIoa5udGg3T/afENIFYoZ3EXp6KLOOyQnFYV2lu/lAV3c45yn3G0aO0QmzTjdLTq+Dza5GB3w3wN06MGhWigy1Ekrf4Xktld1DSzIz8XpYsuJUL0uaZMZOHOM7bdjj2s5Ny+F3R22NBoSHLXzWd3XkNNneR6WMmp4nMSXZQ90ESwA0xlaCay60MJiAZEbrCN2szSZomjq7D5gXbyza/g0sTaiuLeVZ0nNbBo+OJ1kxjc6tUCKXqtaagbggkjoEYL4LwFzy8tgtZtFlu3+yoNdYxHu18si1l/Xd/EAQLKMvtBiWqGxYbqA5Y2R+1qdZJaHUC8VjjVqFofBLpvflwcHWGiEK98duFHfJPlHOGrva8uRs0SPj5zxaHBwsnEtfkWaoUce4aop6Bcl7GoIPuGifSAJOpYxAZIUQuea6VVg2hNG3eNHyomUnHo3pzGhV08=
+    - secure: NPUsgzKDZEZuBI3oGa1V0KVKMSLoU5DKpXiHyUTIXdT2mWl8CE6b0e4RZiDvOqzZe3nRV3/H3JfmG1nrDkfuw355hozGycD08h4uiPmg1k57ud65SKCeNJciPKsuTpaMeKD/HjDMqnjsCAGZOn3k3EdDVrRHVU3zUnsk5Vt3+DaPLAM4nMqmnD1NuEyUpW2ZWkmH6OBg4AJeIhj2lp2SOYRjGTI3RhAgcXZ22Eqv0PEzh38zfDyrOccAMqpCwWpEa+CrEJQAccih1E4W7WR2kvLoUQZF9CfsXn4synRQeSZJinjGll9LGfaQFZHlioA6xU7p0xKs18yfNdXjtKm9Lfrki3TdbnL1g/SXZrVuJPwFiBG7oat7V2WMr6G5QoRvtUm5IvZbroEd9eMZs213VotQFkA1VGapjdAIyA11XN5g2Ja4dpTJnTca73Y8978qcnfZ9y+tQg/pU/FLY++TiTTMEH6VgGjpJHxNDA3nyGVc7ZcNMJa5OhDoBqD1Ip0QpQLDH6T0jJh8TLhJQfRKABLi4nmCCsJyqX5am1X8k0LmSoEdes2jp8rO+DAyB0/a2+S8yJH0kOiBz8KC4Dgmgmw5Oj90LTVF9DRLQRWiZtPoPhFjYgaXdSmR6s5HjAlflQujzafYKjJdkhlsb/39AhVEawV/3cwz0oDQ+Qf4Ac0=
