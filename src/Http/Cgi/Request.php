@@ -20,6 +20,13 @@ class Request extends \Lead\Net\Http\Request implements \Psr\Http\Message\Server
     ];
 
     /**
+     * Holds custom data.
+     *
+     * @var array
+     */
+    public $data = [];
+
+    /**
      * Holds the environment variable container.
      *
      * @var object

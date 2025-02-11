@@ -3,6 +3,7 @@ namespace Lead\Net\Http\Psr7;
 
 use InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
+use Psr\Http\Message\RequestInterface;
 
 /**
  * PSR-7 Request interoperability trait
@@ -14,7 +15,7 @@ trait RequestTrait
      *
      * @return string Returns the request method.
      */
-    public function getMethod()
+    public function getMethod(): string
     {
         return $this->method();
     }
@@ -31,7 +32,7 @@ trait RequestTrait
      *
      * @throws InvalidArgumentException for invalid HTTP methods.
      */
-    public function withMethod($method)
+    public function withMethod($method): RequestInterface
     {
         $request = clone $this;
         $request->method($method);
@@ -54,7 +55,7 @@ trait RequestTrait
      *
      * @return string
      */
-    public function getRequestTarget()
+    public function getRequestTarget(): string
     {
         return $this->requestTarget();
     }
@@ -72,7 +73,7 @@ trait RequestTrait
      * @param  mixed $requestTarget
      * @return self
      */
-    public function withRequestTarget($requestTarget)
+    public function withRequestTarget($requestTarget): RequestInterface
     {
         $request = clone $this;
         if (preg_match('~^(?:[a-z]+:)?//~i', $requestTarget)) {
@@ -123,7 +124,7 @@ trait RequestTrait
      *
      * @return UriInterface Returns a UriInterface instance representing the URI of the request.
      */
-    public function getUri()
+    public function getUri(): UriInterface
     {
         $uri = new Uri($this->url());
         if ($this->username()) {
@@ -159,7 +160,7 @@ trait RequestTrait
      * @param  bool         $preserveHost Preserve the original state of the Host header.
      * @return self
      */
-    public function withUri(UriInterface $uri, $preserveHost = false)
+    public function withUri(UriInterface $uri, $preserveHost = false): RequestInterface
     {
         $request = clone $this;
         $request->scheme($uri->getScheme());

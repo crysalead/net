@@ -9,6 +9,7 @@
 namespace Lead\Net\Http\Psr7;
 
 use InvalidArgumentException;
+
 use Psr\Http\Message\UriInterface;
 
 /**
@@ -138,7 +139,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getScheme()
+    public function getScheme(): string
     {
         return $this->_scheme;
     }
@@ -146,7 +147,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getAuthority()
+    public function getAuthority(): string
     {
         if (empty($this->_host)) {
             return '';
@@ -167,7 +168,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getUserInfo()
+    public function getUserInfo(): string
     {
         return $this->_userInfo;
     }
@@ -175,7 +176,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getHost()
+    public function getHost(): string
     {
         return $this->_host;
     }
@@ -183,7 +184,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getPort()
+    public function getPort(): ?int
     {
         return $this->_isNonStandardPort($this->_scheme, $this->_host, $this->_port)
             ? $this->_port
@@ -193,7 +194,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getPath()
+    public function getPath(): string
     {
         return $this->_path;
     }
@@ -201,7 +202,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getQuery()
+    public function getQuery(): string
     {
         return $this->_query;
     }
@@ -209,7 +210,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function getFragment()
+    public function getFragment(): string
     {
         return $this->_fragment;
     }
@@ -217,7 +218,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withScheme($scheme)
+    public function withScheme($scheme): UriInterface
     {
         if (! is_string($scheme)) {
             throw new InvalidArgumentException(sprintf(
@@ -243,7 +244,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withUserInfo($user, $password = null)
+    public function withUserInfo($user, $password = null): UriInterface
     {
         if (! is_string($user)) {
             throw new InvalidArgumentException(sprintf(
@@ -279,7 +280,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withHost($host)
+    public function withHost($host): UriInterface
     {
         if (! is_string($host)) {
             throw new InvalidArgumentException(sprintf(
@@ -303,7 +304,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withPort($port)
+    public function withPort($port): UriInterface
     {
         if (! is_numeric($port) && $port !== null) {
             throw new InvalidArgumentException(sprintf(
@@ -337,7 +338,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withPath($path)
+    public function withPath($path): UriInterface
     {
         if (! is_string($path)) {
             throw new InvalidArgumentException(
@@ -373,7 +374,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withQuery($query)
+    public function withQuery($query): UriInterface
     {
         if (! is_string($query)) {
             throw new InvalidArgumentException(
@@ -403,7 +404,7 @@ class Uri implements UriInterface
     /**
      * {@inheritdoc}
      */
-    public function withFragment($fragment)
+    public function withFragment($fragment): UriInterface
     {
         if (! is_string($fragment)) {
             throw new InvalidArgumentException(sprintf(

@@ -24,6 +24,20 @@ class Cookies extends \Lead\Collection\Collection
     protected $_data = [];
 
     /**
+     * Hashes.
+     *
+     * @var array
+     */
+    protected $_hashes = [];
+
+    /**
+     * Names.
+     *
+     * @var array
+     */
+    protected $_names = [];
+
+    /**
      * Set to true to throw exceptions when invalid cookies are added to the cookie jar.
      *
      * @var boolean

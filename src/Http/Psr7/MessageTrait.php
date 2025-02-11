@@ -4,6 +4,7 @@ namespace Lead\Net\Http\Psr7;
 use InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\StreamInterface;
+use Psr\Http\Message\MessageInterface;
 
 /**
  * PSR-7 Message interoperability trait
@@ -17,7 +18,7 @@ trait MessageTrait
      *
      * @return string HTTP protocol version.
      */
-    public function getProtocolVersion()
+    public function getProtocolVersion(): string
     {
         return $this->version();
     }
@@ -31,7 +32,7 @@ trait MessageTrait
      * @param  string $version HTTP protocol version
      * @return self
      */
-    public function withProtocolVersion($version)
+    public function withProtocolVersion($version): MessageInterface
     {
         $message = clone $this;
         $message->version($version);
@@ -63,7 +64,7 @@ trait MessageTrait
      *               key MUST be a header name, and each value MUST be an array of strings
      *               for that header.
      */
-    public function getHeaders()
+    public function getHeaders(): array
     {
         $headers = [];
         foreach ($this->headers() as $name => $value) {
@@ -80,7 +81,7 @@ trait MessageTrait
      *                      name using a case-insensitive string comparison. Returns false if
      *                      no matching header name is found in the message.
      */
-    public function hasHeader($name)
+    public function hasHeader($name): bool
     {
         $headers = $this->headers();
         return isset($headers[$name]);
@@ -100,7 +101,7 @@ trait MessageTrait
      *                  header. If the header does not appear in the message, this method MUST
      *                  return an empty array.
      */
-    public function getHeader($name)
+    public function getHeader($name): array
     {
         $headers = $this->headers();
         return $headers[$name]->data();
@@ -125,7 +126,7 @@ trait MessageTrait
      *                      concatenated together using a comma. If the header does not appear in
      *                      the message, this method MUST return an empty string.
      */
-    public function getHeaderLine($name)
+    public function getHeaderLine($name): string
     {
         $headers = $this->headers();
         return $headers[$name]->value();
@@ -143,7 +144,7 @@ trait MessageTrait
      *
      * @throws InvalidArgumentException for invalid header names or values.
      */
-    public function withHeader($name, $value)
+    public function withHeader($name, $value): MessageInterface
     {
         $message = clone $this;
         $headers = $message->headers();
@@ -164,7 +165,7 @@ trait MessageTrait
      *
      * @throws InvalidArgumentException for invalid header names or values.
      */
-    public function withAddedHeader($name, $value)
+    public function withAddedHeader($name, $value): MessageInterface
     {
         $message = clone $this;
         $headers = $message->headers();
@@ -180,7 +181,7 @@ trait MessageTrait
      * @param  string $name Case-insensitive header field name to remove.
      * @return self
      */
-    public function withoutHeader($name)
+    public function withoutHeader($name): MessageInterface
     {
         $message = clone $this;
         $headers = $message->headers();
@@ -193,7 +194,7 @@ trait MessageTrait
      *
      * @return StreamInterface Returns the body as a stream.
      */
-    public function getBody()
+    public function getBody(): StreamInterface
     {
         return $this->stream();
     }
@@ -208,7 +209,7 @@ trait MessageTrait
      *
      * @throws InvalidArgumentException When the body is not valid.
      */
-    public function withBody(StreamInterface $body)
+    public function withBody(StreamInterface $body): MessageInterface
     {
         $message = clone $this;
         $stream = $message->stream();

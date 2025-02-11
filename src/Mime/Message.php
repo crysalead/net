@@ -52,6 +52,20 @@ class Message
     protected $_attachments = [];
 
     /**
+     * The stream body.
+     *
+     * @var object
+     */
+    protected $_stream = null;
+
+    /**
+     * The body.
+     *
+     * @var string
+     */
+    protected $_body = null;
+
+    /**
      * Alt body message
      *
      * @var string

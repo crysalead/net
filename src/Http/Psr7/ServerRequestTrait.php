@@ -1,6 +1,7 @@
 <?php
 namespace Lead\Net\Http\Psr7;
 
+use Psr\Http\Message\ServerRequestInterface;
 use Lead\Net\Http\Cookie\CookieValues;
 
 /**
@@ -17,7 +18,7 @@ trait ServerRequestTrait
      *
      * @return array
      */
-    public function getServerParams()
+    public function getServerParams(): array
     {
         return $this->env->data();
     }
@@ -32,7 +33,7 @@ trait ServerRequestTrait
      *
      * @return array
      */
-    public function getCookieParams()
+    public function getCookieParams(): array
     {
         $headers = $this->headers();
         return CookieValues::toArray($headers['Cookie']->value());
@@ -55,7 +56,7 @@ trait ServerRequestTrait
      * @param array $cookies Array of key/value pairs representing cookies.
      * @return static
      */
-    public function withCookieParams(array $cookies)
+    public function withCookieParams(array $cookies): ServerRequestInterface
     {
         $request = clone $this;
         $headers = $request->headers();
@@ -75,7 +76,7 @@ trait ServerRequestTrait
      *
      * @return array
      */
-    public function getQueryParams()
+    public function getQueryParams(): array
     {
         return $this->query();
     }
@@ -102,7 +103,7 @@ trait ServerRequestTrait
      *     $_GET.
      * @return static
      */
-    public function withQueryParams(array $query)
+    public function withQueryParams(array $query): ServerRequestInterface
     {
         $request = clone $this;
         $request->query($query);
@@ -121,7 +122,7 @@ trait ServerRequestTrait
      * @return array An array tree of UploadedFileInterface instances; an empty
      *     array MUST be returned if no data is present.
      */
-    public function getUploadedFiles()
+    public function getUploadedFiles(): array
     {
         // This method doesn't make sense
         return [];
@@ -138,7 +139,7 @@ trait ServerRequestTrait
      * @return static
      * @throws \InvalidArgumentException if an invalid structure is provided.
      */
-    public function withUploadedFiles(array $uploadedFiles)
+    public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface
     {
         // This method doesn't make sense
         return $this;
@@ -197,7 +198,7 @@ trait ServerRequestTrait
      * @throws \InvalidArgumentException if an unsupported argument type is
      *     provided.
      */
-    public function withParsedBody($data)
+    public function withParsedBody($data): ServerRequestInterface
     {
         $request = clone $this;
         $headers = $request->headers();
@@ -220,7 +221,7 @@ trait ServerRequestTrait
      *
      * @return mixed[] Attributes derived from the request.
      */
-    public function getAttributes()
+    public function getAttributes(): array
     {
         return $this->params();
     }
@@ -261,7 +262,7 @@ trait ServerRequestTrait
      * @param mixed $value The value of the attribute.
      * @return static
      */
-    public function withAttribute($name, $value)
+    public function withAttribute($name, $value): ServerRequestInterface
     {
         $request = clone $this;
         $params = $request->params();
@@ -284,7 +285,7 @@ trait ServerRequestTrait
      * @param string $name The attribute name.
      * @return static
      */
-    public function withoutAttribute($name)
+    public function withoutAttribute($name): ServerRequestInterface
     {
         $request = clone $this;
         $params = $request->params();

@@ -48,6 +48,13 @@ class Socket
     protected $_body = null;
 
     /**
+     * The data.
+     *
+     * @var string
+     */
+    protected $_data = null;
+
+    /**
      * The outgoing stream.
      *
      * @var object

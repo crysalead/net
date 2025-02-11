@@ -1,6 +1,8 @@
 <?php
 namespace Lead\Net\Http\Psr7;
 
+use Psr\Http\Message\ResponseInterface;
+
 /**
  * PSR-7 Response interoperability trait
  */
@@ -14,7 +16,7 @@ trait ResponseTrait
      *
      * @return integer Status code.
      */
-    public function getStatusCode()
+    public function getStatusCode(): int
     {
         return $this->status()[0];
     }
@@ -33,7 +35,7 @@ trait ResponseTrait
      *
      * @return string Reason phrase; must return an empty string if none present.
      */
-    public function getReasonPhrase()
+    public function getReasonPhrase(): string
     {
         return $this->status()[1];
     }
@@ -60,7 +62,7 @@ trait ResponseTrait
      *
      * @throws \InvalidArgumentException For invalid status code arguments.
      */
-    public function withStatus($code, $reasonPhrase = '')
+    public function withStatus($code, $reasonPhrase = ''): ResponseInterface
     {
         $response = clone $this;
         $response->status($reasonPhrase ? [$code, $reasonPhrase] : [$code]);

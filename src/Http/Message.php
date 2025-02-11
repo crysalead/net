@@ -11,6 +11,13 @@ use Lead\Net\NetException;
 class Message
 {
     /**
+     * Class dependencies
+     *
+     * @var array
+     */
+    protected $_classes = [];
+
+    /**
      * HTTP protocol version number
      *
      * @var string
